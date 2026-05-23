@@ -1,44 +1,27 @@
 import type { DiagramNode } from '../types';
 
-export interface ExportResult {
-  html: string;
-  scss: string;
-}
-
-export function generateExportCode(nodes: DiagramNode[]): ExportResult {
-  let html = `<div class="loom-canvas">\n`;
-  let scss = `.loom-canvas {\n  position: relative;\n  width: 1080px;\n  height: 600px;\n  border: 1px solid #ccc;\n  background-color: #ffffff;\n}\n\n`;
+export function generateExportCode(nodes: DiagramNode[]): string {
+  let html = `<div style="position: relative; width: 1080px; height: 600px; border: 1px solid #ccc; background-color: #ffffff;">\n`;
 
   nodes.forEach((node) => {
-    const className = `loom-node-${node.id}`;
-    html += `  <div class="${className}">\n    ${node.content}\n  </div>\n`;
-
-    scss += `.${className} {\n`;
-    scss += `  position: absolute;\n`;
-    scss += `  left: ${node.position.x}px;\n`;
-    scss += `  top: ${node.position.y}px;\n`;
-    scss += `  width: ${node.dimensions.width}px;\n`;
-    scss += `  height: ${node.dimensions.height}px;\n`;
-    scss += `  box-sizing: border-box;\n`;
+    let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; `;
     
     if (node.style) {
-      if (node.style.backgroundColor) scss += `  background-color: ${node.style.backgroundColor};\n`;
-      if (node.style.borderColor) scss += `  border: 1px solid ${node.style.borderColor};\n`;
-      if (node.style.color) scss += `  color: ${node.style.color};\n`;
-      if (node.style.fontSize) scss += `  font-size: ${node.style.fontSize};\n`;
+      if (node.style.backgroundColor) styleStr += `background-color: ${node.style.backgroundColor}; `;
+      if (node.style.borderColor) styleStr += `border: 1px solid ${node.style.borderColor}; `;
+      if (node.style.color) styleStr += `color: ${node.style.color}; `;
+      if (node.style.fontSize) styleStr += `font-size: ${node.style.fontSize}; `;
+      // Add default flex centering if you want, but for now we'll just add the specified styles
+      styleStr += `display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
     } else {
       // Default styles
-      scss += `  background-color: #f0f0f0;\n`;
-      scss += `  border: 1px solid #333;\n`;
-      scss += `  display: flex;\n`;
-      scss += `  align-items: center;\n`;
-      scss += `  justify-content: center;\n`;
-      scss += `  font-family: sans-serif;\n`;
+      styleStr += `background-color: #f0f0f0; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
     }
-    scss += `}\n\n`;
+    
+    html += `  <div style="${styleStr.trim()}">\n    ${node.content}\n  </div>\n`;
   });
 
   html += `</div>`;
 
-  return { html, scss };
+  return html;
 }
