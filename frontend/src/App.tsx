@@ -1,121 +1,104 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { Rnd } from 'react-rnd'
+import type { DiagramNode } from './types'
+import { generateExportCode } from './utils/exportEngine'
+import { ExportModal } from './components/ExportModal'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [nodes, setNodes] = useState<DiagramNode[]>([])
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [exportData, setExportData] = useState({ html: '', scss: '' })
+
+  const handleAddBox = () => {
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0], // Shorter ID for cleaner CSS classes
+      type: 'box',
+      position: { x: 50, y: 50 },
+      dimensions: { width: 150, height: 100 },
+      content: 'New Box',
+      style: {
+        backgroundColor: '#e0f2fe',
+        borderColor: '#0284c7',
+        color: '#0f172a'
+      }
+    }
+    setNodes([...nodes, newNode])
+  }
+
+  const handleDragStop = (id: string, d: { x: number, y: number }) => {
+    setNodes(nodes.map(node => 
+      node.id === id ? { ...node, position: { x: d.x, y: d.y } } : node
+    ))
+  }
+
+  const handleResizeStop = (
+    id: string, 
+    ref: HTMLElement, 
+    position: { x: number, y: number }
+  ) => {
+    setNodes(nodes.map(node => 
+      node.id === id ? { 
+        ...node, 
+        dimensions: { 
+          width: parseInt(ref.style.width, 10), 
+          height: parseInt(ref.style.height, 10) 
+        },
+        position
+      } : node
+    ))
+  }
+
+  const handleExport = () => {
+    const { html, scss } = generateExportCode(nodes)
+    setExportData({ html, scss })
+    setIsModalOpen(true)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app-container">
+      <header className="toolbar">
+        <h1>Project Loom</h1>
+        <div className="toolbar-actions">
+          <button onClick={handleAddBox} className="btn primary">Add Box</button>
+          <button onClick={handleExport} className="btn secondary">Export HTML</button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+      </header>
+      
+      <main className="workspace">
+        <div className="canvas">
+          {nodes.map(node => (
+            <Rnd
+              key={node.id}
+              position={node.position}
+              size={{ width: node.dimensions.width, height: node.dimensions.height }}
+              onDragStop={(_e, d) => handleDragStop(node.id, d)}
+              onResizeStop={(_e, _direction, ref, _delta, position) => handleResizeStop(node.id, ref, position)}
+              bounds="parent"
+              className="diagram-node"
+              style={{
+                backgroundColor: node.style?.backgroundColor || '#f0f0f0',
+                border: `1px solid ${node.style?.borderColor || '#333'}`,
+                color: node.style?.color || '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: node.style?.fontSize || '16px'
+              }}
+            >
+              {node.content}
+            </Rnd>
+          ))}
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </main>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <ExportModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        htmlCode={exportData.html}
+        scssCode={exportData.scss}
+      />
+    </div>
   )
 }
 
