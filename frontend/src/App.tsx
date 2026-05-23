@@ -8,7 +8,7 @@ import './App.css'
 function App() {
   const [nodes, setNodes] = useState<DiagramNode[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [exportData, setExportData] = useState({ html: '', scss: '' })
+  const [exportData, setExportData] = useState('')
 
   const handleAddBox = () => {
     const newNode: DiagramNode = {
@@ -50,8 +50,8 @@ function App() {
   }
 
   const handleExport = () => {
-    const { html, scss } = generateExportCode(nodes)
-    setExportData({ html, scss })
+    const html = generateExportCode(nodes)
+    setExportData(html)
     setIsModalOpen(true)
   }
 
@@ -95,8 +95,7 @@ function App() {
       <ExportModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        htmlCode={exportData.html}
-        scssCode={exportData.scss}
+        htmlCode={exportData}
       />
     </div>
   )
