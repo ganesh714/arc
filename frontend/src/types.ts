@@ -1,0 +1,25 @@
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Dimensions {
+  width: number;
+  height: number;
+}
+
+export interface NodeStyle {
+  backgroundColor?: string;
+  borderColor?: string;
+  color?: string;
+  fontSize?: string;
+}
+
+export interface DiagramNode {
+  id: string;
+  type: 'box';
+  position: Position;
+  dimensions: Dimensions;
+  content: string;
+  style?: NodeStyle;
+}
