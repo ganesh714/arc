@@ -16,6 +16,7 @@ interface DiagramContextType {
   moveNode: (id: string, position: { x: number; y: number }) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
   selectNode: (id: string | null) => void;
+  setNodes: (nodes: DiagramNode[]) => void;
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
@@ -178,7 +179,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, addLine, addArrow, updateLinePoints, updateNode, moveNode, resizeNode, selectNode }}>
+    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, addLine, addArrow, updateLinePoints, updateNode, moveNode, resizeNode, selectNode, setNodes }}>
       {children}
     </DiagramContext.Provider>
   );
