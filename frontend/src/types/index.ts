@@ -23,4 +23,5 @@ export interface DiagramNode {
   dimensions: Dimensions;
   content: string;
   style?: NodeStyle;
+  rotation?: number;
 }
