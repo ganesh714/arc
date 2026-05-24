@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Rnd } from 'react-rnd'
 import type { DiagramNode } from './types'
 import { generateExportCode } from './utils/exportEngine'
@@ -87,6 +87,9 @@ function App() {
                 onMouseDown={(e) => {
                   e.stopPropagation()
                   setSelectedNodeId(node.id)
+                }}
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation()
                 }}
                 style={{
                   backgroundColor: node.style?.backgroundColor || '#f0f0f0',
