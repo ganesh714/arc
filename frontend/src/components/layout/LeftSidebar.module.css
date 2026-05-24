@@ -1,6 +1,6 @@
 .container {
   position: absolute;
-  top: 48px; /* Height of the header */
+  top: 0;
   left: 0;
   bottom: 0;
   display: flex;
