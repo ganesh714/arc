@@ -2,7 +2,7 @@ import { useDiagram } from '@/context/DiagramContext';
 import styles from './SidePanel.module.css';
 
 export function SidePanel() {
-  const { nodes, selectedNodeId, updateNode, selectNode, moveNode, resizeNode } = useDiagram();
+  const { nodes, selectedNodeId, updateNode, selectNode, moveNode, resizeNode, updateLinePoints } = useDiagram();
   const node = nodes.find(n => n.id === selectedNodeId);
 
   if (!node) return null;
@@ -39,6 +39,49 @@ export function SidePanel() {
     );
   };
 
+  const handleStartPointChange = (axis: 'x' | 'y', value: number) => {
+    if (!node.startPoint || !node.endPoint) return;
+    const val = isNaN(value) ? 0 : value;
+    const newStart = { ...node.startPoint, [axis]: val };
+    updateLinePoints(node.id, newStart, node.endPoint);
+  };
+
+  const handleEndPointChange = (axis: 'x' | 'y', value: number) => {
+    if (!node.startPoint || !node.endPoint) return;
+    const val = isNaN(value) ? 0 : value;
+    const newEnd = { ...node.endPoint, [axis]: val };
+    updateLinePoints(node.id, node.startPoint, newEnd);
+  };
+
+  const handleLengthChange = (newLength: number) => {
+    if (!node.startPoint || !node.endPoint) return;
+    const len = isNaN(newLength) || newLength < 5 ? 5 : newLength;
+    const start = node.startPoint;
+    const end = node.endPoint;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const angleRad = Math.atan2(dy, dx);
+    
+    const newEndX = start.x + len * Math.cos(angleRad);
+    const newEndY = start.y + len * Math.sin(angleRad);
+    updateLinePoints(node.id, start, { x: newEndX, y: newEndY });
+  };
+
+  const handleAngleChange = (newAngle: number) => {
+    if (!node.startPoint || !node.endPoint) return;
+    const ang = isNaN(newAngle) ? 0 : newAngle;
+    const start = node.startPoint;
+    const end = node.endPoint;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    
+    const angleRad = (ang * Math.PI) / 180;
+    const newEndX = start.x + len * Math.cos(angleRad);
+    const newEndY = start.y + len * Math.sin(angleRad);
+    updateLinePoints(node.id, start, { x: newEndX, y: newEndY });
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.header}>
@@ -71,30 +114,133 @@ export function SidePanel() {
         </div>
       </div>
 
-      <div className={styles.section}>
-        <div className={styles.grid}>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Width (px)</span>
-            <input
-              type="number"
-              className={styles.numberInput}
-              value={node.dimensions.width}
-              onChange={(e) => handleDimensionChange('width', parseInt(e.target.value, 10))}
-              min={20}
-            />
-          </div>
-          <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Height (px)</span>
-            <input
-              type="number"
-              className={styles.numberInput}
-              value={node.dimensions.height}
-              onChange={(e) => handleDimensionChange('height', parseInt(e.target.value, 10))}
-              min={20}
-            />
+      {node.type !== 'line' && node.type !== 'arrow' ? (
+        <div className={styles.section}>
+          <div className={styles.grid}>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Width (px)</span>
+              <input
+                type="number"
+                className={styles.numberInput}
+                value={node.dimensions.width}
+                onChange={(e) => handleDimensionChange('width', parseInt(e.target.value, 10))}
+                min={20}
+              />
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Height (px)</span>
+              <input
+                type="number"
+                className={styles.numberInput}
+                value={node.dimensions.height}
+                onChange={(e) => handleDimensionChange('height', parseInt(e.target.value, 10))}
+                min={20}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      ) : node.startPoint && node.endPoint && (() => {
+        const start = node.startPoint;
+        const end = node.endPoint;
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const length = Math.round(Math.sqrt(dx * dx + dy * dy));
+        let angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI));
+        if (angle < 0) angle += 360;
+
+        return (
+          <>
+            {/* Start Point */}
+            <div className={styles.section}>
+              <div className={styles.grid}>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Start X (px)</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(start.x)}
+                    onChange={(e) => handleStartPointChange('x', parseInt(e.target.value, 10))}
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Start Y (px)</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(start.y)}
+                    onChange={(e) => handleStartPointChange('y', parseInt(e.target.value, 10))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* End Point */}
+            <div className={styles.section}>
+              <div className={styles.grid}>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">End X (px)</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(end.x)}
+                    onChange={(e) => handleEndPointChange('x', parseInt(e.target.value, 10))}
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">End Y (px)</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(end.y)}
+                    onChange={(e) => handleEndPointChange('y', parseInt(e.target.value, 10))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Length and Angle */}
+            <div className={styles.section}>
+              <div className={styles.grid} style={{ marginBottom: '8px' }}>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Length (px)</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={length}
+                    onChange={(e) => handleLengthChange(parseInt(e.target.value, 10))}
+                    min={5}
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Angle (°)</span>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="360"
+                      className={styles.numberInput}
+                      value={angle}
+                      onChange={(e) => handleAngleChange(parseInt(e.target.value, 10) || 0)}
+                      style={{ width: '100%' }}
+                    />
+                    <span className="text-xs text-slate-400 font-bold">°</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  value={angle}
+                  onChange={(e) => handleAngleChange(parseInt(e.target.value, 10))}
+                  className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {node.type !== 'line' && node.type !== 'arrow' && (
         <div className={styles.section}>
