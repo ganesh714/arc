@@ -60,6 +60,17 @@ export function Node({ node }: NodeProps) {
               bottomLeft: false,
               bottomRight: false,
             }
+          : (node.type === 'line' || node.type === 'arrow')
+          ? {
+              top: false,
+              bottom: false,
+              left: true,
+              right: true,
+              topLeft: false,
+              topRight: false,
+              bottomLeft: false,
+              bottomRight: false,
+            }
           : {
               top: true,
               bottom: true,
@@ -89,8 +100,8 @@ export function Node({ node }: NodeProps) {
         e.stopPropagation();
       }}
       style={{
-        backgroundColor: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
-        border: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle')
+        backgroundColor: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle' || node.type === 'line' || node.type === 'arrow') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
+        border: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle' || node.type === 'line' || node.type === 'arrow')
           ? (isSelected ? '1px dashed #3b82f6' : 'none')
           : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
         borderRadius: node.type === 'box' ? (node.style?.borderRadius || '4px') : '0px',
@@ -166,6 +177,45 @@ export function Node({ node }: NodeProps) {
               {node.content}
             </div>
           </div>
+        </div>
+      ) : node.type === 'line' ? (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+            <line
+              x1="0"
+              y1="50%"
+              x2="100%"
+              y2="50%"
+              stroke={node.style?.borderColor || '#475569'}
+              strokeWidth="3"
+            />
+          </svg>
+        </div>
+      ) : node.type === 'arrow' ? (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+            <defs>
+              <marker
+                id={`arrowhead-${node.id}`}
+                markerWidth="8"
+                markerHeight="6"
+                refX="6"
+                refY="3"
+                orient="auto"
+              >
+                <polygon points="0 0, 8 3, 0 6" fill={node.style?.borderColor || '#0284c7'} />
+              </marker>
+            </defs>
+            <line
+              x1="0"
+              y1="50%"
+              x2="100%"
+              y2="50%"
+              stroke={node.style?.borderColor || '#0284c7'}
+              strokeWidth="3"
+              markerEnd={`url(#arrowhead-${node.id})`}
+            />
+          </svg>
         </div>
       ) : (
         node.content
