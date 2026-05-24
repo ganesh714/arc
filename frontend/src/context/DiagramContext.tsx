@@ -8,6 +8,7 @@ interface DiagramContextType {
   addBox: () => void;
   addDiamond: () => void;
   addCircle: () => void;
+  addTriangle: () => void;
   updateNode: (updatedNode: DiagramNode) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
@@ -68,6 +69,22 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
+  const addTriangle = () => {
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'triangle',
+      position: { x: 120, y: 120 },
+      dimensions: { width: 120, height: 100 },
+      content: 'New Triangle',
+      style: {
+        backgroundColor: '#f0fdf4',
+        borderColor: '#16a34a',
+        color: '#0f172a'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
   const updateNode = (updatedNode: DiagramNode) => {
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
   };
@@ -93,7 +110,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, updateNode, moveNode, resizeNode, selectNode }}>
+    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, updateNode, moveNode, resizeNode, selectNode }}>
       {children}
     </DiagramContext.Provider>
   );
