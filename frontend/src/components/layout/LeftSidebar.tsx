@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDiagram } from '@/context/DiagramContext';
 import styles from './LeftSidebar.module.css';
 
 interface SidebarTab {
@@ -10,6 +11,7 @@ interface SidebarTab {
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
+  const { addBox } = useDiagram();
 
   const tabs: SidebarTab[] = [
     { id: 'elements', label: 'Elements', icon: '🎨', description: 'Shapes, arrows, and diagram connectors' },
@@ -46,7 +48,11 @@ export function LeftSidebar() {
               <div>
                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Basic Shapes</h4>
                 <div className={styles.elementsGrid}>
-                  <div className={styles.elementItem} title="Add Rectangle">
+                  <div 
+                    className={`${styles.elementItem} ${styles.interactive}`} 
+                    title="Add Rectangle"
+                    onClick={addBox}
+                  >
                     <div className={`${styles.elementPreview} ${styles.shapeRect}`}></div>
                     <span className={styles.elementName}>Rectangle</span>
                   </div>
