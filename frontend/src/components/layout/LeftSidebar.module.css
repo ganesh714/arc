@@ -116,6 +116,10 @@
   transition: all 0.2s;
 }
 
+.elementItem.interactive {
+  cursor: pointer;
+}
+
 .elementItem:hover {
   background-color: #ffffff;
   border-color: #cbd5e1;
