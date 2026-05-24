@@ -6,6 +6,7 @@ interface DiagramContextType {
   nodes: DiagramNode[];
   selectedNodeId: string | null;
   addBox: () => void;
+  addDiamond: () => void;
   updateNode: (updatedNode: DiagramNode) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
@@ -28,6 +29,22 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       style: {
         backgroundColor: '#e0f2fe',
         borderColor: '#0284c7',
+        color: '#0f172a'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addDiamond = () => {
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'diamond',
+      position: { x: 80, y: 80 },
+      dimensions: { width: 120, height: 120 },
+      content: 'New Diamond',
+      style: {
+        backgroundColor: '#fff3cd',
+        borderColor: '#ffc107',
         color: '#0f172a'
       }
     };
@@ -59,7 +76,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, updateNode, moveNode, resizeNode, selectNode }}>
+    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, updateNode, moveNode, resizeNode, selectNode }}>
       {children}
     </DiagramContext.Provider>
   );
