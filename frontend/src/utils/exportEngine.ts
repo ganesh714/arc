@@ -31,6 +31,22 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `      </div>\n`;
       html += `    </div>\n`;
       html += `  </div>\n`;
+    } else if (node.type === 'triangle') {
+      const bg = node.style?.backgroundColor || '#f0fdf4';
+      const border = node.style?.borderColor || '#16a34a';
+      const color = node.style?.color || '#000000';
+      const fontSize = node.style?.fontSize || '16px';
+      
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
+      html += `    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block;">\n`;
+      html += `      <polygon points="50,3 97,97 3,97" fill="${bg}" stroke="${border}" stroke-width="2.5" vector-effect="non-scaling-stroke" />\n`;
+      html += `    </svg>\n`;
+      html += `    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; pointer-events: none;">\n`;
+      html += `      <div style="text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 30px 15px 15px 15px;">\n`;
+      html += `        ${node.content}\n`;
+      html += `      </div>\n`;
+      html += `    </div>\n`;
+      html += `  </div>\n`;
     } else {
       let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; `;
       
