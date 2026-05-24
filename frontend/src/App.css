@@ -69,13 +69,23 @@ body {
   background-color: #e2e8f0;
 }
 
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f8fafc;
+}
+
 .workspace {
   flex: 1;
   display: flex;
-  background-color: #f8fafc;
+  background-color: #ffffff;
   overflow: hidden;
-  padding: 0;
   position: relative;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .canvas {
@@ -183,25 +193,22 @@ code {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
-/* Side Panel Styles (Overlay) */
+/* Side Panel Styles */
 .side-panel {
-  position: fixed;
-  top: 48px;
-  right: 0;
-  bottom: 0;
+  height: 100%;
   width: 320px;
   background-color: #ffffff;
-  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 40;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
   padding: 1.5rem;
   overflow-y: auto;
-  border-left: 1px solid #e2e8f0;
-  animation: slideIn 0.3s ease-out;
+  animation: fadeInRight 0.3s ease-out;
 }
 
-@keyframes slideIn {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .side-panel-header {
@@ -277,31 +284,21 @@ code {
   z-index: 10;
 }
 
-/* Left Sidebar Styles (Overlay) */
+/* Left Sidebar Styles */
 .left-sidebar {
-  position: fixed;
-  top: 48px;
-  left: 0;
-  bottom: 0;
-  width: 70px; /* Collapsed width: shows only slim navigation */
+  height: 100%;
+  width: 70px;
   background-color: #ffffff;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-  border-right: 1px solid #e2e8f0;
-  z-index: 40;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   display: flex;
   overflow: hidden;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s; /* Smooth expand/collapse transition */
-  animation: slideInLeft 0.3s ease-out;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .left-sidebar.expanded {
-  width: 290px; /* Expanded width: reveals tab content pane */
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
-}
-
-@keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  width: 290px;
 }
 
 /* Slim Left Tab Nav Bar */
