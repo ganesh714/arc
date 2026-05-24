@@ -13,6 +13,7 @@ export interface NodeStyle {
   borderColor?: string;
   color?: string;
   fontSize?: string;
+  borderRadius?: string;
 }
 
 export interface DiagramNode {
