@@ -280,13 +280,20 @@ code {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 290px;
+  width: 70px; /* Collapsed width: shows only slim navigation */
   background-color: #ffffff;
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
   border-right: 1px solid #e2e8f0;
   z-index: 40;
   display: flex;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s; /* Smooth expand/collapse transition */
   animation: slideInLeft 0.3s ease-out;
+}
+
+.left-sidebar.expanded {
+  width: 290px; /* Expanded width: reveals tab content pane */
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes slideInLeft {
