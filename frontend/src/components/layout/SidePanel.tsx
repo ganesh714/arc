@@ -118,6 +118,31 @@ export function SidePanel() {
         </div>
       </div>
 
+      {node.type !== 'circle' && (
+        <div className={styles.section}>
+          <label>Corner Radius</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              min="0"
+              max="40"
+              value={parseInt(node.style?.borderRadius || (node.type === 'box' ? '4' : '0'), 10)}
+              onChange={(e) => handleChange('borderRadius', `${e.target.value}px`)}
+              className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+            />
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={parseInt(node.style?.borderRadius || (node.type === 'box' ? '4' : '0'), 10)}
+              onChange={(e) => handleChange('borderRadius', `${e.target.value}px`)}
+              className={styles.numberInput}
+              style={{ width: '65px', flexShrink: 0 }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className={styles.section}>
         <label>Border Color</label>
         <div className={styles.colorPickerWrapper}>
