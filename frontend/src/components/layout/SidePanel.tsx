@@ -2,7 +2,7 @@ import { useDiagram } from '@/context/DiagramContext';
 import styles from './SidePanel.module.css';
 
 export function SidePanel() {
-  const { nodes, selectedNodeId, updateNode, selectNode } = useDiagram();
+  const { nodes, selectedNodeId, updateNode, selectNode, moveNode, resizeNode } = useDiagram();
   const node = nodes.find(n => n.id === selectedNodeId);
 
   if (!node) return null;
@@ -21,11 +21,79 @@ export function SidePanel() {
     }
   };
 
+  const handlePositionChange = (axis: 'x' | 'y', value: number) => {
+    moveNode(node.id, {
+      ...node.position,
+      [axis]: isNaN(value) ? 0 : value,
+    });
+  };
+
+  const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
+    resizeNode(
+      node.id,
+      {
+        ...node.dimensions,
+        [dimension]: isNaN(value) ? 0 : value,
+      },
+      node.position
+    );
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.header}>
         <h3>Properties</h3>
         <button className={styles.close} onClick={() => selectNode(null)}>&times;</button>
+      </div>
+
+      {/* Geometry Settings */}
+      <div className={styles.section}>
+        <label>Geometry</label>
+        <div className={styles.grid}>
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">X Pos (px)</span>
+            <input
+              type="number"
+              className={styles.numberInput}
+              value={node.position.x}
+              onChange={(e) => handlePositionChange('x', parseInt(e.target.value, 10))}
+            />
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Y Pos (px)</span>
+            <input
+              type="number"
+              className={styles.numberInput}
+              value={node.position.y}
+              onChange={(e) => handlePositionChange('y', parseInt(e.target.value, 10))}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.grid}>
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Width (px)</span>
+            <input
+              type="number"
+              className={styles.numberInput}
+              value={node.dimensions.width}
+              onChange={(e) => handleDimensionChange('width', parseInt(e.target.value, 10))}
+              min={20}
+            />
+          </div>
+          <div>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Height (px)</span>
+            <input
+              type="number"
+              className={styles.numberInput}
+              value={node.dimensions.height}
+              onChange={(e) => handleDimensionChange('height', parseInt(e.target.value, 10))}
+              min={20}
+            />
+          </div>
+        </div>
       </div>
 
       <div className={styles.section}>
