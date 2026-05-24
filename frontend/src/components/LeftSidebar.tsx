@@ -8,7 +8,11 @@ interface SidebarTab {
 }
 
 export function LeftSidebar() {
-  const [activeTab, setActiveTab] = useState<string>('elements');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+
+  const handleTabClick = (tabId: string) => {
+    setActiveTab(activeTab === tabId ? null : tabId);
+  };
 
   const tabs: SidebarTab[] = [
     { id: 'elements', label: 'Elements', icon: '🎨', description: 'Shapes, arrows, and diagram connectors' },
@@ -18,14 +22,14 @@ export function LeftSidebar() {
   ];
 
   return (
-    <div className="left-sidebar">
+    <div className={`left-sidebar ${activeTab ? 'expanded' : ''}`}>
       {/* Tab Navigation */}
       <div className="sidebar-nav">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             className={`nav-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabClick(tab.id)}
             title={tab.label}
           >
             <span className="tab-icon">{tab.icon}</span>
@@ -35,7 +39,8 @@ export function LeftSidebar() {
       </div>
 
       {/* Expanded Tab Content Panel */}
-      <div className="sidebar-content">
+      {activeTab && (
+        <div className="sidebar-content">
         {activeTab === 'elements' && (
           <div className="tab-pane">
             <div className="pane-header">
@@ -102,6 +107,7 @@ export function LeftSidebar() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
