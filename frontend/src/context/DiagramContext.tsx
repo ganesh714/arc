@@ -11,6 +11,7 @@ interface DiagramContextType {
   addTriangle: () => void;
   addLine: () => void;
   addArrow: () => void;
+  updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
@@ -96,7 +97,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       content: '',
       style: {
         borderColor: '#475569',
-      }
+      },
+      startPoint: { x: 150, y: 160 },
+      endPoint: { x: 350, y: 160 }
     };
     setNodes((prev) => [...prev, newNode]);
   };
@@ -110,9 +113,31 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       content: '',
       style: {
         borderColor: '#0284c7',
-      }
+      },
+      startPoint: { x: 150, y: 210 },
+      endPoint: { x: 350, y: 210 }
     };
     setNodes((prev) => [...prev, newNode]);
+  };
+
+  const updateLinePoints = (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
+    setNodes((prev) => prev.map(node => {
+      if (node.id === id) {
+        const x = Math.min(startPoint.x, endPoint.x);
+        const y = Math.min(startPoint.y, endPoint.y);
+        const width = Math.max(15, Math.abs(endPoint.x - startPoint.x));
+        const height = Math.max(15, Math.abs(endPoint.y - startPoint.y));
+        
+        return {
+          ...node,
+          startPoint,
+          endPoint,
+          position: { x, y },
+          dimensions: { width, height }
+        };
+      }
+      return node;
+    }));
   };
 
   const updateNode = (updatedNode: DiagramNode) => {
@@ -120,9 +145,22 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const moveNode = (id: string, position: { x: number; y: number }) => {
-    setNodes((prev) => prev.map(node => 
-      node.id === id ? { ...node, position } : node
-    ));
+    setNodes((prev) => prev.map(node => {
+      if (node.id === id) {
+        if (node.startPoint && node.endPoint) {
+          const dx = position.x - node.position.x;
+          const dy = position.y - node.position.y;
+          return {
+            ...node,
+            position,
+            startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+            endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+          };
+        }
+        return { ...node, position };
+      }
+      return node;
+    }));
   };
 
   const resizeNode = (
@@ -140,7 +178,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, addLine, addArrow, updateNode, moveNode, resizeNode, selectNode }}>
+    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, addLine, addArrow, updateLinePoints, updateNode, moveNode, resizeNode, selectNode }}>
       {children}
     </DiagramContext.Provider>
   );
