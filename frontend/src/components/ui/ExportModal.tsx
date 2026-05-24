@@ -11,6 +11,7 @@ interface ExportModalProps {
 
 export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
   const [copiedHtml, setCopiedHtml] = useState(false);
+  const [copiedJson, setCopiedJson] = useState(false);
   const [activeTab, setActiveTab] = useState<'html' | 'json'>('html');
   const { nodes } = useDiagram();
 
@@ -21,6 +22,17 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
       await navigator.clipboard.writeText(htmlCode);
       setCopiedHtml(true);
       setTimeout(() => setCopiedHtml(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      const jsonStr = JSON.stringify(nodes, null, 2);
+      await navigator.clipboard.writeText(jsonStr);
+      setCopiedJson(true);
+      setTimeout(() => setCopiedJson(false), 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
     }
@@ -76,9 +88,14 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
           <div className={styles.codeSection}>
             <div className={styles.codeHeader}>
               <h3>JSON AST (Loom Script)</h3>
-              <Button variant="outline" size="sm" onClick={handleSaveDiagram}>
-                Save Diagram
-              </Button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button variant="outline" size="sm" onClick={handleCopyJson}>
+                  {copiedJson ? 'Copied!' : 'Copy to Clipboard'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleSaveDiagram}>
+                  Save Diagram
+                </Button>
+              </div>
             </div>
             <pre className={styles.pre}><code>{JSON.stringify(nodes, null, 2)}</code></pre>
           </div>
