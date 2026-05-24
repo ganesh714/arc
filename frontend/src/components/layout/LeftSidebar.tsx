@@ -11,7 +11,7 @@ interface SidebarTab {
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
-  const { addBox, addDiamond, addCircle, addTriangle } = useDiagram();
+  const { addBox, addDiamond, addCircle, addTriangle, addLine, addArrow } = useDiagram();
 
   const tabs: SidebarTab[] = [
     { id: 'elements', label: 'Elements', icon: '🎨', description: 'Shapes, arrows, and diagram connectors' },
@@ -83,6 +83,42 @@ export function LeftSidebar() {
                   >
                     <div className={`${styles.elementPreview} ${styles.shapeDiamond}`}></div>
                     <span className={styles.elementName}>Diamond</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Lines & Connectors</h4>
+                <div className={styles.elementsGrid}>
+                  <div 
+                    className={`${styles.elementItem} ${styles.interactive}`} 
+                    title="Add Straight Line"
+                    onClick={addLine}
+                  >
+                    <div className={styles.elementPreview}>
+                      <svg width="36" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                        <line x1="0" y1="50" x2="100" y2="50" stroke="#94a3b8" strokeWidth="12" />
+                      </svg>
+                    </div>
+                    <span className={styles.elementName}>Line</span>
+                  </div>
+                  
+                  <div 
+                    className={`${styles.elementItem} ${styles.interactive}`} 
+                    title="Add Arrow"
+                    onClick={addArrow}
+                  >
+                    <div className={styles.elementPreview}>
+                      <svg width="36" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                        <defs>
+                          <marker id="preview-arrowhead" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+                            <polygon points="0 0, 6 3, 0 6" fill="#94a3b8" />
+                          </marker>
+                        </defs>
+                        <line x1="0" y1="50" x2="80" y2="50" stroke="#94a3b8" strokeWidth="12" markerEnd="url(#preview-arrowhead)" />
+                      </svg>
+                    </div>
+                    <span className={styles.elementName}>Arrow</span>
                   </div>
                 </div>
               </div>
