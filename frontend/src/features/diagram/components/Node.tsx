@@ -89,8 +89,8 @@ export function Node({ node }: NodeProps) {
         e.stopPropagation();
       }}
       style={{
-        backgroundColor: node.type === 'diamond' ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
-        border: node.type === 'diamond'
+        backgroundColor: (node.type === 'diamond' || node.type === 'circle') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
+        border: (node.type === 'diamond' || node.type === 'circle')
           ? (isSelected ? '1px dashed #3b82f6' : 'none')
           : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
         color: node.style?.color || '#000',
@@ -115,6 +115,24 @@ export function Node({ node }: NodeProps) {
           }}
         >
           <div style={{ transform: 'rotate(-45deg)', width: '141.4%', textAlign: 'center', wordBreak: 'break-word', padding: '4px' }}>
+            {node.content}
+          </div>
+        </div>
+      ) : node.type === 'circle' ? (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            backgroundColor: node.style?.backgroundColor || '#f1f5f9',
+            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#64748b'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '8px' }}>
             {node.content}
           </div>
         </div>
