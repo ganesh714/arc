@@ -16,6 +16,11 @@ export interface NodeStyle {
   borderRadius?: string;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
 export interface DiagramNode {
   id: string;
   type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow';
@@ -24,4 +29,6 @@ export interface DiagramNode {
   content: string;
   style?: NodeStyle;
   rotation?: number;
+  startPoint?: Point;
+  endPoint?: Point;
 }
