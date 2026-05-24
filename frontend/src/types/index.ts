@@ -17,7 +17,7 @@ export interface NodeStyle {
 
 export interface DiagramNode {
   id: string;
-  type: 'box';
+  type: 'box' | 'diamond';
   position: Position;
   dimensions: Dimensions;
   content: string;
