@@ -89,8 +89,8 @@ export function Node({ node }: NodeProps) {
         e.stopPropagation();
       }}
       style={{
-        backgroundColor: (node.type === 'diamond' || node.type === 'circle') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
-        border: (node.type === 'diamond' || node.type === 'circle')
+        backgroundColor: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
+        border: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle')
           ? (isSelected ? '1px dashed #3b82f6' : 'none')
           : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
         borderRadius: node.type === 'box' ? (node.style?.borderRadius || '4px') : '0px',
@@ -136,6 +136,35 @@ export function Node({ node }: NodeProps) {
         >
           <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '8px' }}>
             {node.content}
+          </div>
+        </div>
+      ) : node.type === 'triangle' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+            <polygon
+              points="50,3 97,97 3,97"
+              fill={node.style?.backgroundColor || '#f0fdf4'}
+              stroke={isSelected ? '#3b82f6' : node.style?.borderColor || '#16a34a'}
+              strokeWidth="2.5"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '30px 15px 15px 15px', color: node.style?.color || '#000', fontSize: node.style?.fontSize || '16px' }}>
+              {node.content}
+            </div>
           </div>
         </div>
       ) : (
