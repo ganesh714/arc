@@ -17,6 +17,19 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `      </div>\n`;
       html += `    </div>\n`;
       html += `  </div>\n`;
+    } else if (node.type === 'circle') {
+      const bg = node.style?.backgroundColor || '#f1f5f9';
+      const border = node.style?.borderColor || '#64748b';
+      const color = node.style?.color || '#000000';
+      const fontSize = node.style?.fontSize || '16px';
+      
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; justify-content: center; font-family: sans-serif; z-index: 5;">\n`;
+      html += `    <div style="width: 100%; height: 100%; border-radius: 50%; border: 2px solid ${border}; background-color: ${bg}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
+      html += `      <div style="text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 8px;">\n`;
+      html += `        ${node.content}\n`;
+      html += `      </div>\n`;
+      html += `    </div>\n`;
+      html += `  </div>\n`;
     } else {
       let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; `;
       
