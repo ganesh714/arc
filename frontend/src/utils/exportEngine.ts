@@ -47,6 +47,25 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `      </div>\n`;
       html += `    </div>\n`;
       html += `  </div>\n`;
+    } else if (node.type === 'line') {
+      const color = node.style?.borderColor || '#475569';
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; z-index: 5;">\n`;
+      html += `    <svg width="100%" height="100%" style="overflow: visible;">\n`;
+      html += `      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="${color}" stroke-width="3" />\n`;
+      html += `    </svg>\n`;
+      html += `  </div>\n`;
+    } else if (node.type === 'arrow') {
+      const color = node.style?.borderColor || '#0284c7';
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; z-index: 5;">\n`;
+      html += `    <svg width="100%" height="100%" style="overflow: visible;">\n`;
+      html += `      <defs>\n`;
+      html += `        <marker id="arrowhead-${node.id}" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">\n`;
+      html += `          <polygon points="0 0, 8 3, 0 6" fill="${color}" />\n`;
+      html += `        </marker>\n`;
+      html += `      </defs>\n`;
+      html += `      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="${color}" stroke-width="3" marker-end="url(#arrowhead-${node.id})" />\n`;
+      html += `    </svg>\n`;
+      html += `  </div>\n`;
     } else {
       let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; `;
       
