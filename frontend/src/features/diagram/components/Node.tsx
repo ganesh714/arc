@@ -93,6 +93,7 @@ export function Node({ node }: NodeProps) {
         border: (node.type === 'diamond' || node.type === 'circle')
           ? (isSelected ? '1px dashed #3b82f6' : 'none')
           : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
+        borderRadius: node.type === 'box' ? (node.style?.borderRadius || '4px') : '0px',
         color: node.style?.color || '#000',
         fontSize: node.style?.fontSize || '16px',
         display: 'flex',
@@ -108,6 +109,7 @@ export function Node({ node }: NodeProps) {
             transform: 'rotate(45deg)',
             backgroundColor: node.style?.backgroundColor || '#fff3cd',
             border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#ffc107'}`,
+            borderRadius: node.style?.borderRadius || '0px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
