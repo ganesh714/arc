@@ -9,7 +9,7 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeId, selectNode, moveNode, resizeNode } = useDiagram();
+  const { selectedNodeId, selectNode, moveNode, resizeNode, updateLinePoints } = useDiagram();
   const isSelected = selectedNodeId === node.id;
 
   const DiamondHandle = () => (
@@ -29,6 +29,60 @@ export function Node({ node }: NodeProps) {
       }}
     />
   );
+
+  const handleStartDrag = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialStart = { ...node.startPoint! };
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      updateLinePoints(
+        node.id,
+        { x: initialStart.x + dx, y: initialStart.y + dy },
+        node.endPoint!
+      );
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleEndDrag = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialEnd = { ...node.endPoint! };
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      updateLinePoints(
+        node.id,
+        node.startPoint!,
+        { x: initialEnd.x + dx, y: initialEnd.y + dy }
+      );
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
 
   return (
     <Rnd
@@ -64,8 +118,8 @@ export function Node({ node }: NodeProps) {
           ? {
               top: false,
               bottom: false,
-              left: true,
-              right: true,
+              left: false,
+              right: false,
               topLeft: false,
               topRight: false,
               bottomLeft: false,
@@ -177,21 +231,21 @@ export function Node({ node }: NodeProps) {
           </div>
         </div>
       ) : node.type === 'line' ? (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', transform: `rotate(${node.rotation || 0}deg)` }}>
-          <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
             <line
-              x1="0"
-              y1="50%"
-              x2="100%"
-              y2="50%"
+              x1={node.startPoint!.x - node.position.x}
+              y1={node.startPoint!.y - node.position.y}
+              x2={node.endPoint!.x - node.position.x}
+              y2={node.endPoint!.y - node.position.y}
               stroke={node.style?.borderColor || '#475569'}
               strokeWidth="3"
             />
           </svg>
         </div>
       ) : node.type === 'arrow' ? (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', transform: `rotate(${node.rotation || 0}deg)` }}>
-          <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
             <defs>
               <marker
                 id={`arrowhead-${node.id}`}
@@ -205,10 +259,10 @@ export function Node({ node }: NodeProps) {
               </marker>
             </defs>
             <line
-              x1="0"
-              y1="50%"
-              x2="100%"
-              y2="50%"
+              x1={node.startPoint!.x - node.position.x}
+              y1={node.startPoint!.y - node.position.y}
+              x2={node.endPoint!.x - node.position.x}
+              y2={node.endPoint!.y - node.position.y}
               stroke={node.style?.borderColor || '#0284c7'}
               strokeWidth="3"
               markerEnd={`url(#arrowhead-${node.id})`}
@@ -232,6 +286,47 @@ export function Node({ node }: NodeProps) {
         >
           {node.content}
         </div>
+      )}
+
+      {isSelected && (node.type === 'line' || node.type === 'arrow') && (
+        <>
+          {/* Start Point Handle */}
+          <div
+            style={{
+              position: 'absolute',
+              left: node.startPoint!.x - node.position.x,
+              top: node.startPoint!.y - node.position.y,
+              width: '10px',
+              height: '10px',
+              backgroundColor: '#ffffff',
+              border: '2px solid #0284c7',
+              borderRadius: '50%',
+              transform: 'translate(-50%, -50%)',
+              cursor: 'pointer',
+              zIndex: 30,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+            onMouseDown={handleStartDrag}
+          />
+          {/* End Point Handle */}
+          <div
+            style={{
+              position: 'absolute',
+              left: node.endPoint!.x - node.position.x,
+              top: node.endPoint!.y - node.position.y,
+              width: '10px',
+              height: '10px',
+              backgroundColor: '#ffffff',
+              border: '2px solid #0284c7',
+              borderRadius: '50%',
+              transform: 'translate(-50%, -50%)',
+              cursor: 'pointer',
+              zIndex: 30,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+            onMouseDown={handleEndDrag}
+          />
+        </>
       )}
     </Rnd>
   );
