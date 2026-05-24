@@ -96,6 +96,30 @@ export function SidePanel() {
         </div>
       </div>
 
+      <div className={styles.section}>
+        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Rotation</span>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min="0"
+            max="360"
+            value={node.rotation || 0}
+            onChange={(e) => updateNode({ ...node, rotation: parseInt(e.target.value, 10) })}
+            className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <input
+            type="number"
+            min="0"
+            max="360"
+            value={node.rotation || 0}
+            onChange={(e) => updateNode({ ...node, rotation: parseInt(e.target.value, 10) || 0 })}
+            className={styles.numberInput}
+            style={{ width: '65px', flexShrink: 0 }}
+          />
+          <span className="text-xs text-slate-400 font-bold">°</span>
+        </div>
+      </div>
+
       {node.type !== 'line' && node.type !== 'arrow' && (
         <div className={styles.section}>
           <label>Text Content</label>
