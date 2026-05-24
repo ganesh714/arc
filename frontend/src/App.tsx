@@ -3,10 +3,12 @@ import { Rnd } from 'react-rnd'
 import type { DiagramNode } from './types'
 import { generateExportCode } from './utils/exportEngine'
 import { ExportModal } from './components/ExportModal'
+import { SidePanel } from './components/SidePanel'
 import './App.css'
 
 function App() {
   const [nodes, setNodes] = useState<DiagramNode[]>([])
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [exportData, setExportData] = useState('')
 
@@ -55,6 +57,10 @@ function App() {
     setIsModalOpen(true)
   }
 
+  const handleUpdateNode = (updatedNode: DiagramNode) => {
+    setNodes(nodes.map(node => node.id === updatedNode.id ? updatedNode : node))
+  }
+
   return (
     <div className="app-container">
       <header className="toolbar">
@@ -66,19 +72,24 @@ function App() {
       </header>
       
       <main className="workspace">
-        <div className="canvas">
+        <div className="canvas" onClick={() => setSelectedNodeId(null)}>
           {nodes.map(node => (
             <Rnd
               key={node.id}
               position={node.position}
               size={{ width: node.dimensions.width, height: node.dimensions.height }}
+              onDragStart={() => setSelectedNodeId(node.id)}
               onDragStop={(_e, d) => handleDragStop(node.id, d)}
               onResizeStop={(_e, _direction, ref, _delta, position) => handleResizeStop(node.id, ref, position)}
               bounds="parent"
-              className="diagram-node"
+              className={`diagram-node ${selectedNodeId === node.id ? 'selected' : ''}`}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                setSelectedNodeId(node.id)
+              }}
               style={{
                 backgroundColor: node.style?.backgroundColor || '#f0f0f0',
-                border: `1px solid ${node.style?.borderColor || '#333'}`,
+                border: `2px solid ${selectedNodeId === node.id ? '#3b82f6' : node.style?.borderColor || '#333'}`,
                 color: node.style?.color || '#000',
                 display: 'flex',
                 alignItems: 'center',
@@ -96,6 +107,12 @@ function App() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         htmlCode={exportData}
+      />
+
+      <SidePanel
+        node={nodes.find(n => n.id === selectedNodeId) || null}
+        onUpdate={handleUpdateNode}
+        onClose={() => setSelectedNodeId(null)}
       />
     </div>
   )
