@@ -100,11 +100,8 @@ export function Node({ node }: NodeProps) {
         e.stopPropagation();
       }}
       style={{
-        backgroundColor: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle' || node.type === 'line' || node.type === 'arrow') ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
-        border: (node.type === 'diamond' || node.type === 'circle' || node.type === 'triangle' || node.type === 'line' || node.type === 'arrow')
-          ? (isSelected ? '1px dashed #3b82f6' : 'none')
-          : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
-        borderRadius: node.type === 'box' ? (node.style?.borderRadius || '4px') : '0px',
+        backgroundColor: 'transparent',
+        border: isSelected ? '1px dashed #3b82f6' : 'none',
         color: node.style?.color || '#000',
         fontSize: node.style?.fontSize || '16px',
         display: 'flex',
@@ -117,7 +114,7 @@ export function Node({ node }: NodeProps) {
           style={{
             width: '70.7%',
             height: '70.7%',
-            transform: 'rotate(45deg)',
+            transform: `rotate(${45 + (node.rotation || 0)}deg)`,
             backgroundColor: node.style?.backgroundColor || '#fff3cd',
             border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#ffc107'}`,
             borderRadius: node.style?.borderRadius || '0px',
@@ -127,7 +124,7 @@ export function Node({ node }: NodeProps) {
             boxSizing: 'border-box',
           }}
         >
-          <div style={{ transform: 'rotate(-45deg)', width: '141.4%', textAlign: 'center', wordBreak: 'break-word', padding: '4px' }}>
+          <div style={{ transform: `rotate(${-45 - (node.rotation || 0)}deg)`, width: '141.4%', textAlign: 'center', wordBreak: 'break-word', padding: '4px' }}>
             {node.content}
           </div>
         </div>
@@ -136,6 +133,7 @@ export function Node({ node }: NodeProps) {
           style={{
             width: '100%',
             height: '100%',
+            transform: `rotate(${node.rotation || 0}deg)`,
             borderRadius: '50%',
             backgroundColor: node.style?.backgroundColor || '#f1f5f9',
             border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#64748b'}`,
@@ -150,7 +148,7 @@ export function Node({ node }: NodeProps) {
           </div>
         </div>
       ) : node.type === 'triangle' ? (
-        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)` }}>
           <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
             <polygon
               points="50,3 97,97 3,97"
@@ -179,7 +177,7 @@ export function Node({ node }: NodeProps) {
           </div>
         </div>
       ) : node.type === 'line' ? (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', transform: `rotate(${node.rotation || 0}deg)` }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
             <line
               x1="0"
@@ -192,7 +190,7 @@ export function Node({ node }: NodeProps) {
           </svg>
         </div>
       ) : node.type === 'arrow' ? (
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', transform: `rotate(${node.rotation || 0}deg)` }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
             <defs>
               <marker
@@ -218,7 +216,22 @@ export function Node({ node }: NodeProps) {
           </svg>
         </div>
       ) : (
-        node.content
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `rotate(${node.rotation || 0}deg)`,
+            backgroundColor: node.style?.backgroundColor || '#f0f0f0',
+            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
+            borderRadius: node.style?.borderRadius || '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          {node.content}
+        </div>
       )}
     </Rnd>
   );
