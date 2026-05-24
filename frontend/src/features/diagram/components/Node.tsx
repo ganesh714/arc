@@ -12,6 +12,24 @@ export function Node({ node }: NodeProps) {
   const { selectedNodeId, selectNode, moveNode, resizeNode } = useDiagram();
   const isSelected = selectedNodeId === node.id;
 
+  const DiamondHandle = () => (
+    <div
+      style={{
+        width: '8px',
+        height: '8px',
+        backgroundColor: '#ffffff',
+        border: '1.5px solid #3b82f6',
+        borderRadius: '50%',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        pointerEvents: 'none',
+      }}
+    />
+  );
+
   return (
     <Rnd
       position={node.position}
@@ -30,6 +48,39 @@ export function Node({ node }: NodeProps) {
       }}
       bounds="parent"
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
+      enableResizing={
+        node.type === 'diamond'
+          ? {
+              top: true,
+              bottom: true,
+              left: true,
+              right: true,
+              topLeft: false,
+              topRight: false,
+              bottomLeft: false,
+              bottomRight: false,
+            }
+          : {
+              top: true,
+              bottom: true,
+              left: true,
+              right: true,
+              topLeft: true,
+              topRight: true,
+              bottomLeft: true,
+              bottomRight: true,
+            }
+      }
+      resizeHandleComponent={
+        node.type === 'diamond' && isSelected
+          ? {
+              top: <DiamondHandle />,
+              bottom: <DiamondHandle />,
+              left: <DiamondHandle />,
+              right: <DiamondHandle />,
+            }
+          : undefined
+      }
       onMouseDown={(e) => {
         e.stopPropagation();
         selectNode(node.id);
