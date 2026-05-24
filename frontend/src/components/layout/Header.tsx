@@ -6,7 +6,7 @@ import styles from './Header.module.css';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
-  const { nodes, addBox } = useDiagram();
+  const { nodes } = useDiagram();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [exportData, setExportData] = useState('');
 
@@ -21,7 +21,6 @@ export function Header() {
       <header className={styles.header}>
         <h1 className={styles.title}>Project Loom</h1>
         <div className={styles.actions}>
-          <Button onClick={addBox} variant="default">Add Box</Button>
           <Button onClick={handleExport} variant="outline">Export HTML</Button>
         </div>
       </header>
