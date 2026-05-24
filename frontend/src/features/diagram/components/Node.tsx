@@ -39,7 +39,9 @@ export function Node({ node }: NodeProps) {
       }}
       style={{
         backgroundColor: node.type === 'diamond' ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
-        border: node.type === 'diamond' ? 'none' : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
+        border: node.type === 'diamond'
+          ? (isSelected ? '1px dashed #3b82f6' : 'none')
+          : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
         color: node.style?.color || '#000',
         fontSize: node.style?.fontSize || '16px',
         display: 'flex',
