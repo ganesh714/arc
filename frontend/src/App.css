@@ -20,26 +20,30 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  height: 48px;
+  padding: 0 1.5rem;
   background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  z-index: 50; /* Ensure header stands on top of overlays */
+  position: relative;
 }
 
 .toolbar h1 {
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: #0f172a;
 }
 
 .toolbar-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -183,7 +187,7 @@ code {
 /* Side Panel Styles (Overlay) */
 .side-panel {
   position: fixed;
-  top: 0;
+  top: 48px;
   right: 0;
   bottom: 0;
   width: 320px;
@@ -277,7 +281,7 @@ code {
 /* Left Sidebar Styles (Overlay) */
 .left-sidebar {
   position: fixed;
-  top: 0;
+  top: 48px;
   left: 0;
   bottom: 0;
   width: 70px; /* Collapsed width: shows only slim navigation */
