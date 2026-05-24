@@ -11,7 +11,7 @@ interface SidebarTab {
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
-  const { addBox, addDiamond, addCircle } = useDiagram();
+  const { addBox, addDiamond, addCircle, addTriangle } = useDiagram();
 
   const tabs: SidebarTab[] = [
     { id: 'elements', label: 'Elements', icon: '🎨', description: 'Shapes, arrows, and diagram connectors' },
@@ -63,6 +63,18 @@ export function LeftSidebar() {
                   >
                     <div className={`${styles.elementPreview} ${styles.shapeCircle}`}></div>
                     <span className={styles.elementName}>Circle</span>
+                  </div>
+                  <div 
+                    className={`${styles.elementItem} ${styles.interactive}`} 
+                    title="Add Triangle"
+                    onClick={addTriangle}
+                  >
+                    <div className={styles.elementPreview}>
+                      <svg width="28" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                        <polygon points="50,6 94,94 6,94" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="8" />
+                      </svg>
+                    </div>
+                    <span className={styles.elementName}>Triangle</span>
                   </div>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
