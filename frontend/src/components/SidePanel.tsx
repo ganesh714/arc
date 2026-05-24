@@ -5,9 +5,18 @@ interface SidePanelProps {
   onUpdate: (updatedNode: DiagramNode) => void;
   onClose: () => void;
 }
-
 export function SidePanel({ node, onUpdate, onClose }: SidePanelProps) {
-  if (!node) return null;
+  if (!node) {
+    return (
+      <div className="side-panel placeholder">
+        <div className="placeholder-content">
+          <span className="placeholder-icon">🎨</span>
+          <h3>No Selection</h3>
+          <p>Click on any box on the canvas to customize its text content and styling colors.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (field: string, value: string) => {
     if (field === 'content') {
