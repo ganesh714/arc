@@ -12,8 +12,8 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       const radius = node.style?.borderRadius || '0px';
       
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; justify-content: center; font-family: sans-serif; z-index: 5;">\n`;
-      html += `    <div style="width: 70.7%; height: 70.7%; transform: rotate(45deg); border: 2px solid ${border}; background-color: ${bg}; border-radius: ${radius}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
-      html += `      <div style="transform: rotate(-45deg); width: 141.4%; text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 4px;">\n`;
+      html += `    <div style="width: 70.7%; height: 70.7%; transform: rotate(${45 + (node.rotation || 0)}deg); border: 2px solid ${border}; background-color: ${bg}; border-radius: ${radius}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
+      html += `      <div style="transform: rotate(${-45 - (node.rotation || 0)}deg); width: 141.4%; text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 4px;">\n`;
       html += `        ${node.content}\n`;
       html += `      </div>\n`;
       html += `    </div>\n`;
@@ -25,7 +25,7 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       const fontSize = node.style?.fontSize || '16px';
       
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; justify-content: center; font-family: sans-serif; z-index: 5;">\n`;
-      html += `    <div style="width: 100%; height: 100%; border-radius: 50%; border: 2px solid ${border}; background-color: ${bg}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
+      html += `    <div style="width: 100%; height: 100%; border-radius: 50%; border: 2px solid ${border}; background-color: ${bg}; transform: rotate(${node.rotation || 0}deg); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
       html += `      <div style="text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 8px;">\n`;
       html += `        ${node.content}\n`;
       html += `      </div>\n`;
@@ -37,7 +37,7 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       const color = node.style?.color || '#000000';
       const fontSize = node.style?.fontSize || '16px';
       
-      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; transform: rotate(${node.rotation || 0}deg); z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block;">\n`;
       html += `      <polygon points="50,3 97,97 3,97" fill="${bg}" stroke="${border}" stroke-width="2.5" vector-effect="non-scaling-stroke" />\n`;
       html += `    </svg>\n`;
@@ -49,14 +49,14 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `  </div>\n`;
     } else if (node.type === 'line') {
       const color = node.style?.borderColor || '#475569';
-      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; z-index: 5;">\n`;
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; transform: rotate(${node.rotation || 0}deg); z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" style="overflow: visible;">\n`;
       html += `      <line x1="0" y1="50%" x2="100%" y2="50%" stroke="${color}" stroke-width="3" />\n`;
       html += `    </svg>\n`;
       html += `  </div>\n`;
     } else if (node.type === 'arrow') {
       const color = node.style?.borderColor || '#0284c7';
-      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; z-index: 5;">\n`;
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; transform: rotate(${node.rotation || 0}deg); z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" style="overflow: visible;">\n`;
       html += `      <defs>\n`;
       html += `        <marker id="arrowhead-${node.id}" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">\n`;
@@ -75,9 +75,10 @@ export function generateExportCode(nodes: DiagramNode[]): string {
         if (node.style.color) styleStr += `color: ${node.style.color}; `;
         if (node.style.fontSize) styleStr += `font-size: ${node.style.fontSize}; `;
         styleStr += `border-radius: ${node.style.borderRadius || '4px'}; `;
+        styleStr += `transform: rotate(${node.rotation || 0}deg); `;
         styleStr += `display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
       } else {
-        styleStr += `background-color: #f0f0f0; border: 2px solid #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
+        styleStr += `background-color: #f0f0f0; border: 2px solid #333; border-radius: 4px; transform: rotate(${node.rotation || 0}deg); display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
       }
       
       html += `  <div style="${styleStr.trim()}">\n    ${node.content}\n  </div>\n`;
