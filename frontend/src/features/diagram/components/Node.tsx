@@ -38,13 +38,36 @@ export function Node({ node }: NodeProps) {
         e.stopPropagation();
       }}
       style={{
-        backgroundColor: node.style?.backgroundColor || '#f0f0f0',
-        border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
+        backgroundColor: node.type === 'diamond' ? 'transparent' : (node.style?.backgroundColor || '#f0f0f0'),
+        border: node.type === 'diamond' ? 'none' : `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
         color: node.style?.color || '#000',
         fontSize: node.style?.fontSize || '16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      {node.content}
+      {node.type === 'diamond' ? (
+        <div
+          style={{
+            width: '70.7%',
+            height: '70.7%',
+            transform: 'rotate(45deg)',
+            backgroundColor: node.style?.backgroundColor || '#fff3cd',
+            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#ffc107'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+          }}
+        >
+          <div style={{ transform: 'rotate(-45deg)', width: '141.4%', textAlign: 'center', wordBreak: 'break-word', padding: '4px' }}>
+            {node.content}
+          </div>
+        </div>
+      ) : (
+        node.content
+      )}
     </Rnd>
   );
 }
