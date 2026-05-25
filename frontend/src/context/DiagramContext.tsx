@@ -55,7 +55,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       style: {
         backgroundColor: '#fff3cd',
         borderColor: '#ffc107',
-        color: '#0f172a'
+        color: '#0f172a',
+        borderRadius: '4px'
       }
     };
     setNodes((prev) => [...prev, newNode]);
