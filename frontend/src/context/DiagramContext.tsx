@@ -9,6 +9,7 @@ interface DiagramContextType {
   addDiamond: (position?: { x: number; y: number }) => void;
   addCircle: (position?: { x: number; y: number }) => void;
   addTriangle: (position?: { x: number; y: number }) => void;
+  addStar: (position?: { x: number; y: number }) => void;
   addLine: (position?: { x: number; y: number }) => void;
   addArrow: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
@@ -20,6 +21,11 @@ interface DiagramContextType {
   selectNode: (id: string | null, multi?: boolean) => void;
   setSelectedNodeIds: (ids: string[]) => void;
   setNodes: (nodes: DiagramNode[]) => void;
+  bringToFront: (ids: string[]) => void;
+  sendToBack: (ids: string[]) => void;
+  alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  zoom: number;
+  setZoom: (zoom: number) => void;
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
@@ -27,6 +33,7 @@ const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 export function DiagramProvider({ children }: { children: ReactNode }) {
   const [nodes, setNodes] = useState<DiagramNode[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [zoom, setZoom] = useState<number>(1.0);
 
   const addBox = (position?: { x: number; y: number }) => {
     const width = 150;
@@ -38,9 +45,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: 'New Box',
       style: {
-        backgroundColor: '#e0f2fe',
-        borderColor: '#0284c7',
-        color: '#0f172a'
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3'
       }
     };
     setNodes((prev) => [...prev, newNode]);
@@ -56,10 +63,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: 'New Diamond',
       style: {
-        backgroundColor: '#fff3cd',
-        borderColor: '#ffc107',
-        color: '#0f172a',
-        borderRadius: '4px'
+        backgroundColor: '#2e2c24',
+        borderColor: '#c69c3a',
+        color: '#e3e3e3',
+        borderRadius: '2px'
       }
     };
     setNodes((prev) => [...prev, newNode]);
@@ -75,9 +82,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: 'New Circle',
       style: {
-        backgroundColor: '#f1f5f9',
-        borderColor: '#64748b',
-        color: '#0f172a'
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3'
       }
     };
     setNodes((prev) => [...prev, newNode]);
@@ -93,9 +100,27 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: 'New Triangle',
       style: {
-        backgroundColor: '#f0fdf4',
-        borderColor: '#16a34a',
-        color: '#0f172a'
+        backgroundColor: '#1c2e24',
+        borderColor: '#2b8a4e',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addStar = (position?: { x: number; y: number }) => {
+    const width = 110;
+    const height = 110;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'star',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 150 },
+      dimensions: { width, height },
+      content: 'New Star',
+      style: {
+        backgroundColor: '#38301b',
+        borderColor: '#9e7c1d',
+        color: '#e3e3e3'
       }
     };
     setNodes((prev) => [...prev, newNode]);
@@ -113,7 +138,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: '',
       style: {
-        borderColor: '#475569',
+        borderColor: '#888888',
       },
       startPoint: { x: startX, y: startY + 10 },
       endPoint: { x: startX + width, y: startY + 10 }
@@ -133,7 +158,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       dimensions: { width, height },
       content: '',
       style: {
-        borderColor: '#0284c7',
+        borderColor: '#0c8ce9',
       },
       startPoint: { x: startX, y: startY + 10 },
       endPoint: { x: startX + width, y: startY + 10 }
@@ -213,7 +238,6 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return prev.map(node => {
         if (selectedNodeIds.includes(node.id)) {
           if (node.id === draggedNodeId) {
-            // Use precise target position for the dragged element to prevent rounding/drift
             if (node.startPoint && node.endPoint) {
               return {
                 ...node,
@@ -224,7 +248,6 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
             }
             return { ...node, position };
           } else {
-            // Apply delta shift to all other selected nodes
             const newPos = { x: node.position.x + dx, y: node.position.y + dy };
             if (node.startPoint && node.endPoint) {
               return {
@@ -266,6 +289,77 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bringToFront = (ids: string[]) => {
+    setNodes((prev) => {
+      const selected = prev.filter((node) => ids.includes(node.id));
+      const unselected = prev.filter((node) => !ids.includes(node.id));
+      return [...unselected, ...selected];
+    });
+  };
+
+  const sendToBack = (ids: string[]) => {
+    setNodes((prev) => {
+      const selected = prev.filter((node) => ids.includes(node.id));
+      const unselected = prev.filter((node) => !ids.includes(node.id));
+      return [...selected, ...unselected];
+    });
+  };
+
+  const alignSelected = (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    if (selectedNodeIds.length <= 1) return;
+
+    setNodes((prev) => {
+      const selectedNodes = prev.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'line' && n.type !== 'arrow');
+      if (selectedNodes.length <= 1) return prev;
+
+      const lefts = selectedNodes.map(n => n.position.x);
+      const rights = selectedNodes.map(n => n.position.x + n.dimensions.width);
+      const tops = selectedNodes.map(n => n.position.y);
+      const bottoms = selectedNodes.map(n => n.position.y + n.dimensions.height);
+
+      const minX = Math.min(...lefts);
+      const maxX = Math.max(...rights);
+      const minY = Math.min(...tops);
+      const maxY = Math.max(...bottoms);
+
+      const targetCenterX = minX + (maxX - minX) / 2;
+      const targetCenterY = minY + (maxY - minY) / 2;
+
+      return prev.map(node => {
+        if (!selectedNodeIds.includes(node.id) || node.type === 'line' || node.type === 'arrow') return node;
+
+        let newX = node.position.x;
+        let newY = node.position.y;
+
+        switch (alignmentType) {
+          case 'left':
+            newX = minX;
+            break;
+          case 'right':
+            newX = maxX - node.dimensions.width;
+            break;
+          case 'center':
+            newX = targetCenterX - node.dimensions.width / 2;
+            break;
+          case 'top':
+            newY = minY;
+            break;
+          case 'bottom':
+            newY = maxY - node.dimensions.height;
+            break;
+          case 'middle':
+            newY = targetCenterY - node.dimensions.height / 2;
+            break;
+        }
+
+        return {
+          ...node,
+          position: { x: newX, y: newY }
+        };
+      });
+    });
+  };
+
   return (
     <DiagramContext.Provider value={{ 
       nodes, 
@@ -274,6 +368,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addDiamond, 
       addCircle, 
       addTriangle, 
+      addStar,
       addLine, 
       addArrow, 
       updateLinePoints, 
@@ -284,7 +379,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       resizeNode, 
       selectNode, 
       setSelectedNodeIds,
-      setNodes 
+      setNodes,
+      bringToFront,
+      sendToBack,
+      alignSelected,
+      zoom,
+      setZoom
     }}>
       {children}
     </DiagramContext.Provider>

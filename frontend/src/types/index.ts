@@ -14,6 +14,9 @@ export interface NodeStyle {
   color?: string;
   fontSize?: string;
   borderRadius?: string;
+  boxShadow?: string;
+  fontWeight?: string;
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 export interface Point {
@@ -23,7 +26,7 @@ export interface Point {
 
 export interface DiagramNode {
   id: string;
-  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow';
+  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star';
   position: Position;
   dimensions: Dimensions;
   content: string;
