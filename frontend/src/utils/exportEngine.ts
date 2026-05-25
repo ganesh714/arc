@@ -47,33 +47,50 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `      </div>\n`;
       html += `    </div>\n`;
       html += `  </div>\n`;
-    } else if (node.type === 'line') {
-      const color = node.style?.borderColor || '#475569';
-      const x1 = node.startPoint!.x - node.position.x;
-      const y1 = node.startPoint!.y - node.position.y;
-      const x2 = node.endPoint!.x - node.position.x;
-      const y2 = node.endPoint!.y - node.position.y;
-      
-      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
-      html += `    <svg width="100%" height="100%" style="overflow: visible; display: block;">\n`;
-      html += `      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="3" />\n`;
-      html += `    </svg>\n`;
-      html += `  </div>\n`;
-    } else if (node.type === 'arrow') {
-      const color = node.style?.borderColor || '#0284c7';
-      const x1 = node.startPoint!.x - node.position.x;
-      const y1 = node.startPoint!.y - node.position.y;
-      const x2 = node.endPoint!.x - node.position.x;
-      const y2 = node.endPoint!.y - node.position.y;
-      
+    } else if (node.type === 'line' || node.type === 'arrow') {
+      const color = node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7');
+      const startX = node.startPoint!.x - node.position.x;
+      const startY = node.startPoint!.y - node.position.y;
+      const endX = node.endPoint!.x - node.position.x;
+      const endY = node.endPoint!.y - node.position.y;
+
+      const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+      const dashStr = node.lineStyle === 'dashed' ? ' stroke-dasharray="8 6"' : '';
+
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" style="overflow: visible; display: block;">\n`;
       html += `      <defs>\n`;
-      html += `        <marker id="arrowhead-${node.id}" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">\n`;
+      html += `        <marker id="arrowhead-end-${node.id}" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">\n`;
       html += `          <polygon points="0 0, 8 3, 0 6" fill="${color}" />\n`;
       html += `        </marker>\n`;
+      html += `        <marker id="arrowhead-start-${node.id}" markerWidth="8" markerHeight="6" refX="2" refY="3" orient="auto">\n`;
+      html += `          <polygon points="8 0, 0 3, 8 6" fill="${color}" />\n`;
+      html += `        </marker>\n`;
       html += `      </defs>\n`;
-      html += `      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="3" marker-end="url(#arrowhead-${node.id})" />\n`;
+
+      if (node.lineCurve === 'curved') {
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        const curveOffset = Math.max(15, Math.min(60, len * 0.15));
+        const nx = len > 0 ? -dy / len : 0;
+        const ny = len > 0 ? dx / len : 0;
+        const controlX = midX + nx * curveOffset;
+        const controlY = midY + ny * curveOffset;
+
+        const startMarkerStr = effectiveArrowType === 'double' ? ` marker-start="url(#arrowhead-start-${node.id})"` : '';
+        const endMarkerStr = (effectiveArrowType === 'single' || effectiveArrowType === 'double') ? ` marker-end="url(#arrowhead-end-${node.id})"` : '';
+
+        html += `      <path d="M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}" stroke="${color}" stroke-width="3" fill="none"${dashStr}${startMarkerStr}${endMarkerStr} />\n`;
+      } else {
+        const startMarkerStr = effectiveArrowType === 'double' ? ` marker-start="url(#arrowhead-start-${node.id})"` : '';
+        const endMarkerStr = (effectiveArrowType === 'single' || effectiveArrowType === 'double') ? ` marker-end="url(#arrowhead-end-${node.id})"` : '';
+
+        html += `      <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="${color}" stroke-width="3"${dashStr}${startMarkerStr}${endMarkerStr} />\n`;
+      }
+
       html += `    </svg>\n`;
       html += `  </div>\n`;
     } else {
