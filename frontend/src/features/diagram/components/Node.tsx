@@ -14,7 +14,6 @@ export function Node({ node }: NodeProps) {
 
   // Figma resize handle
   const FigmaHandle = ({ position }: { position: string }) => {
-    // Offset handles slightly outwards
     const offsets: Record<string, React.CSSProperties> = {
       topLeft: { top: '-3px', left: '-3px', cursor: 'nwse-resize' },
       topRight: { top: '-3px', right: '-3px', cursor: 'nesw-resize' },
@@ -108,6 +107,22 @@ export function Node({ node }: NodeProps) {
     right: <FigmaHandle position="right" />,
   } : undefined;
 
+  const isLine = node.type === 'line' || node.type === 'arrow';
+
+  // Build text style object
+  const textStyle: React.CSSProperties = {
+    color: node.style?.color || '#e3e3e3',
+    fontSize: node.style?.fontSize || '11px',
+    fontWeight: node.style?.fontWeight || 'normal',
+    textAlign: node.style?.textAlign || 'center',
+    width: '100%',
+    wordBreak: 'break-word',
+  };
+
+  // Shadow filters vs css box shadows
+  const hasShadow = !!node.style?.boxShadow;
+  const shadowFilter = hasShadow ? `drop-shadow(${node.style!.boxShadow})` : 'none';
+
   return (
     <Rnd
       position={node.position}
@@ -132,7 +147,7 @@ export function Node({ node }: NodeProps) {
       bounds="parent"
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
-        (node.type === 'line' || node.type === 'arrow')
+        isLine
           ? {
               top: false,
               bottom: false,
@@ -173,10 +188,7 @@ export function Node({ node }: NodeProps) {
       }}
       style={{
         backgroundColor: 'transparent',
-        // Figma-style high fidelity focus outline overlay
         outline: isSelected ? '1.5px solid #0c8ce9' : 'none',
-        color: node.style?.color || '#e3e3e3',
-        fontSize: node.style?.fontSize || '11px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -196,10 +208,13 @@ export function Node({ node }: NodeProps) {
             alignItems: 'center',
             justifyContent: 'center',
             boxSizing: 'border-box',
+            filter: shadowFilter
           }}
         >
-          <div style={{ transform: `rotate(${-45 - (node.rotation || 0)}deg)`, width: '141.4%', textAlign: 'center', wordBreak: 'break-word', padding: '4px' }}>
-            {node.content}
+          <div style={{ transform: `rotate(${-45 - (node.rotation || 0)}deg)`, width: '141.4%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ ...textStyle, padding: '4px' }}>
+              {node.content}
+            </div>
           </div>
         </div>
       ) : node.type === 'circle' ? (
@@ -215,14 +230,15 @@ export function Node({ node }: NodeProps) {
             alignItems: 'center',
             justifyContent: 'center',
             boxSizing: 'border-box',
+            boxShadow: node.style?.boxShadow || 'none'
           }}
         >
-          <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '8px' }}>
+          <div style={{ ...textStyle, padding: '8px' }}>
             {node.content}
           </div>
         </div>
       ) : node.type === 'triangle' ? (
-        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)` }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)`, filter: shadowFilter }}>
           <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
             {(() => {
               const r = parseInt(node.style?.borderRadius || '0', 10);
@@ -269,12 +285,40 @@ export function Node({ node }: NodeProps) {
               pointerEvents: 'none' 
             }}
           >
-            <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '30px 15px 15px 15px', color: node.style?.color || '#e3e3e3', fontSize: node.style?.fontSize || '11px' }}>
+            <div style={{ ...textStyle, padding: '30px 15px 15px 15px' }}>
               {node.content}
             </div>
           </div>
         </div>
-      ) : (node.type === 'line' || node.type === 'arrow') ? (
+      ) : node.type === 'star' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)`, filter: shadowFilter }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ display: 'block' }}>
+            <polygon 
+              points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36" 
+              fill={node.style?.backgroundColor || '#38301b'} 
+              stroke={node.style?.borderColor || '#9e7c1d'} 
+              strokeWidth="2" 
+            />
+          </svg>
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ ...textStyle, padding: '24px 20px 20px 20px' }}>
+              {node.content}
+            </div>
+          </div>
+        </div>
+      ) : isLine ? (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
             <defs>
@@ -385,13 +429,16 @@ export function Node({ node }: NodeProps) {
             justifyContent: 'center',
             boxSizing: 'border-box',
             padding: '8px',
+            boxShadow: node.style?.boxShadow || 'none'
           }}
         >
-          {node.content}
+          <div style={textStyle}>
+            {node.content}
+          </div>
         </div>
       )}
 
-      {isSelected && (node.type === 'line' || node.type === 'arrow') && (
+      {isSelected && isLine && (
         <>
           {/* Start Point Handle */}
           <div

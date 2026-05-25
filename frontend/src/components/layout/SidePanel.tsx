@@ -1,7 +1,15 @@
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './SidePanel.module.css';
-import { X as CloseIcon } from 'lucide-react';
+import { 
+  X as CloseIcon, 
+  AlignLeft, 
+  AlignCenter, 
+  AlignRight, 
+  Bold, 
+  ArrowUp, 
+  ArrowDown
+} from 'lucide-react';
 
 export function SidePanel() {
   const { 
@@ -12,7 +20,10 @@ export function SidePanel() {
     selectNode, 
     moveNode, 
     resizeNode, 
-    updateLinePoints 
+    updateLinePoints,
+    bringToFront,
+    sendToBack,
+    alignSelected
   } = useDiagram();
 
   const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
@@ -114,10 +125,115 @@ export function SidePanel() {
     updateLinePoints(node.id, start, { x: newEndX, y: newEndY });
   };
 
-  // Helper to format node title
+  const getShadowParts = (shadowStr?: string) => {
+    if (!shadowStr) return { x: 0, y: 4, blur: 8, color: '#000000' };
+    const clean = shadowStr.replace(/px/g, '');
+    const parts = clean.split(' ');
+    const x = parseInt(parts[0], 10) || 0;
+    const y = parseInt(parts[1], 10) || 0;
+    const blur = parseInt(parts[2], 10) || 0;
+    const color = parts.slice(3).join(' ') || '#000000';
+    return { x, y, blur, color };
+  };
+
+  const handleShadowChange = (part: 'x' | 'y' | 'blur' | 'color', val: any) => {
+    const current = getShadowParts(node.style?.boxShadow);
+    if (part === 'x') current.x = parseInt(val, 10) || 0;
+    else if (part === 'y') current.y = parseInt(val, 10) || 0;
+    else if (part === 'blur') current.blur = parseInt(val, 10) || 0;
+    else if (part === 'color') current.color = val;
+
+    handleChange('boxShadow', `${current.x}px ${current.y}px ${current.blur}px ${current.color}`);
+  };
+
+  const handleMultipleShadowChange = (part: 'x' | 'y' | 'blur' | 'color', val: any) => {
+    selectedNodeIds.forEach(id => {
+      const targetNode = nodes.find(n => n.id === id);
+      if (!targetNode || targetNode.type === 'line' || targetNode.type === 'arrow') return;
+      const current = getShadowParts(targetNode.style?.boxShadow);
+      if (part === 'x') current.x = parseInt(val, 10) || 0;
+      else if (part === 'y') current.y = parseInt(val, 10) || 0;
+      else if (part === 'blur') current.blur = parseInt(val, 10) || 0;
+      else if (part === 'color') current.color = val;
+
+      updateNode({
+        ...targetNode,
+        style: {
+          ...targetNode.style,
+          boxShadow: `${current.x}px ${current.y}px ${current.blur}px ${current.color}`
+        }
+      });
+    });
+  };
+
   const getNodeTitle = (n: DiagramNode) => {
     return n.type.toUpperCase() + ` (${n.id})`;
   };
+
+  // Alignment Toolbar JSX
+  const AlignmentToolbar = () => (
+    <div className={styles.alignGrid}>
+      <button className={styles.alignButton} onClick={() => alignSelected('left')} title="Align Left">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="10" y="10" width="10" height="80" />
+          <rect x="30" y="25" width="50" height="20" rx="5" />
+          <rect x="30" y="55" width="30" height="20" rx="5" />
+        </svg>
+      </button>
+      <button className={styles.alignButton} onClick={() => alignSelected('center')} title="Align Horizontal Centers">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="45" y="10" width="10" height="80" />
+          <rect x="20" y="25" width="60" height="20" rx="5" />
+          <rect x="30" y="55" width="40" height="20" rx="5" />
+        </svg>
+      </button>
+      <button className={styles.alignButton} onClick={() => alignSelected('right')} title="Align Right">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="80" y="10" width="10" height="80" />
+          <rect x="20" y="25" width="50" height="20" rx="5" />
+          <rect x="40" y="55" width="30" height="20" rx="5" />
+        </svg>
+      </button>
+      <button className={styles.alignButton} onClick={() => alignSelected('top')} title="Align Top">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="10" y="10" width="80" height="10" />
+          <rect x="25" y="30" width="20" height="50" rx="5" />
+          <rect x="55" y="30" width="20" height="30" rx="5" />
+        </svg>
+      </button>
+      <button className={styles.alignButton} onClick={() => alignSelected('middle')} title="Align Vertical Centers">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="10" y="45" width="80" height="10" />
+          <rect x="25" y="20" width="20" height="60" rx="5" />
+          <rect x="55" y="30" width="20" height="40" rx="5" />
+        </svg>
+      </button>
+      <button className={styles.alignButton} onClick={() => alignSelected('bottom')} title="Align Bottom">
+        <svg width="12" height="12" viewBox="0 0 100 100" fill="currentColor">
+          <rect x="10" y="80" width="80" height="10" />
+          <rect x="25" y="20" width="20" height="50" rx="5" />
+          <rect x="55" y="40" width="20" height="30" rx="5" />
+        </svg>
+      </button>
+    </div>
+  );
+
+  // Depth control buttons
+  const DepthArrangement = ({ ids }: { ids: string[] }) => (
+    <div className={styles.section}>
+      <span className={styles.sectionTitle}>Layer Depth</span>
+      <div className={styles.grid}>
+        <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '24px' }}>
+          <ArrowUp size={12} />
+          <span>To Front</span>
+        </button>
+        <button className={styles.select} onClick={() => sendToBack(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '24px' }}>
+          <ArrowDown size={12} />
+          <span>To Back</span>
+        </button>
+      </div>
+    </div>
+  );
 
   if (selectedNodes.length > 1) {
     const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow');
@@ -137,22 +253,33 @@ export function SidePanel() {
 
     const commonBg = getCommonStyleValue('backgroundColor', '#ffffff');
     const commonBorder = getCommonStyleValue('borderColor', '#333333');
-    const commonTextColor = getCommonStyleValue('color', '#000000');
     const commonRadius = parseInt(getCommonStyleValue('borderRadius', '4px'), 10);
     const commonRotation = getCommonValue('rotation', 0);
-
     const commonLineCurve = getCommonValue('lineCurve', 'straight');
     const commonLineStyle = getCommonValue('lineStyle', 'solid');
     const commonArrowType = getCommonValue('arrowType', 'none');
 
+    // Multi-selection Typography properties
+    const commonFontSize = getCommonStyleValue('fontSize', '11px');
+    const commonFontWeight = getCommonStyleValue('fontWeight', 'normal');
+    const commonTextAlign = getCommonStyleValue('textAlign', 'center');
+
+    // Multi-selection Shadows properties
+    const firstShadow = getShadowParts(firstNode.style?.boxShadow);
+    const isShadowCommon = selectedNodes.every(n => n.style?.boxShadow === firstNode.style?.boxShadow);
+    const commonShadow = isShadowCommon ? firstShadow : { x: 0, y: 4, blur: 8, color: '#000000' };
+
     return (
       <div className={styles.overlay}>
         <div className={styles.header}>
-          <h3>Mixed selection ({selectedNodes.length})</h3>
+          <h3>Mixed Selection ({selectedNodes.length})</h3>
           <button className={styles.close} onClick={() => selectNode(null)}>
             <CloseIcon size={12} />
           </button>
         </div>
+
+        {/* Alignment controls directly below header */}
+        <AlignmentToolbar />
 
         <div className={styles.propertiesContent}>
           {allShapes && (
@@ -212,6 +339,63 @@ export function SidePanel() {
                 )}
               </div>
 
+              {/* Depth Section */}
+              <DepthArrangement ids={selectedNodeIds} />
+
+              {/* Text Styling (Typography) Section */}
+              <div className={styles.section}>
+                <span className={styles.sectionTitle}>Typography</span>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Size</span>
+                  <select
+                    className={styles.select}
+                    value={commonFontSize}
+                    onChange={(e) => handleMultipleChange('fontSize', e.target.value)}
+                  >
+                    <option value="9px">9 px</option>
+                    <option value="11px">11 px</option>
+                    <option value="13px">13 px</option>
+                    <option value="16px">16 px</option>
+                    <option value="20px">20 px</option>
+                    <option value="24px">24 px</option>
+                    <option value="32px">32 px</option>
+                  </select>
+                </div>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Format</span>
+                  <div className={styles.toggleGroup} style={{ width: '120px' }}>
+                    <button
+                      className={`${styles.toggleButton} ${commonFontWeight === 'bold' ? styles.toggleButtonActive : ''}`}
+                      onClick={() => handleMultipleChange('fontWeight', commonFontWeight === 'bold' ? 'normal' : 'bold')}
+                      title="Bold"
+                    >
+                      <Bold size={11} />
+                    </button>
+                    <button
+                      className={`${styles.toggleButton} ${commonTextAlign === 'left' ? styles.toggleButtonActive : ''}`}
+                      onClick={() => handleMultipleChange('textAlign', 'left')}
+                      title="Align Left"
+                    >
+                      <AlignLeft size={11} />
+                    </button>
+                    <button
+                      className={`${styles.toggleButton} ${commonTextAlign === 'center' ? styles.toggleButtonActive : ''}`}
+                      onClick={() => handleMultipleChange('textAlign', 'center')}
+                      title="Align Center"
+                    >
+                      <AlignCenter size={11} />
+                    </button>
+                    <button
+                      className={`${styles.toggleButton} ${commonTextAlign === 'right' ? styles.toggleButtonActive : ''}`}
+                      onClick={() => handleMultipleChange('textAlign', 'right')}
+                      title="Align Right"
+                    >
+                      <AlignRight size={11} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Fill Properties */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Fill</span>
@@ -228,7 +412,7 @@ export function SidePanel() {
               {/* Stroke Properties */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Stroke</span>
-                <div className={styles.colorPickerWrapper}>
+                <div className={styles.colorPickerWrapper} style={{ marginBottom: '8px' }}>
                   <input
                     type="color"
                     value={commonBorder}
@@ -238,16 +422,57 @@ export function SidePanel() {
                 </div>
               </div>
 
-              {/* Text Properties */}
+              {/* Drop Shadows (Effects) Section */}
               <div className={styles.section}>
-                <span className={styles.sectionTitle}>Text</span>
-                <div className={styles.colorPickerWrapper}>
+                <span className={styles.sectionTitle}>Effects (Shadow)</span>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Blur</span>
+                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="30"
+                      value={commonShadow.blur}
+                      onChange={(e) => handleMultipleShadowChange('blur', e.target.value)}
+                      className={styles.slider}
+                    />
+                    <div className={styles.inputWrapper} style={{ width: '35px' }}>
+                      <input
+                        type="number"
+                        value={commonShadow.blur}
+                        onChange={(e) => handleMultipleShadowChange('blur', e.target.value)}
+                        className={styles.numberInput}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.grid}>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputLabel}>X</span>
+                    <input
+                      type="number"
+                      className={styles.numberInput}
+                      value={commonShadow.x}
+                      onChange={(e) => handleMultipleShadowChange('x', e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputLabel}>Y</span>
+                    <input
+                      type="number"
+                      className={styles.numberInput}
+                      value={commonShadow.y}
+                      onChange={(e) => handleMultipleShadowChange('y', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className={styles.colorPickerWrapper} style={{ marginTop: '8px' }}>
                   <input
                     type="color"
-                    value={commonTextColor}
-                    onChange={(e) => handleMultipleChange('color', e.target.value)}
+                    value={commonShadow.color}
+                    onChange={(e) => handleMultipleShadowChange('color', e.target.value)}
                   />
-                  <span className={styles.colorHex}>{commonTextColor}</span>
+                  <span className={styles.colorHex}>{commonShadow.color}</span>
                 </div>
               </div>
             </>
@@ -306,23 +531,6 @@ export function SidePanel() {
               </div>
             </>
           )}
-
-          {!allShapes && !allConnectors && (
-            <div className={styles.section}>
-              <span className={styles.sectionTitle}>Stroke</span>
-              <div className={styles.colorPickerWrapper}>
-                <input
-                  type="color"
-                  value={commonBorder}
-                  onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
-                />
-                <span className={styles.colorHex}>{commonBorder}</span>
-              </div>
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '8px', fontStyle: 'italic', textAlign: 'center' }}>
-                Mixed shapes selected. Edit line or border color above.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -330,6 +538,7 @@ export function SidePanel() {
 
   // Single Selection Inspection
   const isLine = node.type === 'line' || node.type === 'arrow';
+  const shadow = getShadowParts(node.style?.boxShadow);
 
   return (
     <div className={styles.overlay}>
@@ -537,7 +746,10 @@ export function SidePanel() {
           )}
         </div>
 
-        {/* Text Area Content Section */}
+        {/* Depth Section */}
+        <DepthArrangement ids={selectedNodeIds} />
+
+        {/* Text Content Section */}
         {!isLine && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Content</span>
@@ -551,6 +763,62 @@ export function SidePanel() {
           </div>
         )}
 
+        {/* Typography properties */}
+        {!isLine && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Typography</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Size</span>
+              <select
+                className={styles.select}
+                value={node.style?.fontSize || '11px'}
+                onChange={(e) => handleChange('fontSize', e.target.value)}
+              >
+                <option value="9px">9 px</option>
+                <option value="11px">11 px</option>
+                <option value="13px">13 px</option>
+                <option value="16px">16 px</option>
+                <option value="20px">20 px</option>
+                <option value="24px">24 px</option>
+                <option value="32px">32 px</option>
+              </select>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Format</span>
+              <div className={styles.toggleGroup} style={{ width: '120px' }}>
+                <button
+                  className={`${styles.toggleButton} ${node.style?.fontWeight === 'bold' ? styles.toggleButtonActive : ''}`}
+                  onClick={() => handleChange('fontWeight', node.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
+                  title="Bold"
+                >
+                  <Bold size={11} />
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${node.style?.textAlign === 'left' ? styles.toggleButtonActive : ''}`}
+                  onClick={() => handleChange('textAlign', 'left')}
+                  title="Align Left"
+                >
+                  <AlignLeft size={11} />
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${node.style?.textAlign === 'center' ? styles.toggleButtonActive : ''}`}
+                  onClick={() => handleChange('textAlign', 'center')}
+                  title="Align Center"
+                >
+                  <AlignCenter size={11} />
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${node.style?.textAlign === 'right' ? styles.toggleButtonActive : ''}`}
+                  onClick={() => handleChange('textAlign', 'right')}
+                  title="Align Right"
+                >
+                  <AlignRight size={11} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Fill color picker */}
         {!isLine && (
           <div className={styles.section}>
@@ -558,10 +826,10 @@ export function SidePanel() {
             <div className={styles.colorPickerWrapper}>
               <input
                 type="color"
-                value={node.style?.backgroundColor || '#f0f0f0'}
+                value={node.style?.backgroundColor || '#2c2c2c'}
                 onChange={(e) => handleChange('backgroundColor', e.target.value)}
               />
-              <span className={styles.colorHex}>{node.style?.backgroundColor || '#f0f0f0'}</span>
+              <span className={styles.colorHex}>{node.style?.backgroundColor || '#2c2c2c'}</span>
             </div>
           </div>
         )}
@@ -572,11 +840,11 @@ export function SidePanel() {
           <div className={styles.colorPickerWrapper} style={{ marginBottom: '10px' }}>
             <input
               type="color"
-              value={node.style?.borderColor || (node.type === 'line' ? '#475569' : node.type === 'arrow' ? '#0284c7' : '#333333')}
+              value={node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
               onChange={(e) => handleChange('borderColor', e.target.value)}
             />
             <span className={styles.colorHex}>
-              {node.style?.borderColor || (node.type === 'line' ? '#475569' : node.type === 'arrow' ? '#0284c7' : '#333333')}
+              {node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
             </span>
           </div>
 
@@ -629,10 +897,66 @@ export function SidePanel() {
             <div className={styles.colorPickerWrapper}>
               <input
                 type="color"
-                value={node.style?.color || '#000000'}
+                value={node.style?.color || '#e3e3e3'}
                 onChange={(e) => handleChange('color', e.target.value)}
               />
-              <span className={styles.colorHex}>{node.style?.color || '#000000'}</span>
+              <span className={styles.colorHex}>{node.style?.color || '#e3e3e3'}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Shadow Effects (Drop Shadows) Section */}
+        {!isLine && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Effects (Shadow)</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Blur</span>
+              <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                <input
+                  type="range"
+                  min="0"
+                  max="30"
+                  value={shadow.blur}
+                  onChange={(e) => handleShadowChange('blur', e.target.value)}
+                  className={styles.slider}
+                />
+                <div className={styles.inputWrapper} style={{ width: '35px' }}>
+                  <input
+                    type="number"
+                    value={shadow.blur}
+                    onChange={(e) => handleShadowChange('blur', e.target.value)}
+                    className={styles.numberInput}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className={styles.grid}>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputLabel}>X</span>
+                <input
+                  type="number"
+                  className={styles.numberInput}
+                  value={shadow.x}
+                  onChange={(e) => handleShadowChange('x', e.target.value)}
+                />
+              </div>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputLabel}>Y</span>
+                <input
+                  type="number"
+                  className={styles.numberInput}
+                  value={shadow.y}
+                  onChange={(e) => handleShadowChange('y', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.colorPickerWrapper} style={{ marginTop: '8px' }}>
+              <input
+                type="color"
+                value={shadow.color}
+                onChange={(e) => handleShadowChange('color', e.target.value)}
+              />
+              <span className={styles.colorHex}>{shadow.color}</span>
             </div>
           </div>
         )}
