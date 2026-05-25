@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Node } from './Node';
 import styles from './Canvas.module.css';
@@ -9,6 +9,7 @@ export function Canvas() {
     selectedNodeIds,
     selectNode,
     setSelectedNodeIds,
+    setNodes,
     addBox,
     addDiamond,
     addCircle,
@@ -16,6 +17,75 @@ export function Canvas() {
     addLine,
     addArrow
   } = useDiagram();
+
+  // Keyboard arrow keys nudging
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't nudge if the user is typing in an input, select, or textarea
+      const targetTag = document.activeElement?.tagName;
+      if (
+        targetTag === 'INPUT' ||
+        targetTag === 'TEXTAREA' ||
+        targetTag === 'SELECT'
+      ) {
+        return;
+      }
+
+      if (selectedNodeIds.length === 0) return;
+
+      let dx = 0;
+      let dy = 0;
+      const nudgeAmount = e.shiftKey ? 10 : 1; // Move 10px if holding Shift, otherwise 1px
+
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'Up':
+          dy = -nudgeAmount;
+          e.preventDefault();
+          break;
+        case 'ArrowDown':
+        case 'Down':
+          dy = nudgeAmount;
+          e.preventDefault();
+          break;
+        case 'ArrowLeft':
+        case 'Left':
+          dx = -nudgeAmount;
+          e.preventDefault();
+          break;
+        case 'ArrowRight':
+        case 'Right':
+          dx = nudgeAmount;
+          e.preventDefault();
+          break;
+        default:
+          return;
+      }
+
+      // Shift positions of all selected elements
+      const updatedNodes = nodes.map((node) => {
+        if (selectedNodeIds.includes(node.id)) {
+          const newPos = { x: node.position.x + dx, y: node.position.y + dy };
+          if (node.startPoint && node.endPoint) {
+            return {
+              ...node,
+              position: newPos,
+              startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+              endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+            };
+          }
+          return { ...node, position: newPos };
+        }
+        return node;
+      });
+      setNodes(updatedNodes);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedNodeIds, setNodes, nodes]);
 
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
 
