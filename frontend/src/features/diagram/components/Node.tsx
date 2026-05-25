@@ -171,7 +171,7 @@ export function Node({ node }: NodeProps) {
             transform: `rotate(${45 + (node.rotation || 0)}deg)`,
             backgroundColor: node.style?.backgroundColor || '#fff3cd',
             border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#ffc107'}`,
-            borderRadius: node.style?.borderRadius || '0px',
+            borderRadius: node.style?.borderRadius || '4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
