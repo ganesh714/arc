@@ -50,24 +50,30 @@ export function LeftSidebar() {
                 <div className={styles.elementsGrid}>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Rectangle"
-                    onClick={addBox}
+                    title="Drag or click to add Rectangle"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'box')}
+                    onClick={() => addBox()}
                   >
                     <div className={`${styles.elementPreview} ${styles.shapeRect}`}></div>
                     <span className={styles.elementName}>Rectangle</span>
                   </div>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Circle"
-                    onClick={addCircle}
+                    title="Drag or click to add Circle"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'circle')}
+                    onClick={() => addCircle()}
                   >
                     <div className={`${styles.elementPreview} ${styles.shapeCircle}`}></div>
                     <span className={styles.elementName}>Circle</span>
                   </div>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Triangle"
-                    onClick={addTriangle}
+                    title="Drag or click to add Triangle"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'triangle')}
+                    onClick={() => addTriangle()}
                   >
                     <div className={styles.elementPreview}>
                       <svg width="28" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
@@ -78,8 +84,10 @@ export function LeftSidebar() {
                   </div>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Diamond"
-                    onClick={addDiamond}
+                    title="Drag or click to add Diamond"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'diamond')}
+                    onClick={() => addDiamond()}
                   >
                     <div className={`${styles.elementPreview} ${styles.shapeDiamond}`}></div>
                     <span className={styles.elementName}>Diamond</span>
@@ -92,8 +100,10 @@ export function LeftSidebar() {
                 <div className={styles.elementsGrid}>
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Straight Line"
-                    onClick={addLine}
+                    title="Drag or click to add Straight Line"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'line')}
+                    onClick={() => addLine()}
                   >
                     <div className={styles.elementPreview}>
                       <svg width="36" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
@@ -105,8 +115,10 @@ export function LeftSidebar() {
                   
                   <div 
                     className={`${styles.elementItem} ${styles.interactive}`} 
-                    title="Add Arrow"
-                    onClick={addArrow}
+                    title="Drag or click to add Arrow"
+                    draggable={true}
+                    onDragStart={(e) => e.dataTransfer.setData('application/loom-node-type', 'arrow')}
+                    onClick={() => addArrow()}
                   >
                     <div className={styles.elementPreview}>
                       <svg width="36" height="24" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
@@ -124,8 +136,8 @@ export function LeftSidebar() {
               </div>
 
               <div className={styles.paneFooter}>
-                <span className={styles.infoBadge}>Soon</span>
-                <p>Interactive drag-and-drop shape rendering is coming soon!</p>
+                <span className={styles.infoBadge}>Tip</span>
+                <p>Drag shapes onto the canvas or click to add them instantly!</p>
               </div>
             </div>
           )}
