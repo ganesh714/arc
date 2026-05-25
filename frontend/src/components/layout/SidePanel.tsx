@@ -348,7 +348,7 @@ export function SidePanel() {
               type="range"
               min="0"
               max="40"
-              value={parseInt(node.style?.borderRadius || (node.type === 'box' ? '4' : '0'), 10)}
+              value={parseInt(node.style?.borderRadius || (node.type === 'box' || node.type === 'diamond' ? '4' : '0'), 10)}
               onChange={(e) => handleChange('borderRadius', `${e.target.value}px`)}
               className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
             />
@@ -356,7 +356,7 @@ export function SidePanel() {
               type="number"
               min="0"
               max="100"
-              value={parseInt(node.style?.borderRadius || (node.type === 'box' ? '4' : '0'), 10)}
+              value={parseInt(node.style?.borderRadius || (node.type === 'box' || node.type === 'diamond' ? '4' : '0'), 10)}
               onChange={(e) => handleChange('borderRadius', `${e.target.value}px`)}
               className={styles.numberInput}
               style={{ width: '65px', flexShrink: 0 }}
