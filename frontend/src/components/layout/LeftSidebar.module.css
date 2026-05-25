@@ -1,9 +1,8 @@
 .container {
   display: flex;
   flex-direction: column;
-  width: 240px;
+  width: 100%; /* Fill the wrapper width controlled by App.tsx */
   background-color: var(--bg-panel);
-  border-right: 1px solid var(--border-default);
   height: 100%;
   user-select: none;
   z-index: 40;
@@ -74,9 +73,11 @@
   justify-content: space-between;
   padding: 6px 12px;
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  transition: background-color 0.1s ease, border 0.1s ease;
   color: var(--text-secondary);
   font-size: 11px;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
 }
 
 .layerItem:hover {
@@ -94,6 +95,22 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  flex: 1;
+}
+
+.gripHandle {
+  color: var(--text-muted);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.3;
+  transition: opacity 0.15s ease;
+  padding: 2px 0;
+}
+
+.layerItem:hover .gripHandle {
+  opacity: 1;
 }
 
 .layerIcon {
@@ -163,4 +180,15 @@
 .emptyDesc {
   font-size: 10px;
   line-height: 1.4;
+}
+
+/* Drag Reordering states */
+.draggingLayer {
+  opacity: 0.4;
+  border: 1px dashed var(--accent-blue);
+}
+
+.dragOverLayer {
+  border-top-color: var(--accent-blue) !important;
+  background-color: var(--bg-hover);
 }
