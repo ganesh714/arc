@@ -9,7 +9,10 @@ import {
   Triangle, 
   Diamond as DiamondIcon, 
   Minus, 
-  ArrowRight 
+  ArrowRight,
+  Star as StarIcon,
+  Plus,
+  Minus as ZoomOutIcon
 } from 'lucide-react';
 
 export function Canvas() {
@@ -23,8 +26,11 @@ export function Canvas() {
     addDiamond,
     addCircle,
     addTriangle,
+    addStar,
     addLine,
-    addArrow
+    addArrow,
+    zoom,
+    setZoom
   } = useDiagram();
 
   const [activeTool, setActiveTool] = useState<string>('select');
@@ -72,7 +78,6 @@ export function Canvas() {
           return;
       }
 
-      // Shift positions of all selected elements
       const updatedNodes = nodes.map((node) => {
         if (selectedNodeIds.includes(node.id)) {
           const newPos = { x: node.position.x + dx, y: node.position.y + dy };
@@ -110,13 +115,14 @@ export function Canvas() {
     if (!type) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
 
     if (type === 'box') addBox({ x, y });
     else if (type === 'diamond') addDiamond({ x, y });
     else if (type === 'circle') addCircle({ x, y });
     else if (type === 'triangle') addTriangle({ x, y });
+    else if (type === 'star') addStar({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
   };
@@ -125,8 +131,8 @@ export function Canvas() {
     if (e.target !== e.currentTarget) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const startX = e.clientX - rect.left;
-    const startY = e.clientY - rect.top;
+    const startX = (e.clientX - rect.left) / zoom;
+    const startY = (e.clientY - rect.top) / zoom;
 
     setMarquee({
       startX,
@@ -136,8 +142,8 @@ export function Canvas() {
     });
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const currentX = moveEvent.clientX - rect.left;
-      const currentY = moveEvent.clientY - rect.top;
+      const currentX = (moveEvent.clientX - rect.left) / zoom;
+      const currentY = (moveEvent.clientY - rect.top) / zoom;
       setMarquee(prev => prev ? { ...prev, currentX, currentY } : null);
     };
 
@@ -195,15 +201,26 @@ export function Canvas() {
   const handleToolClick = (tool: string, action: () => void) => {
     setActiveTool(tool);
     action();
-    // Return to select tool after adding
     setTimeout(() => {
       setActiveTool('select');
     }, 200);
   };
 
+  const handleZoomIn = () => {
+    setZoom(Math.min(2.0, zoom + 0.1));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(Math.max(0.5, zoom - 0.1));
+  };
+
+  const handleZoomReset = () => {
+    setZoom(1.0);
+  };
+
   return (
     <div className={styles.canvasWrapper}>
-      {/* Figma-style Floating Toolbar */}
+      {/* Figma Floating Toolbar */}
       <div className={styles.toolbar}>
         <button 
           className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
@@ -247,6 +264,14 @@ export function Canvas() {
         </button>
 
         <button 
+          className={`${styles.toolButton} ${activeTool === 'star' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('star', () => addStar({ x: 350, y: 200 }))}
+          title="Star"
+        >
+          <StarIcon size={15} />
+        </button>
+
+        <button 
           className={`${styles.toolButton} ${activeTool === 'line' ? styles.toolButtonActive : ''}`}
           onClick={() => handleToolClick('line', () => addLine({ x: 250, y: 200 }))}
           title="Line (L)"
@@ -263,22 +288,49 @@ export function Canvas() {
         </button>
       </div>
 
+      {/* Floating Zoom HUD */}
+      <div className={styles.zoomHUD}>
+        <button className={styles.zoomBtn} onClick={handleZoomOut} title="Zoom Out">
+          <ZoomOutIcon size={10} />
+        </button>
+        <span className={styles.zoomLabel} onClick={handleZoomReset} title="Reset to 100%">
+          {Math.round(zoom * 100)}%
+        </span>
+        <button className={styles.zoomBtn} onClick={handleZoomIn} title="Zoom In">
+          <Plus size={10} />
+        </button>
+      </div>
+
       <div 
         className={styles.canvas} 
         onMouseDown={handleMouseDown}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
-        {nodes.map((node) => (
-          <Node key={node.id} node={node} />
-        ))}
+        {/* Scaled viewport container */}
+        <div style={{
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top left',
+          width: `${100 / zoom}%`,
+          height: `${100 / zoom}%`,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          pointerEvents: 'none'
+        }}>
+          <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+            {nodes.map((node) => (
+              <Node key={node.id} node={node} />
+            ))}
+          </div>
+        </div>
 
-        {/* Marquee Selection */}
+        {/* Marquee Selection (stays standard overlay scale) */}
         {marquee && (() => {
-          const left = Math.min(marquee.startX, marquee.currentX);
-          const top = Math.min(marquee.startY, marquee.currentY);
-          const width = Math.abs(marquee.currentX - marquee.startX);
-          const height = Math.abs(marquee.currentY - marquee.startY);
+          const left = Math.min(marquee.startX, marquee.currentX) * zoom;
+          const top = Math.min(marquee.startY, marquee.currentY) * zoom;
+          const width = Math.abs(marquee.currentX - marquee.startX) * zoom;
+          const height = Math.abs(marquee.currentY - marquee.startY) * zoom;
           
           return (
             <div 
