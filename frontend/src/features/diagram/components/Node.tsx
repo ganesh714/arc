@@ -88,11 +88,6 @@ export function Node({ node }: NodeProps) {
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
-      onDragStart={(e: any) => {
-        if (!selectedNodeIds.includes(node.id)) {
-          selectNode(node.id, e.shiftKey);
-        }
-      }}
       onDragStop={(_e, d) => {
         if (selectedNodeIds.includes(node.id)) {
           moveSelectedNodes(node.id, { x: d.x, y: d.y });
@@ -158,11 +153,27 @@ export function Node({ node }: NodeProps) {
       }
       onMouseDown={(e: any) => {
         e.stopPropagation();
-        // Shift key to toggle multi-selection
-        selectNode(node.id, e.shiftKey);
+        
+        // If shift is pressed, toggle selection immediately on mouse down
+        if (e.shiftKey) {
+          selectNode(node.id, true);
+          return;
+        }
+
+        // If not shift, and not already selected, select it exclusively immediately
+        if (!selectedNodeIds.includes(node.id)) {
+          selectNode(node.id, false);
+        }
+        // If already selected, do nothing on mouse down to preserve multi-selection for dragging
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
+        
+        // If we click without shift on an already-selected element within a multi-selection, 
+        // refine the selection to only this element on mouse release
+        if (!e.shiftKey && selectedNodeIds.includes(node.id) && selectedNodeIds.length > 1) {
+          selectNode(node.id, false);
+        }
       }}
       style={{
         backgroundColor: 'transparent',
