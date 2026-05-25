@@ -9,7 +9,7 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       const border = node.style?.borderColor || '#ffc107';
       const color = node.style?.color || '#000000';
       const fontSize = node.style?.fontSize || '16px';
-      const radius = node.style?.borderRadius || '0px';
+      const radius = node.style?.borderRadius || '4px';
       
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; display: flex; align-items: center; justify-content: center; font-family: sans-serif; z-index: 5;">\n`;
       html += `    <div style="width: 70.7%; height: 70.7%; transform: rotate(${45 + (node.rotation || 0)}deg); border: 2px solid ${border}; background-color: ${bg}; border-radius: ${radius}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">\n`;
