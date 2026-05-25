@@ -31,4 +31,7 @@ export interface DiagramNode {
   rotation?: number;
   startPoint?: Point;
   endPoint?: Point;
+  lineStyle?: 'solid' | 'dashed';
+  lineCurve?: 'straight' | 'curved';
+  arrowType?: 'none' | 'single' | 'double';
 }
