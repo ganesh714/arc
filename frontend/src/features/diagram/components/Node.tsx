@@ -9,8 +9,8 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeId, selectNode, moveNode, resizeNode, updateLinePoints } = useDiagram();
-  const isSelected = selectedNodeId === node.id;
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints } = useDiagram();
+  const isSelected = selectedNodeIds.includes(node.id);
 
   const DiamondHandle = () => (
     <div
@@ -88,8 +88,18 @@ export function Node({ node }: NodeProps) {
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
-      onDragStart={() => selectNode(node.id)}
-      onDragStop={(_e, d) => moveNode(node.id, { x: d.x, y: d.y })}
+      onDragStart={(e: any) => {
+        if (!selectedNodeIds.includes(node.id)) {
+          selectNode(node.id, e.shiftKey);
+        }
+      }}
+      onDragStop={(_e, d) => {
+        if (selectedNodeIds.includes(node.id)) {
+          moveSelectedNodes(node.id, { x: d.x, y: d.y });
+        } else {
+          moveNode(node.id, { x: d.x, y: d.y });
+        }
+      }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
         resizeNode(
           node.id,
@@ -146,9 +156,10 @@ export function Node({ node }: NodeProps) {
             }
           : undefined
       }
-      onMouseDown={(e) => {
+      onMouseDown={(e: any) => {
         e.stopPropagation();
-        selectNode(node.id);
+        // Shift key to toggle multi-selection
+        selectNode(node.id, e.shiftKey);
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
