@@ -4,7 +4,7 @@ import type { DiagramNode } from '@/types';
 
 interface DiagramContextType {
   nodes: DiagramNode[];
-  selectedNodeId: string | null;
+  selectedNodeIds: string[];
   addBox: (position?: { x: number; y: number }) => void;
   addDiamond: (position?: { x: number; y: number }) => void;
   addCircle: (position?: { x: number; y: number }) => void;
@@ -13,9 +13,12 @@ interface DiagramContextType {
   addArrow: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
+  updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
+  moveSelectedNodes: (draggedNodeId: string, position: { x: number; y: number }) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
-  selectNode: (id: string | null) => void;
+  selectNode: (id: string | null, multi?: boolean) => void;
+  setSelectedNodeIds: (ids: string[]) => void;
   setNodes: (nodes: DiagramNode[]) => void;
 }
 
@@ -23,7 +26,7 @@ const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 
 export function DiagramProvider({ children }: { children: ReactNode }) {
   const [nodes, setNodes] = useState<DiagramNode[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
   const addBox = (position?: { x: number; y: number }) => {
     const width = 150;
@@ -162,6 +165,22 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
   };
 
+  const updateMultipleNodes = (ids: string[], updates: Partial<DiagramNode>) => {
+    setNodes((prev) => prev.map(node => {
+      if (ids.includes(node.id)) {
+        const newStyle = updates.style 
+          ? { ...node.style, ...updates.style } 
+          : node.style;
+        return {
+          ...node,
+          ...updates,
+          style: newStyle
+        } as DiagramNode;
+      }
+      return node;
+    }));
+  };
+
   const moveNode = (id: string, position: { x: number; y: number }) => {
     setNodes((prev) => prev.map(node => {
       if (node.id === id) {
@@ -181,6 +200,48 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const moveSelectedNodes = (draggedNodeId: string, position: { x: number; y: number }) => {
+    setNodes((prev) => {
+      const draggedNode = prev.find(n => n.id === draggedNodeId);
+      if (!draggedNode) return prev;
+
+      const dx = position.x - draggedNode.position.x;
+      const dy = position.y - draggedNode.position.y;
+
+      if (dx === 0 && dy === 0) return prev;
+
+      return prev.map(node => {
+        if (selectedNodeIds.includes(node.id)) {
+          if (node.id === draggedNodeId) {
+            // Use precise target position for the dragged element to prevent rounding/drift
+            if (node.startPoint && node.endPoint) {
+              return {
+                ...node,
+                position,
+                startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+                endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+              };
+            }
+            return { ...node, position };
+          } else {
+            // Apply delta shift to all other selected nodes
+            const newPos = { x: node.position.x + dx, y: node.position.y + dy };
+            if (node.startPoint && node.endPoint) {
+              return {
+                ...node,
+                position: newPos,
+                startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+                endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+              };
+            }
+            return { ...node, position: newPos };
+          }
+        }
+        return node;
+      });
+    });
+  };
+
   const resizeNode = (
     id: string, 
     dimensions: { width: number; height: number }, 
@@ -191,12 +252,40 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     ));
   };
 
-  const selectNode = (id: string | null) => {
-    setSelectedNodeId(id);
+  const selectNode = (id: string | null, multi?: boolean) => {
+    if (id === null) {
+      setSelectedNodeIds([]);
+    } else if (multi) {
+      setSelectedNodeIds(prev => 
+        prev.includes(id) 
+          ? prev.filter(item => item !== id) 
+          : [...prev, id]
+      );
+    } else {
+      setSelectedNodeIds([id]);
+    }
   };
 
   return (
-    <DiagramContext.Provider value={{ nodes, selectedNodeId, addBox, addDiamond, addCircle, addTriangle, addLine, addArrow, updateLinePoints, updateNode, moveNode, resizeNode, selectNode, setNodes }}>
+    <DiagramContext.Provider value={{ 
+      nodes, 
+      selectedNodeIds, 
+      addBox, 
+      addDiamond, 
+      addCircle, 
+      addTriangle, 
+      addLine, 
+      addArrow, 
+      updateLinePoints, 
+      updateNode, 
+      updateMultipleNodes,
+      moveNode, 
+      moveSelectedNodes,
+      resizeNode, 
+      selectNode, 
+      setSelectedNodeIds,
+      setNodes 
+    }}>
       {children}
     </DiagramContext.Provider>
   );
