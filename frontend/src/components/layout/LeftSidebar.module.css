@@ -117,7 +117,11 @@
 }
 
 .elementItem.interactive {
-  cursor: pointer;
+  cursor: grab;
+}
+
+.elementItem.interactive:active {
+  cursor: grabbing;
 }
 
 .elementItem:hover {
