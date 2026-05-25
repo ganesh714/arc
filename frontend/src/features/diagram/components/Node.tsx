@@ -204,13 +204,37 @@ export function Node({ node }: NodeProps) {
       ) : node.type === 'triangle' ? (
         <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)` }}>
           <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
-            <polygon
-              points="50,3 97,97 3,97"
-              fill={node.style?.backgroundColor || '#f0fdf4'}
-              stroke={isSelected ? '#3b82f6' : node.style?.borderColor || '#16a34a'}
-              strokeWidth="2.5"
-              vectorEffect="non-scaling-stroke"
-            />
+            {(() => {
+              const r = parseInt(node.style?.borderRadius || '0', 10);
+              const s = Math.max(0, Math.min(25, r * 0.5));
+              
+              const p1x = 50 - s * 0.45;
+              const p1y = 3 + s * 0.90;
+              const p2x = 50 + s * 0.45;
+              const p2y = 3 + s * 0.90;
+              
+              const p3x = 97 - s * 0.45;
+              const p3y = 97 - s * 0.90;
+              const p4x = 97 - s;
+              const p4y = 97;
+              
+              const p5x = 3 + s;
+              const p5y = 97;
+              const p6x = 3 + s * 0.45;
+              const p6y = 97 - s * 0.90;
+              
+              const pathData = `M ${p1x} ${p1y} Q 50 3 ${p2x} ${p2y} L ${p3x} ${p3y} Q 97 97 ${p4x} ${p4y} L ${p5x} ${p5y} Q 3 97 ${p6x} ${p6y} Z`;
+              
+              return (
+                <path
+                  d={pathData}
+                  fill={node.style?.backgroundColor || '#f0fdf4'}
+                  stroke={isSelected ? '#3b82f6' : node.style?.borderColor || '#16a34a'}
+                  strokeWidth="2.5"
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            })()}
           </svg>
           <div 
             style={{ 
