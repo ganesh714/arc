@@ -12,23 +12,36 @@ export function Node({ node }: NodeProps) {
   const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
 
-  const DiamondHandle = () => (
-    <div
-      style={{
-        width: '8px',
-        height: '8px',
-        backgroundColor: '#ffffff',
-        border: '1.5px solid #3b82f6',
-        borderRadius: '50%',
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        pointerEvents: 'none',
-      }}
-    />
-  );
+  // Figma resize handle
+  const FigmaHandle = ({ position }: { position: string }) => {
+    // Offset handles slightly outwards
+    const offsets: Record<string, React.CSSProperties> = {
+      topLeft: { top: '-3px', left: '-3px', cursor: 'nwse-resize' },
+      topRight: { top: '-3px', right: '-3px', cursor: 'nesw-resize' },
+      bottomLeft: { bottom: '-3px', left: '-3px', cursor: 'nesw-resize' },
+      bottomRight: { bottom: '-3px', right: '-3px', cursor: 'nwse-resize' },
+      top: { top: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      bottom: { bottom: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      left: { left: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+      right: { right: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+    };
+
+    return (
+      <div
+        style={{
+          width: '6px',
+          height: '6px',
+          backgroundColor: '#ffffff',
+          border: '1.5px solid #0c8ce9',
+          borderRadius: '1px',
+          position: 'absolute',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          pointerEvents: 'none',
+          ...offsets[position],
+        }}
+      />
+    );
+  };
 
   const handleStartDrag = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,6 +97,17 @@ export function Node({ node }: NodeProps) {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const activeHandles = isSelected ? {
+    topLeft: <FigmaHandle position="topLeft" />,
+    topRight: <FigmaHandle position="topRight" />,
+    bottomLeft: <FigmaHandle position="bottomLeft" />,
+    bottomRight: <FigmaHandle position="bottomRight" />,
+    top: <FigmaHandle position="top" />,
+    bottom: <FigmaHandle position="bottom" />,
+    left: <FigmaHandle position="left" />,
+    right: <FigmaHandle position="right" />,
+  } : undefined;
+
   return (
     <Rnd
       position={node.position}
@@ -108,18 +132,7 @@ export function Node({ node }: NodeProps) {
       bounds="parent"
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
-        node.type === 'diamond'
-          ? {
-              top: true,
-              bottom: true,
-              left: true,
-              right: true,
-              topLeft: false,
-              topRight: false,
-              bottomLeft: false,
-              bottomRight: false,
-            }
-          : (node.type === 'line' || node.type === 'arrow')
+        (node.type === 'line' || node.type === 'arrow')
           ? {
               top: false,
               bottom: false,
@@ -141,48 +154,33 @@ export function Node({ node }: NodeProps) {
               bottomRight: true,
             }
       }
-      resizeHandleComponent={
-        node.type === 'diamond' && isSelected
-          ? {
-              top: <DiamondHandle />,
-              bottom: <DiamondHandle />,
-              left: <DiamondHandle />,
-              right: <DiamondHandle />,
-            }
-          : undefined
-      }
+      resizeHandleComponent={activeHandles}
       onMouseDown={(e: any) => {
         e.stopPropagation();
-        
-        // If shift is pressed, toggle selection immediately on mouse down
         if (e.shiftKey) {
           selectNode(node.id, true);
           return;
         }
-
-        // If not shift, and not already selected, select it exclusively immediately
         if (!selectedNodeIds.includes(node.id)) {
           selectNode(node.id, false);
         }
-        // If already selected, do nothing on mouse down to preserve multi-selection for dragging
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
-        
-        // If we click without shift on an already-selected element within a multi-selection, 
-        // refine the selection to only this element on mouse release
         if (!e.shiftKey && selectedNodeIds.includes(node.id) && selectedNodeIds.length > 1) {
           selectNode(node.id, false);
         }
       }}
       style={{
         backgroundColor: 'transparent',
-        border: isSelected ? '1px dashed #3b82f6' : 'none',
-        color: node.style?.color || '#000',
-        fontSize: node.style?.fontSize || '16px',
+        // Figma-style high fidelity focus outline overlay
+        outline: isSelected ? '1.5px solid #0c8ce9' : 'none',
+        color: node.style?.color || '#e3e3e3',
+        fontSize: node.style?.fontSize || '11px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: isSelected ? 30 : 1,
       }}
     >
       {node.type === 'diamond' ? (
@@ -191,9 +189,9 @@ export function Node({ node }: NodeProps) {
             width: '70.7%',
             height: '70.7%',
             transform: `rotate(${45 + (node.rotation || 0)}deg)`,
-            backgroundColor: node.style?.backgroundColor || '#fff3cd',
-            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#ffc107'}`,
-            borderRadius: node.style?.borderRadius || '4px',
+            backgroundColor: node.style?.backgroundColor || '#2e2c24',
+            border: `1.5px solid ${node.style?.borderColor || '#c69c3a'}`,
+            borderRadius: node.style?.borderRadius || '2px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -211,8 +209,8 @@ export function Node({ node }: NodeProps) {
             height: '100%',
             transform: `rotate(${node.rotation || 0}deg)`,
             borderRadius: '50%',
-            backgroundColor: node.style?.backgroundColor || '#f1f5f9',
-            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#64748b'}`,
+            backgroundColor: node.style?.backgroundColor || '#2c2c2c',
+            border: `1.5px solid ${node.style?.borderColor || '#555555'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -250,9 +248,9 @@ export function Node({ node }: NodeProps) {
               return (
                 <path
                   d={pathData}
-                  fill={node.style?.backgroundColor || '#f0fdf4'}
-                  stroke={isSelected ? '#3b82f6' : node.style?.borderColor || '#16a34a'}
-                  strokeWidth="2.5"
+                  fill={node.style?.backgroundColor || '#1c2e24'}
+                  stroke={node.style?.borderColor || '#2b8a4e'}
+                  strokeWidth="2"
                   vectorEffect="non-scaling-stroke"
                 />
               );
@@ -271,7 +269,7 @@ export function Node({ node }: NodeProps) {
               pointerEvents: 'none' 
             }}
           >
-            <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '30px 15px 15px 15px', color: node.style?.color || '#000', fontSize: node.style?.fontSize || '16px' }}>
+            <div style={{ textAlign: 'center', wordBreak: 'break-word', padding: '30px 15px 15px 15px', color: node.style?.color || '#e3e3e3', fontSize: node.style?.fontSize || '11px' }}>
               {node.content}
             </div>
           </div>
@@ -282,23 +280,23 @@ export function Node({ node }: NodeProps) {
             <defs>
               <marker
                 id={`arrowhead-end-${node.id}`}
-                markerWidth="8"
-                markerHeight="6"
-                refX="6"
-                refY="3"
+                markerWidth="6"
+                markerHeight="5"
+                refX="5"
+                refY="2.5"
                 orient="auto"
               >
-                <polygon points="0 0, 8 3, 0 6" fill={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')} />
+                <polygon points="0 0, 6 2.5, 0 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
               </marker>
               <marker
                 id={`arrowhead-start-${node.id}`}
-                markerWidth="8"
-                markerHeight="6"
-                refX="2"
-                refY="3"
+                markerWidth="6"
+                markerHeight="5"
+                refX="1"
+                refY="2.5"
                 orient="auto"
               >
-                <polygon points="8 0, 0 3, 8 6" fill={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')} />
+                <polygon points="6 0, 0 2.5, 6 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
               </marker>
             </defs>
 
@@ -322,20 +320,18 @@ export function Node({ node }: NodeProps) {
 
               return (
                 <g style={{ cursor: 'move' }}>
-                  {/* Invisible generous click/drag target hitbox */}
                   <path
                     d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
                     stroke="transparent"
                     strokeWidth="16"
                     fill="none"
                   />
-                  {/* Visible thin line/arrow */}
                   <path
                     d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
-                    strokeWidth="3"
+                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    strokeWidth="2"
                     fill="none"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
+                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -351,7 +347,6 @@ export function Node({ node }: NodeProps) {
 
               return (
                 <g style={{ cursor: 'move' }}>
-                  {/* Invisible generous click/drag target hitbox */}
                   <line
                     x1={startX}
                     y1={startY}
@@ -360,15 +355,14 @@ export function Node({ node }: NodeProps) {
                     stroke="transparent"
                     strokeWidth="16"
                   />
-                  {/* Visible thin line/arrow */}
                   <line
                     x1={startX}
                     y1={startY}
                     x2={endX}
                     y2={endY}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
-                    strokeWidth="3"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
+                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    strokeWidth="2"
+                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -383,13 +377,14 @@ export function Node({ node }: NodeProps) {
             width: '100%',
             height: '100%',
             transform: `rotate(${node.rotation || 0}deg)`,
-            backgroundColor: node.style?.backgroundColor || '#f0f0f0',
-            border: `2px solid ${isSelected ? '#3b82f6' : node.style?.borderColor || '#333'}`,
+            backgroundColor: node.style?.backgroundColor || '#2c2c2c',
+            border: `1.5px solid ${node.style?.borderColor || '#555555'}`,
             borderRadius: node.style?.borderRadius || '4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             boxSizing: 'border-box',
+            padding: '8px',
           }}
         >
           {node.content}
@@ -404,10 +399,10 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.startPoint!.x - node.position.x,
               top: node.startPoint!.y - node.position.y,
-              width: '10px',
-              height: '10px',
+              width: '8px',
+              height: '8px',
               backgroundColor: '#ffffff',
-              border: '2px solid #0284c7',
+              border: '2px solid #0c8ce9',
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
@@ -422,10 +417,10 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.endPoint!.x - node.position.x,
               top: node.endPoint!.y - node.position.y,
-              width: '10px',
-              height: '10px',
+              width: '8px',
+              height: '8px',
               backgroundColor: '#ffffff',
-              border: '2px solid #0284c7',
+              border: '2px solid #0c8ce9',
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
