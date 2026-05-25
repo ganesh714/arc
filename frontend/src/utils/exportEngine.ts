@@ -37,9 +37,29 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       const color = node.style?.color || '#000000';
       const fontSize = node.style?.fontSize || '16px';
       
+      const r = parseInt(node.style?.borderRadius || '0', 10);
+      const s = Math.max(0, Math.min(25, r * 0.5));
+      
+      const p1x = 50 - s * 0.45;
+      const p1y = 3 + s * 0.90;
+      const p2x = 50 + s * 0.45;
+      const p2y = 3 + s * 0.90;
+      
+      const p3x = 97 - s * 0.45;
+      const p3y = 97 - s * 0.90;
+      const p4x = 97 - s;
+      const p4y = 97;
+      
+      const p5x = 3 + s;
+      const p5y = 97;
+      const p6x = 3 + s * 0.45;
+      const p6y = 97 - s * 0.90;
+      
+      const pathData = `M ${p1x} ${p1y} Q 50 3 ${p2x} ${p2y} L ${p3x} ${p3y} Q 97 97 ${p4x} ${p4y} L ${p5x} ${p5y} Q 3 97 ${p6x} ${p6y} Z`;
+
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; transform: rotate(${node.rotation || 0}deg); z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block;">\n`;
-      html += `      <polygon points="50,3 97,97 3,97" fill="${bg}" stroke="${border}" stroke-width="2.5" vector-effect="non-scaling-stroke" />\n`;
+      html += `      <path d="${pathData}" fill="${bg}" stroke="${border}" stroke-width="2.5" vector-effect="non-scaling-stroke" />\n`;
       html += `    </svg>\n`;
       html += `    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: sans-serif; pointer-events: none;">\n`;
       html += `      <div style="text-align: center; color: ${color}; font-size: ${fontSize}; word-wrap: break-word; padding: 30px 15px 15px 15px;">\n`;
