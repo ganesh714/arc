@@ -1,11 +1,24 @@
 import { useDiagram } from '@/context/DiagramContext';
+import type { DiagramNode } from '@/types';
 import styles from './SidePanel.module.css';
 
 export function SidePanel() {
-  const { nodes, selectedNodeId, updateNode, selectNode, moveNode, resizeNode, updateLinePoints } = useDiagram();
-  const node = nodes.find(n => n.id === selectedNodeId);
+  const { 
+    nodes, 
+    selectedNodeIds, 
+    updateNode, 
+    updateMultipleNodes, 
+    selectNode, 
+    moveNode, 
+    resizeNode, 
+    updateLinePoints 
+  } = useDiagram();
 
-  if (!node) return null;
+  const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+
+  if (selectedNodes.length === 0) return null;
+
+  const node = selectedNodes[0];
 
   const handleChange = (field: string, value: string) => {
     if (field === 'content') {
@@ -21,7 +34,24 @@ export function SidePanel() {
     }
   };
 
+  const handleMultipleChange = (field: string, value: any) => {
+    if (field === 'content') {
+      updateMultipleNodes(selectedNodeIds, { content: value });
+    } else if (field === 'rotation') {
+      updateMultipleNodes(selectedNodeIds, { rotation: value });
+    } else if (field === 'lineCurve' || field === 'lineStyle' || field === 'arrowType') {
+      updateMultipleNodes(selectedNodeIds, { [field]: value });
+    } else {
+      updateMultipleNodes(selectedNodeIds, {
+        style: {
+          [field]: value
+        }
+      });
+    }
+  };
+
   const handlePositionChange = (axis: 'x' | 'y', value: number) => {
+    if (!node) return;
     moveNode(node.id, {
       ...node.position,
       [axis]: isNaN(value) ? 0 : value,
@@ -29,6 +59,7 @@ export function SidePanel() {
   };
 
   const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
+    if (!node) return;
     resizeNode(
       node.id,
       {
@@ -40,21 +71,21 @@ export function SidePanel() {
   };
 
   const handleStartPointChange = (axis: 'x' | 'y', value: number) => {
-    if (!node.startPoint || !node.endPoint) return;
+    if (!node || !node.startPoint || !node.endPoint) return;
     const val = isNaN(value) ? 0 : value;
     const newStart = { ...node.startPoint, [axis]: val };
     updateLinePoints(node.id, newStart, node.endPoint);
   };
 
   const handleEndPointChange = (axis: 'x' | 'y', value: number) => {
-    if (!node.startPoint || !node.endPoint) return;
+    if (!node || !node.startPoint || !node.endPoint) return;
     const val = isNaN(value) ? 0 : value;
     const newEnd = { ...node.endPoint, [axis]: val };
     updateLinePoints(node.id, node.startPoint, newEnd);
   };
 
   const handleLengthChange = (newLength: number) => {
-    if (!node.startPoint || !node.endPoint) return;
+    if (!node || !node.startPoint || !node.endPoint) return;
     const len = isNaN(newLength) || newLength < 5 ? 5 : newLength;
     const start = node.startPoint;
     const end = node.endPoint;
@@ -68,7 +99,7 @@ export function SidePanel() {
   };
 
   const handleAngleChange = (newAngle: number) => {
-    if (!node.startPoint || !node.endPoint) return;
+    if (!node || !node.startPoint || !node.endPoint) return;
     const ang = isNaN(newAngle) ? 0 : newAngle;
     const start = node.startPoint;
     const end = node.endPoint;
@@ -81,6 +112,219 @@ export function SidePanel() {
     const newEndY = start.y + len * Math.sin(angleRad);
     updateLinePoints(node.id, start, { x: newEndX, y: newEndY });
   };
+
+  if (selectedNodes.length > 1) {
+    const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow');
+    const allConnectors = selectedNodes.every(n => n.type === 'line' || n.type === 'arrow');
+    const noCircles = selectedNodes.every(n => n.type !== 'circle');
+
+    const firstNode = selectedNodes[0];
+    const getCommonStyleValue = (field: string, fallback: string) => {
+      const isCommon = selectedNodes.every(n => n.style?.[field as keyof typeof n.style] === firstNode.style?.[field as keyof typeof firstNode.style]);
+      return isCommon ? (firstNode.style?.[field as keyof typeof firstNode.style] || fallback) : fallback;
+    };
+
+    const getCommonValue = (field: keyof DiagramNode, fallback: any) => {
+      const isCommon = selectedNodes.every(n => n[field] === firstNode[field]);
+      return isCommon ? (firstNode[field] ?? fallback) : fallback;
+    };
+
+    const commonBg = getCommonStyleValue('backgroundColor', '#ffffff');
+    const commonBorder = getCommonStyleValue('borderColor', '#333333');
+    const commonTextColor = getCommonStyleValue('color', '#000000');
+    const commonRadius = parseInt(getCommonStyleValue('borderRadius', '4px'), 10);
+    const commonRotation = getCommonValue('rotation', 0);
+
+    const commonLineCurve = getCommonValue('lineCurve', 'straight');
+    const commonLineStyle = getCommonValue('lineStyle', 'solid');
+    const commonArrowType = getCommonValue('arrowType', 'none');
+
+    return (
+      <div className={styles.overlay}>
+        <div className={styles.header}>
+          <h3>Properties ({selectedNodes.length} selected)</h3>
+          <button className={styles.close} onClick={() => selectNode(null)}>&times;</button>
+        </div>
+
+        {allShapes && (
+          <>
+            {/* Background Color */}
+            <div className={styles.section}>
+              <label>Background Color</label>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={commonBg}
+                  onChange={(e) => handleMultipleChange('backgroundColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>{commonBg}</span>
+              </div>
+            </div>
+
+            {/* Border Color */}
+            <div className={styles.section}>
+              <label>Border Color</label>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={commonBorder}
+                  onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>{commonBorder}</span>
+              </div>
+            </div>
+
+            {/* Text Color */}
+            <div className={styles.section}>
+              <label>Text Color</label>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={commonTextColor}
+                  onChange={(e) => handleMultipleChange('color', e.target.value)}
+                />
+                <span className={styles.colorHex}>{commonTextColor}</span>
+              </div>
+            </div>
+
+            {/* Corner Radius */}
+            {noCircles && (
+              <div className={styles.section}>
+                <label>Corner Radius</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="40"
+                    value={commonRadius}
+                    onChange={(e) => handleMultipleChange('borderRadius', `${e.target.value}px`)}
+                    className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={commonRadius}
+                    onChange={(e) => handleMultipleChange('borderRadius', `${e.target.value}px`)}
+                    className={styles.numberInput}
+                    style={{ width: '65px', flexShrink: 0 }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Rotation */}
+            <div className={styles.section}>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Rotation</span>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  value={commonRotation}
+                  onChange={(e) => handleMultipleChange('rotation', parseInt(e.target.value, 10))}
+                  className="flex-1 accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="360"
+                  value={commonRotation}
+                  onChange={(e) => handleMultipleChange('rotation', parseInt(e.target.value, 10) || 0)}
+                  className={styles.numberInput}
+                  style={{ width: '65px', flexShrink: 0 }}
+                />
+                <span className="text-xs text-slate-400 font-bold">°</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {allConnectors && (
+          <>
+            {/* Line Color */}
+            <div className={styles.section}>
+              <label>Line Color</label>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={commonBorder}
+                  onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>{commonBorder}</span>
+              </div>
+            </div>
+
+            {/* Connector Styling */}
+            <div className={styles.section}>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Connector Styling</span>
+              <div className="flex flex-col gap-3">
+                {/* Curve Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Connector Route</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={commonLineCurve}
+                    onChange={(e) => handleMultipleChange('lineCurve', e.target.value as 'straight' | 'curved')}
+                  >
+                    <option value="straight">Straight</option>
+                    <option value="curved">Curved</option>
+                  </select>
+                </div>
+
+                {/* Stroke Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Stroke Pattern</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={commonLineStyle}
+                    onChange={(e) => handleMultipleChange('lineStyle', e.target.value as 'solid' | 'dashed')}
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                  </select>
+                </div>
+
+                {/* Arrowhead Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Arrowheads</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={commonArrowType}
+                    onChange={(e) => handleMultipleChange('arrowType', e.target.value as 'none' | 'single' | 'double')}
+                  >
+                    <option value="none">None</option>
+                    <option value="single">Single End</option>
+                    <option value="double">Double Ended</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {!allShapes && !allConnectors && (
+          <>
+            {/* Mixed selection - show Border / Line color common properties */}
+            <div className={styles.section}>
+              <label>Border / Line Color</label>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={commonBorder}
+                  onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>{commonBorder}</span>
+              </div>
+            </div>
+            <div className="p-4 text-xs text-slate-400 text-center italic bg-slate-50 rounded border border-slate-100 m-3">
+              Mixed selection: editing only common properties like line/border color is supported.
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.overlay}>
