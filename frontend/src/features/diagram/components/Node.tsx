@@ -321,15 +321,25 @@ export function Node({ node }: NodeProps) {
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
 
               return (
-                <path
-                  d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-                  stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
-                  strokeWidth="3"
-                  fill="none"
-                  strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
-                  markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
-                  markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
-                />
+                <g style={{ cursor: 'move' }}>
+                  {/* Invisible generous click/drag target hitbox */}
+                  <path
+                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
+                    stroke="transparent"
+                    strokeWidth="16"
+                    fill="none"
+                  />
+                  {/* Visible thin line/arrow */}
+                  <path
+                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
+                    stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
+                    markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
+                    markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
+                  />
+                </g>
               );
             })() : (() => {
               const startX = node.startPoint!.x - node.position.x;
@@ -340,17 +350,29 @@ export function Node({ node }: NodeProps) {
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
 
               return (
-                <line
-                  x1={startX}
-                  y1={startY}
-                  x2={endX}
-                  y2={endY}
-                  stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
-                  strokeWidth="3"
-                  strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
-                  markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
-                  markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
-                />
+                <g style={{ cursor: 'move' }}>
+                  {/* Invisible generous click/drag target hitbox */}
+                  <line
+                    x1={startX}
+                    y1={startY}
+                    x2={endX}
+                    y2={endY}
+                    stroke="transparent"
+                    strokeWidth="16"
+                  />
+                  {/* Visible thin line/arrow */}
+                  <line
+                    x1={startX}
+                    y1={startY}
+                    x2={endX}
+                    y2={endY}
+                    stroke={node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7')}
+                    strokeWidth="3"
+                    strokeDasharray={node.lineStyle === 'dashed' ? '8 6' : undefined}
+                    markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
+                    markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
+                  />
+                </g>
               );
             })()}
           </svg>
