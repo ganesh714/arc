@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Node } from './Node';
 import styles from './Canvas.module.css';
+import { 
+  MousePointer2, 
+  Square, 
+  Circle, 
+  Triangle, 
+  Diamond as DiamondIcon, 
+  Minus, 
+  ArrowRight 
+} from 'lucide-react';
 
 export function Canvas() {
   const { 
@@ -18,10 +27,11 @@ export function Canvas() {
     addArrow
   } = useDiagram();
 
+  const [activeTool, setActiveTool] = useState<string>('select');
+
   // Keyboard arrow keys nudging
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't nudge if the user is typing in an input, select, or textarea
       const targetTag = document.activeElement?.tagName;
       if (
         targetTag === 'INPUT' ||
@@ -35,7 +45,7 @@ export function Canvas() {
 
       let dx = 0;
       let dy = 0;
-      const nudgeAmount = e.shiftKey ? 10 : 1; // Move 10px if holding Shift, otherwise 1px
+      const nudgeAmount = e.shiftKey ? 10 : 1;
 
       switch (e.key) {
         case 'ArrowUp':
@@ -112,7 +122,6 @@ export function Canvas() {
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only drag selection if clicking directly on canvas, not elements
     if (e.target !== e.currentTarget) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -146,7 +155,6 @@ export function Canvas() {
         const width = right - left;
         const height = bottom - top;
 
-        // If it's a small click, treat it as a click off to clear selection
         if (width < 3 && height < 3) {
           if (!upEvent.shiftKey) {
             selectNode(null);
@@ -154,7 +162,6 @@ export function Canvas() {
           return null;
         }
 
-        // Find all intersecting nodes
         const intersectingIds = nodes
           .filter(node => {
             const nodeLeft = node.position.x;
@@ -185,8 +192,77 @@ export function Canvas() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleToolClick = (tool: string, action: () => void) => {
+    setActiveTool(tool);
+    action();
+    // Return to select tool after adding
+    setTimeout(() => {
+      setActiveTool('select');
+    }, 200);
+  };
+
   return (
     <div className={styles.canvasWrapper}>
+      {/* Figma-style Floating Toolbar */}
+      <div className={styles.toolbar}>
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('select')}
+          title="Move/Select (V)"
+        >
+          <MousePointer2 size={15} />
+        </button>
+        <div className={styles.divider} />
+        
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'box' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('box', () => addBox({ x: 350, y: 200 }))}
+          title="Rectangle (R)"
+        >
+          <Square size={15} />
+        </button>
+        
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'circle' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('circle', () => addCircle({ x: 350, y: 200 }))}
+          title="Ellipse (O)"
+        >
+          <Circle size={15} />
+        </button>
+
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'triangle' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('triangle', () => addTriangle({ x: 350, y: 200 }))}
+          title="Triangle"
+        >
+          <Triangle size={15} />
+        </button>
+
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'diamond' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('diamond', () => addDiamond({ x: 350, y: 200 }))}
+          title="Diamond"
+        >
+          <DiamondIcon size={15} />
+        </button>
+
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'line' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('line', () => addLine({ x: 250, y: 200 }))}
+          title="Line (L)"
+        >
+          <Minus size={15} />
+        </button>
+
+        <button 
+          className={`${styles.toolButton} ${activeTool === 'arrow' ? styles.toolButtonActive : ''}`}
+          onClick={() => handleToolClick('arrow', () => addArrow({ x: 250, y: 200 }))}
+          title="Arrow (Shift+L)"
+        >
+          <ArrowRight size={15} />
+        </button>
+      </div>
+
       <div 
         className={styles.canvas} 
         onMouseDown={handleMouseDown}
@@ -197,7 +273,7 @@ export function Canvas() {
           <Node key={node.id} node={node} />
         ))}
 
-        {/* Marquee Selection Visual Representation */}
+        {/* Marquee Selection */}
         {marquee && (() => {
           const left = Math.min(marquee.startX, marquee.currentX);
           const top = Math.min(marquee.startY, marquee.currentY);
