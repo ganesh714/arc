@@ -238,6 +238,52 @@ export function SidePanel() {
                 />
               </div>
             </div>
+
+            {/* Connector Styling */}
+            <div className={styles.section}>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2">Connector Styling</span>
+              <div className="flex flex-col gap-3">
+                {/* Curve Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Connector Route</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={node.lineCurve || 'straight'}
+                    onChange={(e) => updateNode({ ...node, lineCurve: e.target.value as 'straight' | 'curved' })}
+                  >
+                    <option value="straight">Straight</option>
+                    <option value="curved">Curved</option>
+                  </select>
+                </div>
+
+                {/* Stroke Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Stroke Pattern</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={node.lineStyle || 'solid'}
+                    onChange={(e) => updateNode({ ...node, lineStyle: e.target.value as 'solid' | 'dashed' })}
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                  </select>
+                </div>
+
+                {/* Arrowhead Type */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-600 font-medium">Arrowheads</span>
+                  <select
+                    className="text-xs bg-slate-50 border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-medium cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={node.arrowType || (node.type === 'arrow' ? 'single' : 'none')}
+                    onChange={(e) => updateNode({ ...node, arrowType: e.target.value as 'none' | 'single' | 'double' })}
+                  >
+                    <option value="none">None</option>
+                    <option value="single">Single End</option>
+                    <option value="double">Double Ended</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </>
         );
       })()}
