@@ -5,12 +5,12 @@ import type { DiagramNode } from '@/types';
 interface DiagramContextType {
   nodes: DiagramNode[];
   selectedNodeId: string | null;
-  addBox: () => void;
-  addDiamond: () => void;
-  addCircle: () => void;
-  addTriangle: () => void;
-  addLine: () => void;
-  addArrow: () => void;
+  addBox: (position?: { x: number; y: number }) => void;
+  addDiamond: (position?: { x: number; y: number }) => void;
+  addCircle: (position?: { x: number; y: number }) => void;
+  addTriangle: (position?: { x: number; y: number }) => void;
+  addLine: (position?: { x: number; y: number }) => void;
+  addArrow: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
@@ -25,12 +25,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [nodes, setNodes] = useState<DiagramNode[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  const addBox = () => {
+  const addBox = (position?: { x: number; y: number }) => {
+    const width = 150;
+    const height = 100;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'box',
-      position: { x: 50, y: 50 },
-      dimensions: { width: 150, height: 100 },
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 50 },
+      dimensions: { width, height },
       content: 'New Box',
       style: {
         backgroundColor: '#e0f2fe',
@@ -41,12 +43,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
-  const addDiamond = () => {
+  const addDiamond = (position?: { x: number; y: number }) => {
+    const width = 120;
+    const height = 120;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'diamond',
-      position: { x: 80, y: 80 },
-      dimensions: { width: 120, height: 120 },
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 80, y: 80 },
+      dimensions: { width, height },
       content: 'New Diamond',
       style: {
         backgroundColor: '#fff3cd',
@@ -57,12 +61,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
-  const addCircle = () => {
+  const addCircle = (position?: { x: number; y: number }) => {
+    const width = 100;
+    const height = 100;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'circle',
-      position: { x: 100, y: 100 },
-      dimensions: { width: 100, height: 100 },
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
+      dimensions: { width, height },
       content: 'New Circle',
       style: {
         backgroundColor: '#f1f5f9',
@@ -73,12 +79,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
-  const addTriangle = () => {
+  const addTriangle = (position?: { x: number; y: number }) => {
+    const width = 120;
+    const height = 100;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'triangle',
-      position: { x: 120, y: 120 },
-      dimensions: { width: 120, height: 100 },
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 120, y: 120 },
+      dimensions: { width, height },
       content: 'New Triangle',
       style: {
         backgroundColor: '#f0fdf4',
@@ -89,34 +97,42 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
-  const addLine = () => {
+  const addLine = (position?: { x: number; y: number }) => {
+    const width = 200;
+    const height = 20;
+    const startX = position ? position.x - width / 2 : 150;
+    const startY = position ? position.y - height / 2 : 150;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'line',
-      position: { x: 150, y: 150 },
-      dimensions: { width: 200, height: 20 },
+      position: { x: startX, y: startY },
+      dimensions: { width, height },
       content: '',
       style: {
         borderColor: '#475569',
       },
-      startPoint: { x: 150, y: 160 },
-      endPoint: { x: 350, y: 160 }
+      startPoint: { x: startX, y: startY + 10 },
+      endPoint: { x: startX + width, y: startY + 10 }
     };
     setNodes((prev) => [...prev, newNode]);
   };
 
-  const addArrow = () => {
+  const addArrow = (position?: { x: number; y: number }) => {
+    const width = 200;
+    const height = 20;
+    const startX = position ? position.x - width / 2 : 150;
+    const startY = position ? position.y - height / 2 : 200;
     const newNode: DiagramNode = {
       id: crypto.randomUUID().split('-')[0],
       type: 'arrow',
-      position: { x: 150, y: 200 },
-      dimensions: { width: 200, height: 20 },
+      position: { x: startX, y: startY },
+      dimensions: { width, height },
       content: '',
       style: {
         borderColor: '#0284c7',
       },
-      startPoint: { x: 150, y: 210 },
-      endPoint: { x: 350, y: 210 }
+      startPoint: { x: startX, y: startY + 10 },
+      endPoint: { x: startX + width, y: startY + 10 }
     };
     setNodes((prev) => [...prev, newNode]);
   };
