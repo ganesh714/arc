@@ -4,7 +4,7 @@ import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import styles from './Header.module.css';
-import { Button } from '@/components/ui/button';
+import { FolderInput, FileDown } from 'lucide-react';
 
 export function Header() {
   const { nodes } = useDiagram();
@@ -21,10 +21,32 @@ export function Header() {
   return (
     <>
       <header className={styles.header}>
-        <h1 className={styles.title}>Project Loom</h1>
-        <div className={styles.actions} style={{ display: 'flex', gap: '8px' }}>
-          <Button onClick={() => setIsImportOpen(true)} variant="outline">Import Diagram</Button>
-          <Button onClick={handleExport} variant="outline">Export</Button>
+        <div className={styles.leftSection}>
+          <div className={styles.logoContainer}>
+            <div className={styles.logoIcon}>L</div>
+            <span className={styles.title}>Loom</span>
+          </div>
+          <div className={styles.statusIndicator}>
+            <span className={styles.statusDot}></span>
+            <span>Cloud Connected</span>
+          </div>
+        </div>
+
+        <div className={styles.centerSection}>
+          <span>Drafts</span>
+          <span style={{ color: 'var(--text-muted)' }}>/</span>
+          <span style={{ color: 'var(--text-primary)' }}>Interactive Diagram</span>
+        </div>
+
+        <div className={styles.actions}>
+          <button className={styles.btn} onClick={() => setIsImportOpen(true)}>
+            <FolderInput size={14} />
+            <span>Import JSON</span>
+          </button>
+          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleExport}>
+            <FileDown size={14} />
+            <span>Export Code</span>
+          </button>
         </div>
       </header>
       <ExportModal 
