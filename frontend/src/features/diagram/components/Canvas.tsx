@@ -14,7 +14,8 @@ import {
   Plus,
   Minus as ZoomOutIcon,
   Bold,
-  Trash2
+  Trash2,
+  ChevronDown
 } from 'lucide-react';
 
 export function Canvas() {
@@ -42,20 +43,68 @@ export function Canvas() {
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard Space detection for panning cursor
+  const [drawingPreview, setDrawingPreview] = useState<{
+    type: string;
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+
+  const drawingPreviewRef = useRef(drawingPreview);
+  drawingPreviewRef.current = drawingPreview;
+
+  const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow'>('box');
+
+  // Close shape dropdown on click away
+  useEffect(() => {
+    if (!shapeDropdownOpen) return;
+    const handleOutsideClick = () => {
+      setShapeDropdownOpen(false);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => {
+      window.removeEventListener('click', handleOutsideClick);
+    };
+  }, [shapeDropdownOpen]);
+
+  // Keyboard Space detection for panning cursor and tool hotkeys
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
       const targetTag = document.activeElement?.tagName;
       if (
         targetTag === 'INPUT' ||
         targetTag === 'TEXTAREA' ||
-        targetTag === 'SELECT'
+        targetTag === 'SELECT' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
       ) {
         return;
       }
       if (e.code === 'Space') {
         e.preventDefault();
         setSpacePressed(true);
+        return;
+      }
+
+      // Hotkeys for switching tools
+      const key = e.key.toLowerCase();
+      if (key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('select');
+      } else if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('box');
+        setCurrentShapeType('box');
+      } else if (key === 'o' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('circle');
+        setCurrentShapeType('circle');
+      } else if (key === 'l' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.shiftKey) {
+          setActiveTool('arrow');
+          setCurrentShapeType('arrow');
+        } else {
+          setActiveTool('line');
+          setCurrentShapeType('line');
+        }
       }
     };
 
@@ -224,6 +273,113 @@ export function Canvas() {
       return;
     }
 
+    if (activeTool !== 'select') {
+      // Shape drawing mode!
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = (e.clientX - rect.left) / zoom - panOffset.x;
+      const startY = (e.clientY - rect.top) / zoom - panOffset.y;
+
+      setDrawingPreview({
+        type: activeTool,
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY
+      });
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+        const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+        setDrawingPreview(prev => prev ? { ...prev, currentX, currentY } : null);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+
+        const currentPreview = drawingPreviewRef.current;
+        if (currentPreview) {
+          const sX = currentPreview.startX;
+          const sY = currentPreview.startY;
+          const cX = currentPreview.currentX;
+          const cY = currentPreview.currentY;
+
+          const left = Math.min(sX, cX);
+          const top = Math.min(sY, cY);
+          const width = Math.max(10, Math.abs(cX - sX));
+          const height = Math.max(10, Math.abs(cY - sY));
+
+          if (width > 5 || height > 5) {
+            const id = crypto.randomUUID().split('-')[0];
+            const isLineType = activeTool === 'line' || activeTool === 'arrow';
+            let newNode: any;
+
+            if (isLineType) {
+              newNode = {
+                id,
+                type: activeTool,
+                position: { x: left, y: top },
+                dimensions: { width, height },
+                content: '',
+                style: {
+                  borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
+                },
+                startPoint: { x: sX, y: sY },
+                endPoint: { x: cX, y: cY }
+              };
+            } else {
+              let defaultBg = '#2c2c2c';
+              let defaultBorder = '#555555';
+              let defaultText = 'Rectangle';
+              let customStyle: any = {};
+
+              if (activeTool === 'diamond') {
+                defaultBg = '#2e2c24';
+                defaultBorder = '#c69c3a';
+                defaultText = 'Diamond';
+                customStyle = { borderRadius: '2px' };
+              } else if (activeTool === 'circle') {
+                defaultText = 'Ellipse';
+              } else if (activeTool === 'triangle') {
+                defaultBg = '#1c2e24';
+                defaultBorder = '#2b8a4e';
+                defaultText = 'Triangle';
+              } else if (activeTool === 'star') {
+                defaultBg = '#38301b';
+                defaultBorder = '#9e7c1d';
+                defaultText = 'Star';
+              }
+
+              newNode = {
+                id,
+                type: activeTool,
+                position: { x: left, y: top },
+                dimensions: { width, height },
+                content: defaultText,
+                style: {
+                  backgroundColor: defaultBg,
+                  borderColor: defaultBorder,
+                  color: '#e3e3e3',
+                  ...customStyle
+                }
+              };
+            }
+
+            setNodes([...nodes, newNode]);
+            selectNode(id, false);
+          }
+        }
+
+        setDrawingPreview(null);
+        setActiveTool('select');
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return;
+    }
+
     if (e.target !== e.currentTarget) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -294,14 +450,6 @@ export function Canvas() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleToolClick = (tool: string, action: () => void) => {
-    setActiveTool(tool);
-    action();
-    setTimeout(() => {
-      setActiveTool('select');
-    }, 200);
-  };
-
   const handleZoomIn = () => {
     setZoom(Math.min(3.0, zoom + 0.1));
   };
@@ -313,19 +461,6 @@ export function Canvas() {
   const handleZoomReset = () => {
     setZoom(1.0);
     setPanOffset({ x: 0, y: 0 });
-  };
-
-  // Helper to place shapes at current visible center of the canvas viewport
-  const getCanvasCenter = () => {
-    const canvasEl = canvasRef.current;
-    if (canvasEl) {
-      const rect = canvasEl.getBoundingClientRect();
-      return {
-        x: rect.width / 2 / zoom - panOffset.x,
-        y: rect.height / 2 / zoom - panOffset.y
-      };
-    }
-    return { x: 350 - panOffset.x, y: 200 - panOffset.y };
   };
 
   // Quick contextual changes
@@ -345,6 +480,26 @@ export function Canvas() {
   const handleDeleteNode = (id: string) => {
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds([]);
+  };
+
+  const shapeIcons = {
+    box: <Square size={15} />,
+    circle: <Circle size={15} />,
+    triangle: <Triangle size={15} />,
+    diamond: <DiamondIcon size={15} />,
+    star: <StarIcon size={15} />,
+    line: <Minus size={15} />,
+    arrow: <ArrowRight size={15} />
+  };
+
+  const shapeLabels = {
+    box: 'Rectangle (R)',
+    circle: 'Ellipse (O)',
+    triangle: 'Triangle',
+    diamond: 'Diamond',
+    star: 'Star',
+    line: 'Line (L)',
+    arrow: 'Arrow (Shift+L)'
   };
 
   const getCursor = () => {
@@ -456,6 +611,149 @@ export function Canvas() {
               );
             })()}
 
+            {/* Live Drawing Preview */}
+            {drawingPreview && (() => {
+              const { type, startX, startY, currentX, currentY } = drawingPreview;
+              const left = Math.min(startX, currentX);
+              const top = Math.min(startY, currentY);
+              const width = Math.abs(currentX - startX);
+              const height = Math.abs(currentY - startY);
+
+              if (type === 'line' || type === 'arrow') {
+                const minX = Math.min(startX, currentX);
+                const minY = Math.min(startY, currentY);
+                const w = Math.max(1, Math.abs(currentX - startX));
+                const h = Math.max(1, Math.abs(currentY - startY));
+                const x1 = startX - minX;
+                const y1 = startY - minY;
+                const x2 = currentX - minX;
+                const y2 = currentY - minY;
+
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${minX}px`,
+                    top: `${minY}px`,
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    pointerEvents: 'none',
+                    overflow: 'visible'
+                  }}>
+                    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+                      {type === 'arrow' && (
+                        <defs>
+                          <marker
+                            id="preview-arrowhead"
+                            markerWidth="6"
+                            markerHeight="5"
+                            refX="5"
+                            refY="2.5"
+                            orient="auto"
+                          >
+                            <polygon points="0 0, 6 2.5, 0 5" fill="#0c8ce9" />
+                          </marker>
+                        </defs>
+                      )}
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#0c8ce9"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        markerEnd={type === 'arrow' ? "url(#preview-arrowhead)" : undefined}
+                      />
+                    </svg>
+                  </div>
+                );
+              }
+
+              // Rendering box, circle, diamond, triangle, star
+              let innerElement = null;
+              if (type === 'box') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '4px'
+                  }} />
+                );
+              } else if (type === 'circle') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '50%'
+                  }} />
+                );
+              } else if (type === 'diamond') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{
+                      width: '70.7%',
+                      height: '70.7%',
+                      transform: 'rotate(45deg)',
+                      border: '1.5px dashed #0c8ce9',
+                      backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                      boxSizing: 'border-box',
+                      borderRadius: '2px'
+                    }} />
+                  </div>
+                );
+              } else if (type === 'triangle') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="50,5 95,95 5,95"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'star') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ display: 'block' }}>
+                    <polygon
+                      points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              }
+
+              return (
+                <div style={{
+                  position: 'absolute',
+                  left: `${left}px`,
+                  top: `${top}px`,
+                  width: `${width}px`,
+                  height: `${height}px`,
+                  pointerEvents: 'none'
+                }}>
+                  {innerElement}
+                </div>
+              );
+            })()}
+
             {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
             {marquee && (() => {
               const left = Math.min(marquee.startX, marquee.currentX);
@@ -490,61 +788,50 @@ export function Canvas() {
         </button>
         <div className={styles.divider} />
         
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'box' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('box', () => addBox(getCanvasCenter()))}
-          title="Rectangle (R)"
-        >
-          <Square size={15} />
-        </button>
-        
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'circle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('circle', () => addCircle(getCanvasCenter()))}
-          title="Ellipse (O)"
-        >
-          <Circle size={15} />
-        </button>
+        <div className={styles.shapeSelectorContainer}>
+          <button
+            className={`${styles.toolButton} ${activeTool !== 'select' ? styles.toolButtonActive : ''}`}
+            onClick={() => setActiveTool(currentShapeType)}
+            title={shapeLabels[currentShapeType]}
+          >
+            {shapeIcons[currentShapeType]}
+          </button>
+          <button
+            className={`${styles.chevronButton} ${shapeDropdownOpen ? styles.chevronButtonActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShapeDropdownOpen(!shapeDropdownOpen);
+            }}
+            title="More shapes"
+          >
+            <ChevronDown size={12} />
+          </button>
 
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'triangle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('triangle', () => addTriangle(getCanvasCenter()))}
-          title="Triangle"
-        >
-          <Triangle size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'diamond' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('diamond', () => addDiamond(getCanvasCenter()))}
-          title="Diamond"
-        >
-          <DiamondIcon size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'star' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('star', () => addStar(getCanvasCenter()))}
-          title="Star"
-        >
-          <StarIcon size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'line' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('line', () => addLine(getCanvasCenter()))}
-          title="Line (L)"
-        >
-          <Minus size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'arrow' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('arrow', () => addArrow(getCanvasCenter()))}
-          title="Arrow (Shift+L)"
-        >
-          <ArrowRight size={15} />
-        </button>
+          {shapeDropdownOpen && (
+            <div className={styles.shapeDropdown} onClick={(e) => e.stopPropagation()}>
+              {Object.entries(shapeIcons).map(([type, icon]) => {
+                const isSelected = currentShapeType === type;
+                return (
+                  <button
+                    key={type}
+                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                    onClick={() => {
+                      setCurrentShapeType(type as any);
+                      setActiveTool(type);
+                      setShapeDropdownOpen(false);
+                    }}
+                  >
+                    <span className={styles.dropdownItemIcon}>{icon}</span>
+                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                    <span className={styles.dropdownItemShortcut}>
+                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Floating Zoom HUD (Fixed overlay inside wrapper) */}
