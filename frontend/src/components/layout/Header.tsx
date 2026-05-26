@@ -7,7 +7,7 @@ import styles from './Header.module.css';
 import { FolderInput, FileDown } from 'lucide-react';
 
 export function Header() {
-  const { nodes } = useDiagram();
+  const { nodes, isSidebarOpen } = useDiagram();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [exportData, setExportData] = useState('');
@@ -22,11 +22,13 @@ export function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.leftSection}>
-          <div className={styles.logoContainer}>
-            <div className={styles.logoIcon}>L</div>
-            <span className={styles.title}>Loom</span>
-          </div>
-          <div className={styles.statusIndicator}>
+          {!isSidebarOpen && (
+            <div className={styles.logoContainer}>
+              <div className={styles.logoIcon}>L</div>
+              <span className={styles.title}>Loom</span>
+            </div>
+          )}
+          <div className={styles.statusIndicator} style={{ marginLeft: isSidebarOpen ? '0px' : '12px' }}>
             <span className={styles.statusDot}></span>
             <span>Cloud Connected</span>
           </div>
