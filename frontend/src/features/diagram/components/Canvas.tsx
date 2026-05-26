@@ -20,7 +20,9 @@ import {
   Eraser,
   MessageSquare,
   Scaling as ScalingIcon,
-  Hand
+  Hand,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 export function Canvas() {
@@ -46,6 +48,8 @@ export function Canvas() {
     setSelectToolMode,
     undo,
     redo,
+    canUndo,
+    canRedo,
     saveHistoryState,
     copySelected,
     pasteSelected,
@@ -1004,6 +1008,28 @@ export function Canvas() {
             })()}
           </div>
         </div>
+      </div>
+
+      {/* Floating History Toolbar - Top Center */}
+      <div className={styles.historyToolbar}>
+        <button 
+          className={styles.toolButton} 
+          onClick={undo} 
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        >
+          <Undo2 size={16} />
+        </button>
+        <button 
+          className={styles.toolButton} 
+          onClick={redo} 
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        >
+          <Redo2 size={16} />
+        </button>
       </div>
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
