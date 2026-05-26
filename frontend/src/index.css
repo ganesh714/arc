@@ -118,6 +118,8 @@
 
 html {
   transition: background-color 0.2s ease, color 0.2s ease;
+  overflow: hidden;
+  height: 100%;
 }
 
 body {
@@ -126,6 +128,7 @@ body {
   color: var(--text-primary);
   font-family: var(--sans);
   overflow: hidden;
+  height: 100%;
 }
 
 /* Custom Scrollbar for Figma elegance */
