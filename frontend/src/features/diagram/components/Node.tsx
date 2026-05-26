@@ -1,4 +1,4 @@
-import type React from 'react';
+import React, { useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
@@ -9,8 +9,9 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom } = useDiagram();
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
+  const [isCardOpen, setIsCardOpen] = useState(node.content === '');
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const FigmaHandle = ({ position }: { position: string }) => {
@@ -115,6 +116,7 @@ export function Node({ node }: NodeProps) {
   } : undefined;
 
   const isLine = node.type === 'line' || node.type === 'arrow';
+  const isComment = node.type === 'comment';
 
   // Build text style object
   const textStyle: React.CSSProperties = {
@@ -142,19 +144,44 @@ export function Node({ node }: NodeProps) {
         }
       }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
-        resizeNode(
-          node.id,
-          {
-            width: parseInt(ref.style.width, 10),
-            height: parseInt(ref.style.height, 10),
-          },
-          position
-        );
+        const newWidth = parseInt(ref.style.width, 10);
+        const newHeight = parseInt(ref.style.height, 10);
+        
+        if (selectToolMode === 'scale') {
+          const oldWidth = node.dimensions.width;
+          const factor = newWidth / oldWidth;
+          const currentFontSizeStr = node.style?.fontSize || '11px';
+          const currentFontSizeNum = parseFloat(currentFontSizeStr) || 11;
+          const newFontSizeNum = Math.max(8, Math.round(currentFontSizeNum * factor));
+          const newFontSizeStr = `${newFontSizeNum}px`;
+          
+          resizeNode(
+            node.id,
+            { width: newWidth, height: newHeight },
+            position
+          );
+          
+          updateNode({
+            ...node,
+            position,
+            dimensions: { width: newWidth, height: newHeight },
+            style: {
+              ...node.style,
+              fontSize: newFontSizeStr
+            }
+          });
+        } else {
+          resizeNode(
+            node.id,
+            { width: newWidth, height: newHeight },
+            position
+          );
+        }
       }}
       scale={zoom}
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
-        isLine
+        (isLine || isComment)
           ? {
               top: false,
               bottom: false,
@@ -176,9 +203,14 @@ export function Node({ node }: NodeProps) {
               bottomRight: true,
             }
       }
-      resizeHandleComponent={activeHandles}
+      disableDragging={activeTool === 'erase'}
+      resizeHandleComponent={isComment ? undefined : activeHandles}
       onMouseDown={(e: any) => {
         e.stopPropagation();
+        if (activeTool === 'erase') {
+          setNodes(nodes.filter(n => n.id !== node.id));
+          return;
+        }
         if (e.shiftKey) {
           selectNode(node.id, true);
           return;
@@ -189,6 +221,7 @@ export function Node({ node }: NodeProps) {
       }}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
+        if (activeTool === 'erase') return;
         if (!e.shiftKey && selectedNodeIds.includes(node.id) && selectedNodeIds.length > 1) {
           selectNode(node.id, false);
         }
@@ -422,6 +455,156 @@ export function Node({ node }: NodeProps) {
               );
             })()}
           </svg>
+        </div>
+      ) : node.type === 'path' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
+            <path
+              d={(() => {
+                const pts = node.points || [];
+                if (pts.length === 0) return '';
+                const xs = pts.map(p => p.x);
+                const ys = pts.map(p => p.y);
+                const minX = Math.min(...xs);
+                const minY = Math.min(...ys);
+                const maxX = Math.max(...xs);
+                const maxY = Math.max(...ys);
+                const origW = Math.max(1, maxX - minX);
+                const origH = Math.max(1, maxY - minY);
+                
+                const scaleX = node.dimensions.width / origW;
+                const scaleY = node.dimensions.height / origH;
+                
+                return `M ${pts[0].x * scaleX} ${pts[0].y * scaleY} ` + 
+                       pts.slice(1).map(p => `L ${p.x * scaleX} ${p.y * scaleY}`).join(' ');
+              })()}
+              fill="none"
+              stroke={node.style?.borderColor || '#0c8ce9'}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      ) : node.type === 'comment' ? (
+        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+          {/* Comment Bubble Pin */}
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCardOpen(!isCardOpen);
+            }}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '16px 16px 16px 4px',
+              backgroundColor: '#ffc000',
+              border: '2px solid #ffffff',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.1s ease',
+              transform: isSelected ? 'scale(1.1)' : 'scale(1)'
+            }}
+            title={node.content || "Add comment"}
+          >
+            <span style={{ fontSize: '14px' }}>💬</span>
+          </div>
+
+          {/* Comment Details Card */}
+          {isCardOpen && (
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                left: '38px',
+                top: '0',
+                backgroundColor: 'var(--bg-panel)',
+                border: '1px solid var(--border-default)',
+                borderRadius: '8px',
+                padding: '12px',
+                width: '220px',
+                boxShadow: 'var(--shadow-lg)',
+                zIndex: 200,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Comment Pin</span>
+                <button
+                  onClick={() => setIsCardOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '10px' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {node.content ? (
+                <>
+                  <div style={{ fontSize: '11px', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                    {node.content}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Just now</span>
+                    <button
+                      onClick={() => {
+                        setNodes(nodes.filter(n => n.id !== node.id));
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#f04438', cursor: 'pointer', fontSize: '10px' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <textarea
+                    placeholder="Type a comment..."
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      height: '60px',
+                      backgroundColor: 'var(--bg-hover)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: '4px',
+                      padding: '6px',
+                      color: 'var(--text-primary)',
+                      fontSize: '11px',
+                      outline: 'none',
+                      resize: 'none'
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const val = (e.target as HTMLTextAreaElement).value.trim();
+                        if (val) {
+                          updateNode({ ...node, content: val });
+                          setIsCardOpen(false);
+                        } else {
+                          setNodes(nodes.filter(n => n.id !== node.id));
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (val) {
+                        updateNode({ ...node, content: val });
+                        setIsCardOpen(false);
+                      } else {
+                        setNodes(nodes.filter(n => n.id !== node.id));
+                      }
+                    }}
+                  />
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Press Enter to save</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div
