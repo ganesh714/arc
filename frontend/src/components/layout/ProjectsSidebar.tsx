@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { Folder, FolderOpen, File, Plus, Search, Check, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Folder, FolderOpen, File, Plus, Search, Check, X, ChevronDown, ChevronRight, PanelLeftClose } from 'lucide-react';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
-  const { projects, activeProjectId, switchProject, addProject } = useDiagram();
+  const { projects, activeProjectId, switchProject, addProject, toggleSidebar } = useDiagram();
   const [searchTerm, setSearchTerm] = useState('');
   
   // Track collapsed folders (categories)
@@ -79,7 +79,13 @@ export function ProjectsSidebar() {
     <div className={styles.sidebar}>
       {/* Header */}
       <div className={styles.header}>
-        <span className={styles.title}>Files & Projects</span>
+        <div className={styles.logoWrapper}>
+          <div className={styles.logoIcon}>L</div>
+          <span className={styles.logoText}>Loom</span>
+        </div>
+        <button className={styles.collapseBtn} onClick={toggleSidebar} title="Collapse sidebar">
+          <PanelLeftClose size={14} />
+        </button>
       </div>
 
       {/* Search Bar */}
