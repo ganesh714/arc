@@ -16,7 +16,7 @@ import {
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<'layers' | 'assets'>('layers');
-  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds } = useDiagram();
+  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState } = useDiagram();
   
   // Drag and drop states for layer reordering
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -56,6 +56,7 @@ export function LeftSidebar() {
 
   const handleDeleteNode = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds(selectedNodeIds.filter(selectedId => selectedId !== id));
   };
@@ -86,6 +87,7 @@ export function LeftSidebar() {
     const [removed] = newNodes.splice(dragOriginalIdx, 1);
     newNodes.splice(dropOriginalIdx, 0, removed);
 
+    saveHistoryState(nodes);
     setNodes(newNodes);
     setDraggedIndex(null);
     setDragOverIndex(null);

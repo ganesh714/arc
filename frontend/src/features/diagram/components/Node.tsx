@@ -233,6 +233,7 @@ export function Node({ node }: NodeProps) {
         if (activeTool === 'hand') return; // let mouse down bubble up to pan the canvas
         e.stopPropagation();
         if (activeTool === 'erase') {
+          saveHistoryState(nodes);
           setNodes(nodes.filter(n => n.id !== node.id));
           return;
         }
@@ -248,6 +249,7 @@ export function Node({ node }: NodeProps) {
         setIsHovered(true);
         // Drag-erasing functionality
         if (activeTool === 'erase' && e.buttons === 1) {
+          saveHistoryState(nodes);
           setNodes(nodes.filter(n => n.id !== node.id));
         }
       }}
@@ -593,6 +595,7 @@ export function Node({ node }: NodeProps) {
                     <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Just now</span>
                     <button
                       onClick={() => {
+                        saveHistoryState(nodes);
                         setNodes(nodes.filter(n => n.id !== node.id));
                       }}
                       style={{ background: 'transparent', border: 'none', color: '#f04438', cursor: 'pointer', fontSize: '10px' }}
