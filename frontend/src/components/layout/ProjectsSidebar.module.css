@@ -190,3 +190,82 @@
   background-color: var(--bg-hover);
   color: var(--text-primary);
 }
+
+/* Collapsed Sidebar Styles */
+.collapsed {
+  align-items: center;
+}
+
+.logoContainerCollapsed {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.logoContainerCollapsed:hover img {
+  transform: scale(1.08);
+}
+
+.logoContainerCollapsed img {
+  transition: transform 0.15s ease;
+}
+
+.projectListCollapsed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  width: 100%;
+}
+
+.projectIconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.projectIconBtn:hover {
+  background-color: var(--bg-hover);
+  color: var(--accent-blue);
+}
+
+.footerCollapsed {
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  border-top: 1px solid var(--border-default);
+}
+
+.addBtnCollapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px dashed var(--border-default);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.addBtnCollapsed:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background-color: var(--bg-active);
+}
+
