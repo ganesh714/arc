@@ -40,7 +40,10 @@ export function ProjectsSidebar() {
         title="Collapse sidebar"
         style={{ cursor: 'pointer' }}
       >
-        <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
+        <div className={styles.logoWrapper}>
+          <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
+          <span className={styles.logoText}>Loom</span>
+        </div>
       </div>
 
       <div className={styles.divider} />
@@ -50,65 +53,54 @@ export function ProjectsSidebar() {
         {projects.map((project) => {
           const isActive = project.id === activeProjectId;
           return (
-            <div key={project.id} className={styles.itemWrapper}>
-              <button
-                className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
-                onClick={() => switchProject(project.id)}
-              >
-                <Folder size={18} />
-              </button>
-              {/* Tooltip */}
-              <div className={styles.tooltip}>
-                <span className={styles.tooltipName}>{project.name}</span>
-                <span className={styles.tooltipCount}>{project.nodes.length} shapes</span>
-                {project.category && <span className={styles.tooltipCategory}>{project.category}</span>}
-              </div>
-              {isActive && <div className={styles.activeIndicator} />}
-            </div>
+            <button
+              key={project.id}
+              className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
+              onClick={() => switchProject(project.id)}
+            >
+              <Folder size={14} className={styles.itemIcon} />
+              <span className={styles.projectName}>{project.name}</span>
+              <span className={styles.itemCount}>{project.nodes.length}</span>
+            </button>
           );
         })}
       </div>
 
-      {/* Footer / Add Project Button (in place of collapse icon) */}
+      {/* Footer / Add Project Button */}
       <div className={styles.footer}>
-        <div className={styles.itemWrapper}>
+        {!isCreating ? (
           <button
             className={styles.addBtn}
-            onClick={() => setIsCreating(!isCreating)}
+            onClick={() => setIsCreating(true)}
             title="New File / Project"
           >
-            <Plus size={18} />
+            <Plus size={14} />
+            <span>New File / Project</span>
           </button>
-
-          {/* Inline Popover to type new project name */}
-          {isCreating && (
-            <div ref={popoverRef} className={styles.popover}>
-              <span className={styles.popoverTitle}>New Project</span>
-              <div className={styles.popoverInputContainer}>
-                <input
-                  type="text"
-                  className={styles.popoverInput}
-                  placeholder="Project name..."
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateProject();
-                    else if (e.key === 'Escape') setIsCreating(false);
-                  }}
-                  autoFocus
-                />
-                <div className={styles.popoverActions}>
-                  <button className={styles.confirmBtn} onClick={handleCreateProject} title="Save">
-                    <Check size={12} />
-                  </button>
-                  <button className={styles.cancelBtn} onClick={() => setIsCreating(false)} title="Cancel">
-                    <X size={12} />
-                  </button>
-                </div>
-              </div>
+        ) : (
+          <div ref={popoverRef} className={styles.inputContainer}>
+            <input
+              type="text"
+              className={styles.input}
+              placeholder="Project name..."
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateProject();
+                else if (e.key === 'Escape') setIsCreating(false);
+              }}
+              autoFocus
+            />
+            <div className={styles.inputActions}>
+              <button className={styles.confirmBtn} onClick={handleCreateProject} title="Save">
+                <Check size={12} />
+              </button>
+              <button className={styles.cancelBtn} onClick={() => setIsCreating(false)} title="Cancel">
+                <X size={12} />
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
