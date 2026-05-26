@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Node } from './Node';
 import styles from './Canvas.module.css';
@@ -37,6 +37,68 @@ export function Canvas() {
   } = useDiagram();
 
   const [activeTool, setActiveTool] = useState<string>('select');
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [spacePressed, setSpacePressed] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard Space detection for panning cursor
+  useEffect(() => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      const targetTag = document.activeElement?.tagName;
+      if (
+        targetTag === 'INPUT' ||
+        targetTag === 'TEXTAREA' ||
+        targetTag === 'SELECT'
+      ) {
+        return;
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setSpacePressed(true);
+      }
+    };
+
+    const handleKeyUpGlobal = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setSpacePressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    window.addEventListener('keyup', handleKeyUpGlobal);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDownGlobal);
+      window.removeEventListener('keyup', handleKeyUpGlobal);
+    };
+  }, []);
+
+  // Wheel listener: Ctrl + scroll zooms, regular scroll pans (trackpad)
+  useEffect(() => {
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+
+    const handleWheelRaw = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const zoomFactor = 0.05;
+        const direction = e.deltaY < 0 ? 1 : -1;
+        const newZoom = Math.min(3.0, Math.max(0.1, zoom + direction * zoomFactor));
+        setZoom(Number(newZoom.toFixed(2)));
+      } else {
+        e.preventDefault();
+        setPanOffset(prev => ({
+          x: prev.x - e.deltaX / zoom,
+          y: prev.y - e.deltaY / zoom
+        }));
+      }
+    };
+
+    canvasEl.addEventListener('wheel', handleWheelRaw, { passive: false });
+    return () => {
+      canvasEl.removeEventListener('wheel', handleWheelRaw);
+    };
+  }, [zoom]);
 
   // Keyboard arrow keys nudging
   useEffect(() => {
@@ -118,8 +180,8 @@ export function Canvas() {
     if (!type) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom;
-    const y = (e.clientY - rect.top) / zoom;
+    const x = (e.clientX - rect.left) / zoom - panOffset.x;
+    const y = (e.clientY - rect.top) / zoom - panOffset.y;
 
     if (type === 'box') addBox({ x, y });
     else if (type === 'diamond') addDiamond({ x, y });
@@ -131,11 +193,42 @@ export function Canvas() {
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const isMiddleClick = e.button === 1;
+    const isSpaceDrag = spacePressed;
+
+    if (isMiddleClick || isSpaceDrag) {
+      e.preventDefault();
+      setIsPanning(true);
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const initialPan = { ...panOffset };
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        setPanOffset({
+          x: initialPan.x + dx / zoom,
+          y: initialPan.y + dy / zoom
+        });
+      };
+
+      const handleMouseUp = () => {
+        setIsPanning(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return;
+    }
+
     if (e.target !== e.currentTarget) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const startX = (e.clientX - rect.left) / zoom;
-    const startY = (e.clientY - rect.top) / zoom;
+    const startX = (e.clientX - rect.left) / zoom - panOffset.x;
+    const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
     setMarquee({
       startX,
@@ -145,8 +238,8 @@ export function Canvas() {
     });
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const currentX = (moveEvent.clientX - rect.left) / zoom;
-      const currentY = (moveEvent.clientY - rect.top) / zoom;
+      const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+      const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
       setMarquee(prev => prev ? { ...prev, currentX, currentY } : null);
     };
 
@@ -210,15 +303,29 @@ export function Canvas() {
   };
 
   const handleZoomIn = () => {
-    setZoom(Math.min(2.0, zoom + 0.1));
+    setZoom(Math.min(3.0, zoom + 0.1));
   };
 
   const handleZoomOut = () => {
-    setZoom(Math.max(0.5, zoom - 0.1));
+    setZoom(Math.max(0.1, zoom - 0.1));
   };
 
   const handleZoomReset = () => {
     setZoom(1.0);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  // Helper to place shapes at current visible center of the canvas viewport
+  const getCanvasCenter = () => {
+    const canvasEl = canvasRef.current;
+    if (canvasEl) {
+      const rect = canvasEl.getBoundingClientRect();
+      return {
+        x: rect.width / 2 / zoom - panOffset.x,
+        y: rect.height / 2 / zoom - panOffset.y
+      };
+    }
+    return { x: 350 - panOffset.x, y: 200 - panOffset.y };
   };
 
   // Quick contextual changes
@@ -240,21 +347,35 @@ export function Canvas() {
     setSelectedNodeIds([]);
   };
 
+  const getCursor = () => {
+    if (isPanning) return 'grabbing';
+    if (spacePressed) return 'grab';
+    return 'default';
+  };
+
   return (
     <div className={styles.canvasWrapper}>
       {/* Main Canvas Area */}
       <div 
+        ref={canvasRef}
         className={styles.canvas} 
         onMouseDown={handleMouseDown}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        style={{
+          cursor: getCursor(),
+          backgroundColor: 'var(--bg-canvas)',
+          backgroundImage: 'radial-gradient(var(--border-default) 1px, transparent 1px)',
+          backgroundSize: `${16 * zoom}px ${16 * zoom}px`,
+          backgroundPosition: `${panOffset.x * zoom}px ${panOffset.y * zoom}px`,
+        }}
       >
         {/* Scaled viewport container */}
         <div style={{
-          transform: `scale(${zoom})`,
+          transform: `translate(${panOffset.x * zoom}px, ${panOffset.y * zoom}px) scale(${zoom})`,
           transformOrigin: 'top left',
-          width: `${100 / zoom}%`,
-          height: `${100 / zoom}%`,
+          width: '100%',
+          height: '100%',
           position: 'absolute',
           top: 0,
           left: 0,
@@ -334,29 +455,28 @@ export function Canvas() {
                 </div>
               );
             })()}
+
+            {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
+            {marquee && (() => {
+              const left = Math.min(marquee.startX, marquee.currentX);
+              const top = Math.min(marquee.startY, marquee.currentY);
+              const width = Math.abs(marquee.currentX - marquee.startX);
+              const height = Math.abs(marquee.currentY - marquee.startY);
+              
+              return (
+                <div 
+                  className={styles.marqueeBox}
+                  style={{
+                    left: `${left}px`,
+                    top: `${top}px`,
+                    width: `${width}px`,
+                    height: `${height}px`
+                  }}
+                />
+              );
+            })()}
           </div>
         </div>
-
-        {/* Marquee Selection */}
-        {marquee && (() => {
-          const left = Math.min(marquee.startX, marquee.currentX) * zoom;
-          const top = Math.min(marquee.startY, marquee.currentY) * zoom;
-          const width = Math.abs(marquee.currentX - marquee.startX) * zoom;
-          const height = Math.abs(marquee.currentY - marquee.startY) * zoom;
-          
-          return (
-            <div 
-              className={styles.marqueeBox}
-              style={{
-                left,
-                top,
-                width,
-                height
-              }}
-            />
-          );
-        })()}
-
       </div>
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
@@ -372,7 +492,7 @@ export function Canvas() {
         
         <button 
           className={`${styles.toolButton} ${activeTool === 'box' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('box', () => addBox({ x: 350, y: 200 }))}
+          onClick={() => handleToolClick('box', () => addBox(getCanvasCenter()))}
           title="Rectangle (R)"
         >
           <Square size={15} />
@@ -380,7 +500,7 @@ export function Canvas() {
         
         <button 
           className={`${styles.toolButton} ${activeTool === 'circle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('circle', () => addCircle({ x: 350, y: 200 }))}
+          onClick={() => handleToolClick('circle', () => addCircle(getCanvasCenter()))}
           title="Ellipse (O)"
         >
           <Circle size={15} />
@@ -388,7 +508,7 @@ export function Canvas() {
 
         <button 
           className={`${styles.toolButton} ${activeTool === 'triangle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('triangle', () => addTriangle({ x: 350, y: 200 }))}
+          onClick={() => handleToolClick('triangle', () => addTriangle(getCanvasCenter()))}
           title="Triangle"
         >
           <Triangle size={15} />
@@ -396,7 +516,7 @@ export function Canvas() {
 
         <button 
           className={`${styles.toolButton} ${activeTool === 'diamond' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('diamond', () => addDiamond({ x: 350, y: 200 }))}
+          onClick={() => handleToolClick('diamond', () => addDiamond(getCanvasCenter()))}
           title="Diamond"
         >
           <DiamondIcon size={15} />
@@ -404,7 +524,7 @@ export function Canvas() {
 
         <button 
           className={`${styles.toolButton} ${activeTool === 'star' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('star', () => addStar({ x: 350, y: 200 }))}
+          onClick={() => handleToolClick('star', () => addStar(getCanvasCenter()))}
           title="Star"
         >
           <StarIcon size={15} />
@@ -412,7 +532,7 @@ export function Canvas() {
 
         <button 
           className={`${styles.toolButton} ${activeTool === 'line' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('line', () => addLine({ x: 250, y: 200 }))}
+          onClick={() => handleToolClick('line', () => addLine(getCanvasCenter()))}
           title="Line (L)"
         >
           <Minus size={15} />
@@ -420,7 +540,7 @@ export function Canvas() {
 
         <button 
           className={`${styles.toolButton} ${activeTool === 'arrow' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('arrow', () => addArrow({ x: 250, y: 200 }))}
+          onClick={() => handleToolClick('arrow', () => addArrow(getCanvasCenter()))}
           title="Arrow (Shift+L)"
         >
           <ArrowRight size={15} />
