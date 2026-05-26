@@ -51,115 +51,119 @@ function MainAppContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 overflow-hidden relative">
-      <Header />
-      
-      {/* Workspace Area */}
-      <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
-        {/* Collapse Toggle floating button when sidebar is closed */}
-        {!isSidebarOpen && (
-          <button
-            onClick={toggleSidebar}
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden relative">
+      {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
+      <div 
+        style={{ 
+          width: isSidebarOpen ? '200px' : '0px', 
+          minWidth: isSidebarOpen ? '200px' : '0px', 
+          height: '100%', 
+          position: 'relative',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          overflow: 'hidden',
+          flexShrink: 0
+        }}
+      >
+        <ProjectsSidebar />
+      </div>
+
+      {/* Main Content Area (Header + Workspace) */}
+      <div className="flex flex-col flex-1 h-full relative overflow-hidden">
+        <Header />
+        
+        {/* Workspace Area */}
+        <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
+          {/* Collapse Toggle floating button when sidebar is closed */}
+          {!isSidebarOpen && (
+            <button
+              onClick={toggleSidebar}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '12px',
+                zIndex: 100,
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                backgroundColor: 'var(--bg-panel)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Expand sidebar"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-panel)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              <PanelLeftOpen size={14} />
+            </button>
+          )}
+
+          {/* Left Sidebar wrapper */}
+          <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
+            <LeftSidebar />
+          </div>
+
+          {/* Left Resize Divider */}
+          <div
+            onMouseDown={startLeftResize}
             style={{
-              position: 'absolute',
-              left: '12px',
-              top: '12px',
-              zIndex: 100,
-              width: '28px',
-              height: '28px',
-              borderRadius: '6px',
-              backgroundColor: 'var(--bg-panel)',
-              border: '1px solid var(--border-default)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              position: 'relative',
+              zIndex: 49,
               display: 'flex',
-              alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              transition: 'all 0.15s ease'
+              height: '100%',
+              flexShrink: 0
             }}
-            title="Expand sidebar"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--bg-panel)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
+            className="group"
           >
-            <PanelLeftOpen size={14} />
-          </button>
-        )}
+            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+          </div>
 
-        {/* Projects Sidebar wrapper (collapsible leftmost column) */}
-        <div 
-          style={{ 
-            width: isSidebarOpen ? '160px' : '0px', 
-            minWidth: isSidebarOpen ? '160px' : '0px', 
-            height: '100%', 
-            position: 'relative',
-            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            overflow: 'hidden'
-          }}
-        >
-          <ProjectsSidebar />
-        </div>
+          {/* Main Canvas */}
+          <div className="flex-1 h-full relative overflow-hidden">
+            <Canvas />
+          </div>
 
-        {/* Left Sidebar wrapper */}
-        <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
-          <LeftSidebar />
-        </div>
+          {/* Right Resize Divider */}
+          <div
+            onMouseDown={startRightResize}
+            style={{
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              position: 'relative',
+              zIndex: 49,
+              display: 'flex',
+              justifyContent: 'center',
+              height: '100%',
+              flexShrink: 0
+            }}
+            className="group"
+          >
+            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+          </div>
 
-        {/* Left Resize Divider */}
-        <div
-          onMouseDown={startLeftResize}
-          style={{
-            width: '4px',
-            cursor: 'col-resize',
-            backgroundColor: 'transparent',
-            position: 'relative',
-            zIndex: 49,
-            display: 'flex',
-            justifyContent: 'center',
-            height: '100%',
-            flexShrink: 0
-          }}
-          className="group"
-        >
-          <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-        </div>
-
-        {/* Main Canvas */}
-        <div className="flex-1 h-full relative overflow-hidden">
-          <Canvas />
-        </div>
-
-        {/* Right Resize Divider */}
-        <div
-          onMouseDown={startRightResize}
-          style={{
-            width: '4px',
-            cursor: 'col-resize',
-            backgroundColor: 'transparent',
-            position: 'relative',
-            zIndex: 49,
-            display: 'flex',
-            justifyContent: 'center',
-            height: '100%',
-            flexShrink: 0
-          }}
-          className="group"
-        >
-          <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-        </div>
-
-        {/* Right Sidebar wrapper */}
-        <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
-          <SidePanel />
+          {/* Right Sidebar wrapper */}
+          <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
+            <SidePanel />
+          </div>
         </div>
       </div>
-    </div>
+    </div>;
   );
 }
 
