@@ -282,6 +282,7 @@ export function Canvas() {
     };
   }, [selectedNodeIds, setNodes, nodes]);
 
+  const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -486,24 +487,24 @@ export function Canvas() {
                 endPoint: { x: cX, y: cY }
               };
             } else {
-              let defaultBg = '#2c2c2c';
-              let defaultBorder = '#555555';
+              let defaultBg = 'var(--bg-hover)';
+              let defaultBorder = 'var(--border-active)';
               let defaultText = 'Rectangle';
               let customStyle: any = {};
 
               if (activeTool === 'diamond') {
-                defaultBg = '#2e2c24';
+                defaultBg = 'var(--bg-hover)';
                 defaultBorder = '#c69c3a';
                 defaultText = 'Diamond';
                 customStyle = { borderRadius: '2px' };
               } else if (activeTool === 'circle') {
                 defaultText = 'Ellipse';
               } else if (activeTool === 'triangle') {
-                defaultBg = '#1c2e24';
+                defaultBg = 'var(--bg-hover)';
                 defaultBorder = '#2b8a4e';
                 defaultText = 'Triangle';
               } else if (activeTool === 'star') {
-                defaultBg = '#38301b';
+                defaultBg = 'var(--bg-hover)';
                 defaultBorder = '#9e7c1d';
                 defaultText = 'Star';
               }
@@ -517,7 +518,7 @@ export function Canvas() {
                 style: {
                   backgroundColor: defaultBg,
                   borderColor: defaultBorder,
-                  color: '#e3e3e3',
+                  color: 'var(--text-primary)',
                   ...customStyle
                 }
               };
@@ -537,20 +538,31 @@ export function Canvas() {
       return;
     }
 
-    if (e.target !== e.currentTarget) return;
+    // Select tool — check if we should drag-select or interact with a node
+    if (e.button !== 0) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const startX = (e.clientX - rect.left) / zoom - panOffset.x;
     const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
-    setMarquee({
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY
-    });
+    // Begin marquee regardless of whether we hit a node or empty space.
+    // The marquee will only commit if the user dragged more than a threshold.
+    setMarquee({ startX, startY, currentX: startX, currentY: startY });
+    setIsDragSelecting(false);
+
+    // Record where we started for click-vs-drag detection
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startClientX;
+      const dy = moveEvent.clientY - startClientY;
+      const dragDist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dragDist > 4) {
+        setIsDragSelecting(true);
+      }
+
       const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
       const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
       setMarquee(prev => prev ? { ...prev, currentX, currentY } : null);
@@ -561,6 +573,7 @@ export function Canvas() {
       document.removeEventListener('mouseup', handleMouseUp);
 
       setMarquee(currentMarquee => {
+        setIsDragSelecting(false);
         if (!currentMarquee) return null;
 
         const left = Math.min(currentMarquee.startX, currentMarquee.currentX);
@@ -570,9 +583,11 @@ export function Canvas() {
         const width = right - left;
         const height = bottom - top;
 
-        if (width < 3 && height < 3) {
-          if (!upEvent.shiftKey) {
-            selectNode(null);
+        // Small drag (< 5px) = treat as a click, not a marquee
+        if (width < 5 && height < 5) {
+          // Only deselect if clicking directly on the canvas (not a node)
+          if (upEvent.target === upEvent.currentTarget || (upEvent.target as HTMLElement).classList.contains('canvas')) {
+            if (!upEvent.shiftKey) selectNode(null);
           }
           return null;
         }
@@ -583,13 +598,7 @@ export function Canvas() {
             const nodeTop = node.position.y;
             const nodeRight = node.position.x + node.dimensions.width;
             const nodeBottom = node.position.y + node.dimensions.height;
-
-            return (
-              nodeLeft < right &&
-              nodeRight > left &&
-              nodeTop < bottom &&
-              nodeBottom > top
-            );
+            return nodeLeft < right && nodeRight > left && nodeTop < bottom && nodeBottom > top;
           })
           .map(node => node.id);
 
@@ -663,6 +672,7 @@ export function Canvas() {
     if (isPanning) return 'grabbing';
     if (spacePressed || activeTool === 'hand') return 'grab';
     if (activeTool === 'erase') return 'cell';
+    if (isDragSelecting) return 'crosshair';
     return 'default';
   };
 
@@ -951,7 +961,7 @@ export function Canvas() {
             })()}
 
             {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
-            {marquee && (() => {
+            {marquee && isDragSelecting && (() => {
               const left = Math.min(marquee.startX, marquee.currentX);
               const top = Math.min(marquee.startY, marquee.currentY);
               const width = Math.abs(marquee.currentX - marquee.startX);
