@@ -25,9 +25,9 @@
 
 .logo {
   width: 24px;
-  height: 24px;
-  object-fit: contain;
-  border-radius: 6px;
+  height: auto;
+  color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .logoText {
