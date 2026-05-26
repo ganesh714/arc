@@ -1161,70 +1161,78 @@ export function Canvas() {
 
           {shapeDropdownOpen && (
             <div className={styles.shapeDropdown} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.dropdownCategory}>Basic Shapes</div>
-              {['box', 'circle', 'triangle', 'star', 'pill'].map((type) => {
-                const isSelected = currentShapeType === type;
-                return (
-                  <button
-                    key={type}
-                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
-                    onClick={() => {
-                      setCurrentShapeType(type as any);
-                      setActiveTool(type);
-                      setShapeDropdownOpen(false);
-                    }}
-                  >
-                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
-                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
-                    <span className={styles.dropdownItemShortcut}>
-                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : ''}
-                    </span>
-                  </button>
-                );
-              })}
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Basic Shapes</div>
+                {['box', 'circle', 'triangle', 'star', 'pill'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                      <span className={styles.dropdownItemShortcut}>
+                        {type === 'box' ? 'R' : type === 'circle' ? 'O' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
               
-              <div className={styles.dropdownDivider} />
-              <div className={styles.dropdownCategory}>Flowchart</div>
-              {['diamond', 'hexagon', 'parallelogram', 'database', 'note'].map((type) => {
-                const isSelected = currentShapeType === type;
-                return (
-                  <button
-                    key={type}
-                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
-                    onClick={() => {
-                      setCurrentShapeType(type as any);
-                      setActiveTool(type);
-                      setShapeDropdownOpen(false);
-                    }}
-                  >
-                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
-                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
-                  </button>
-                );
-              })}
+              <div className={styles.columnDivider} />
 
-              <div className={styles.dropdownDivider} />
-              <div className={styles.dropdownCategory}>Connectors</div>
-              {['line', 'arrow'].map((type) => {
-                const isSelected = currentShapeType === type;
-                return (
-                  <button
-                    key={type}
-                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
-                    onClick={() => {
-                      setCurrentShapeType(type as any);
-                      setActiveTool(type);
-                      setShapeDropdownOpen(false);
-                    }}
-                  >
-                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
-                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
-                    <span className={styles.dropdownItemShortcut}>
-                      {type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
-                    </span>
-                  </button>
-                );
-              })}
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Flowchart</div>
+                {['diamond', 'hexagon', 'parallelogram', 'database', 'note'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={styles.columnDivider} />
+
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Connectors</div>
+                {['line', 'arrow'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                      <span className={styles.dropdownItemShortcut}>
+                        {type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
