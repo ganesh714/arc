@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { Folder, Plus, Check, X } from 'lucide-react';
+import { Folder, Plus, Check, X, FolderKanban } from 'lucide-react';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
-  const { projects, activeProjectId, switchProject, addProject, toggleSidebar } = useDiagram();
+  const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
   
   // Track adding project
   const [isCreating, setIsCreating] = useState(false);
@@ -30,6 +30,49 @@ export function ProjectsSidebar() {
     window.addEventListener('mousedown', handleOutsideClick);
     return () => window.removeEventListener('mousedown', handleOutsideClick);
   }, [isCreating]);
+
+  // Collapsed Sidebar view (simple icons)
+  if (!isSidebarOpen) {
+    return (
+      <div className={`${styles.sidebar} ${styles.collapsed}`}>
+        {/* Top Logo - Clickable to open */}
+        <div 
+          className={styles.logoContainerCollapsed} 
+          onClick={toggleSidebar} 
+          title="Expand sidebar"
+        >
+          <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* Single Projects Folder Icon */}
+        <div className={styles.projectListCollapsed}>
+          <button 
+            className={styles.projectIconBtn} 
+            onClick={toggleSidebar}
+            title="Projects"
+          >
+            <FolderKanban size={20} />
+          </button>
+        </div>
+
+        {/* Footer with Plus icon */}
+        <div className={styles.footerCollapsed}>
+          <button
+            className={styles.addBtnCollapsed}
+            onClick={() => {
+              toggleSidebar();
+              setIsCreating(true);
+            }}
+            title="New File / Project"
+          >
+            <Plus size={20} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.sidebar}>
