@@ -12,6 +12,7 @@ export function Node({ node }: NodeProps) {
   const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
+  const [isHovered, setIsHovered] = useState(false);
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const FigmaHandle = ({ position }: { position: string }) => {
@@ -159,6 +160,13 @@ export function Node({ node }: NodeProps) {
           moveNode(node.id, { x: d.x, y: d.y });
         }
       }}
+      onDragStart={(e) => {
+        // Prevent drag triggers when editing comments
+        if (isComment && isCardOpen) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }}
       onResizeStop={(_e, _direction, ref, _delta, position) => {
         const newWidth = parseInt(ref.style.width, 10);
         const newHeight = parseInt(ref.style.height, 10);
@@ -197,7 +205,7 @@ export function Node({ node }: NodeProps) {
       scale={zoom}
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
-        (isLine || isComment)
+        (isLine || isComment || activeTool === 'hand' || activeTool === 'erase')
           ? {
               top: false,
               bottom: false,
@@ -219,9 +227,10 @@ export function Node({ node }: NodeProps) {
               bottomRight: true,
             }
       }
-      disableDragging={activeTool === 'erase'}
-      resizeHandleComponent={isComment ? undefined : activeHandles}
+      disableDragging={activeTool === 'erase' || activeTool === 'hand' || (isComment && isCardOpen)}
+      resizeHandleComponent={(isComment || activeTool === 'hand' || activeTool === 'erase') ? undefined : activeHandles}
       onMouseDown={(e: any) => {
+        if (activeTool === 'hand') return; // let mouse down bubble up to pan the canvas
         e.stopPropagation();
         if (activeTool === 'erase') {
           setNodes(nodes.filter(n => n.id !== node.id));
@@ -235,7 +244,18 @@ export function Node({ node }: NodeProps) {
           selectNode(node.id, false);
         }
       }}
+      onMouseEnter={(e: any) => {
+        setIsHovered(true);
+        // Drag-erasing functionality
+        if (activeTool === 'erase' && e.buttons === 1) {
+          setNodes(nodes.filter(n => n.id !== node.id));
+        }
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
       onClick={(e: React.MouseEvent) => {
+        if (activeTool === 'hand') return;
         e.stopPropagation();
         if (activeTool === 'erase') return;
         if (!e.shiftKey && selectedNodeIds.includes(node.id) && selectedNodeIds.length > 1) {
@@ -244,7 +264,11 @@ export function Node({ node }: NodeProps) {
       }}
       style={{
         backgroundColor: 'transparent',
-        outline: isSelected ? `${1.5 / zoom}px solid #0c8ce9` : 'none',
+        outline: activeTool === 'erase' && isHovered 
+          ? `${1.5 / zoom}px solid #f04438` 
+          : isSelected 
+            ? `${1.5 / zoom}px solid #0c8ce9` 
+            : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

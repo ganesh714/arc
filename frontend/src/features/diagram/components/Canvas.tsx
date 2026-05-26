@@ -19,7 +19,8 @@ import {
   Pencil,
   Eraser,
   MessageSquare,
-  Scaling as ScalingIcon
+  Scaling as ScalingIcon,
+  Hand
 } from 'lucide-react';
 
 export function Canvas() {
@@ -148,6 +149,8 @@ export function Canvas() {
       } else if (key === 'k' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('select');
         setSelectToolMode('scale');
+      } else if (key === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('hand');
       } else if (key === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('pen');
       } else if (key === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
@@ -306,7 +309,7 @@ export function Canvas() {
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const isMiddleClick = e.button === 1;
-    const isSpaceDrag = spacePressed;
+    const isSpaceDrag = spacePressed || activeTool === 'hand';
 
     if (isMiddleClick || isSpaceDrag) {
       e.preventDefault();
@@ -658,7 +661,8 @@ export function Canvas() {
 
   const getCursor = () => {
     if (isPanning) return 'grabbing';
-    if (spacePressed) return 'grab';
+    if (spacePressed || activeTool === 'hand') return 'grab';
+    if (activeTool === 'erase') return 'cell';
     return 'default';
   };
 
@@ -1021,6 +1025,15 @@ export function Canvas() {
             </div>
           )}
         </div>
+
+        {/* Hand tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'hand' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('hand')}
+          title="Hand / Pan Canvas (H)"
+        >
+          <Hand size={15} />
+        </button>
 
         <div className={styles.divider} />
         
