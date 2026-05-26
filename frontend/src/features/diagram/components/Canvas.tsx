@@ -1234,21 +1234,6 @@ export function Canvas() {
                     </button>
                   );
                 })}
-                
-                <div className={styles.dropdownDivider} style={{ margin: '8px 4px' }} />
-                <div className={styles.dropdownCategory}>Collaboration</div>
-                <button
-                  className={`${styles.dropdownItem} ${activeTool === 'comment' ? styles.dropdownItemActive : ''}`}
-                  onClick={() => {
-                    setCurrentShapeType('comment');
-                    setActiveTool('comment');
-                    setShapeDropdownOpen(false);
-                  }}
-                >
-                  <span className={styles.dropdownItemIcon} style={{ color: 'var(--accent-purple)' }}><MessageSquare size={14} /></span>
-                  <span className={styles.dropdownItemLabel}>Comment</span>
-                  <span className={styles.dropdownItemShortcut}>C</span>
-                </button>
               </div>
             </div>
           )}
@@ -1272,6 +1257,21 @@ export function Canvas() {
           title="Eraser (E)"
         >
           <Eraser size={15} />
+        </button>
+
+        <div className={styles.divider} />
+
+        {/* Standalone Comment tool - Theme consistent */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
+          onClick={() => {
+            setActiveTool('comment');
+            setCurrentShapeType('comment');
+          }}
+          title="Comment (C)"
+          style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}
+        >
+          <MessageSquare size={15} />
         </button>
       </div>
 
