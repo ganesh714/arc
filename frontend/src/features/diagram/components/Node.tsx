@@ -9,7 +9,7 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode } = useDiagram();
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
 
@@ -57,10 +57,15 @@ export function Node({ node }: NodeProps) {
     const startX = e.clientX;
     const startY = e.clientY;
     const initialStart = { ...node.startPoint! };
+    const initialNodes = [...nodes];
+    let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        hasMoved = true;
+      }
       updateLinePoints(
         node.id,
         { x: initialStart.x + dx, y: initialStart.y + dy },
@@ -71,6 +76,9 @@ export function Node({ node }: NodeProps) {
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (hasMoved) {
+        saveHistoryState(initialNodes);
+      }
     };
     
     document.addEventListener('mousemove', handleMouseMove);
@@ -84,10 +92,15 @@ export function Node({ node }: NodeProps) {
     const startX = e.clientX;
     const startY = e.clientY;
     const initialEnd = { ...node.endPoint! };
+    const initialNodes = [...nodes];
+    let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        hasMoved = true;
+      }
       updateLinePoints(
         node.id,
         node.startPoint!,
@@ -98,6 +111,9 @@ export function Node({ node }: NodeProps) {
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (hasMoved) {
+        saveHistoryState(initialNodes);
+      }
     };
     
     document.addEventListener('mousemove', handleMouseMove);
