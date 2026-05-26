@@ -1,104 +1,135 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 100%;
   background-color: var(--bg-panel);
   border-right: 1px solid var(--border-default);
   height: 100%;
   user-select: none;
   z-index: 40;
-  padding: 12px 0;
 }
 
 .logoContainer {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 8px;
+}
+
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .logo {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 6px;
+}
+
+.logoText {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .divider {
-  width: 32px;
   height: 1px;
   background-color: var(--border-default);
-  margin-bottom: 12px;
+  margin: 0 12px;
 }
 
 .projectList {
   flex: 1;
+  overflow-y: auto;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-
-.itemWrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
+  gap: 2px;
 }
 
 .projectBtn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  gap: 8px;
+  width: 100%;
   border: none;
-  background-color: transparent;
-  color: var(--text-secondary);
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: left;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-secondary);
+  font-size: 11px;
+  transition: all 0.15s ease;
+  min-width: 0;
 }
 
 .projectBtn:hover {
   background-color: var(--bg-hover);
   color: var(--text-primary);
-  border-radius: 8px;
 }
 
 .activeProject {
   background-color: var(--bg-active) !important;
   color: var(--accent-blue) !important;
-  border-radius: 8px;
+  font-weight: 500;
 }
 
-/* Active indicator line on the left side of the button */
-.activeIndicator {
-  position: absolute;
-  left: 0;
-  width: 3px;
-  height: 20px;
-  background-color: var(--accent-blue);
-  border-radius: 0 4px 4px 0;
+.itemIcon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.activeProject .itemIcon {
+  color: var(--accent-blue);
+  opacity: 1;
+}
+
+.projectName {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemCount {
+  font-size: 9px;
+  color: var(--text-muted);
+  background-color: var(--bg-hover);
+  padding: 1px 5px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.activeProject .itemCount {
+  background-color: rgba(12, 140, 233, 0.15);
+  color: var(--accent-blue);
+}
+
+/* Footer Styling */
+.footer {
+  padding: 8px;
+  border-top: 1px solid var(--border-default);
 }
 
 .addBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
   border: 1px dashed var(--border-default);
-  background-color: transparent;
-  color: var(--text-muted);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: 11px;
+  transition: all 0.15s ease;
 }
 
 .addBtn:hover {
@@ -107,98 +138,31 @@
   background-color: var(--bg-active);
 }
 
-/* Tooltip Styling */
-.tooltip {
-  position: absolute;
-  left: 54px;
-  background-color: #1a1a1a;
-  border: 1px solid #333333;
-  color: #ffffff;
-  padding: 6px 10px;
-  border-radius: 6px;
+.inputContainer {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  font-size: 10px;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateX(-5px);
-  transition: all 0.15s ease;
-  white-space: nowrap;
-  z-index: 200;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.itemWrapper:hover .tooltip {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.tooltipName {
-  font-weight: bold;
-  font-size: 11px;
-}
-
-.tooltipCount {
-  color: #a0a0a0;
-}
-
-.tooltipCategory {
-  font-size: 8px;
-  color: var(--accent-blue);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
-}
-
-/* Popover for creating new project */
-.popover {
-  position: absolute;
-  left: 54px;
-  top: 0;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
-  padding: 10px;
-  width: 180px;
-  box-shadow: var(--shadow-lg);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.popoverTitle {
-  font-size: 10px;
-  font-weight: bold;
-  color: var(--text-secondary);
-}
-
-.popoverInputContainer {
-  display: flex;
-  align-items: center;
   gap: 4px;
+  width: 100%;
 }
 
-.popoverInput {
-  flex: 1;
+.input {
   background-color: var(--bg-hover);
   border: 1px solid var(--border-default);
   border-radius: 4px;
-  padding: 4px 6px;
+  padding: 5px 6px;
   color: var(--text-primary);
   font-size: 11px;
   outline: none;
-  min-width: 0;
 }
 
-.popoverInput:focus {
+.input:focus {
   border-color: var(--accent-blue);
 }
 
-.popoverActions {
+.inputActions {
   display: flex;
-  gap: 2px;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .confirmBtn, .cancelBtn {
@@ -223,32 +187,6 @@
 }
 
 .cancelBtn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-/* Footer Styling */
-.footer {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-top: 12px;
-}
-
-.collapseBtn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-}
-
-.collapseBtn:hover {
   background-color: var(--bg-hover);
   color: var(--text-primary);
 }
