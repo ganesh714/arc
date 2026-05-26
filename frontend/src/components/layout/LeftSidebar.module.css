@@ -2,17 +2,18 @@
   display: flex;
   flex-direction: column;
   width: 100%; /* Fill the wrapper width controlled by App.tsx */
-  background-color: var(--bg-panel);
+  background: var(--bg-panel);
   height: 100%;
   user-select: none;
   z-index: 40;
   overflow-x: hidden;
+  transition: background 0.3s ease;
 }
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid var(--border-default);
-  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-section);
+  background: var(--bg-panel);
   padding: 0 8px;
 }
 
@@ -53,14 +54,16 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .sectionTitle {
   font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-  color: var(--text-muted);
+  letter-spacing: 1px;
+  font-weight: 800;
+  color: var(--text-primary);
 }
 
 .layerList {
