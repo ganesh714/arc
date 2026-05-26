@@ -1,4 +1,4 @@
-import type React from 'react';
+import React, { useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
@@ -9,32 +9,41 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints } = useDiagram();
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
+  const [isCardOpen, setIsCardOpen] = useState(node.content === '');
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Figma resize handle
+  // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const FigmaHandle = ({ position }: { position: string }) => {
+    const handleSize = 6 / zoom;
+    const borderSize = 1.5 / zoom;
+    const offsetPos = -3 / zoom;
+    const shadowSize = 1 / zoom;
+    const shadowBlur = 2 / zoom;
+    const borderRadius = 1 / zoom;
+
     const offsets: Record<string, React.CSSProperties> = {
-      topLeft: { top: '-3px', left: '-3px', cursor: 'nwse-resize' },
-      topRight: { top: '-3px', right: '-3px', cursor: 'nesw-resize' },
-      bottomLeft: { bottom: '-3px', left: '-3px', cursor: 'nesw-resize' },
-      bottomRight: { bottom: '-3px', right: '-3px', cursor: 'nwse-resize' },
-      top: { top: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-      bottom: { bottom: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-      left: { left: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
-      right: { right: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+      topLeft: { top: `${offsetPos}px`, left: `${offsetPos}px`, cursor: 'nwse-resize' },
+      topRight: { top: `${offsetPos}px`, right: `${offsetPos}px`, cursor: 'nesw-resize' },
+      bottomLeft: { bottom: `${offsetPos}px`, left: `${offsetPos}px`, cursor: 'nesw-resize' },
+      bottomRight: { bottom: `${offsetPos}px`, right: `${offsetPos}px`, cursor: 'nwse-resize' },
+      top: { top: `${offsetPos}px`, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      bottom: { bottom: `${offsetPos}px`, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      left: { left: `${offsetPos}px`, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+      right: { right: `${offsetPos}px`, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
     };
 
     return (
       <div
         style={{
-          width: '6px',
-          height: '6px',
+          width: `${handleSize}px`,
+          height: `${handleSize}px`,
           backgroundColor: '#ffffff',
-          border: '1.5px solid #0c8ce9',
-          borderRadius: '1px',
+          border: `${borderSize}px solid #0c8ce9`,
+          borderRadius: `${borderRadius}px`,
           position: 'absolute',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          boxShadow: `0 ${shadowSize}px ${shadowBlur}px rgba(0,0,0,0.3)`,
           pointerEvents: 'none',
           ...offsets[position],
         }}
@@ -49,10 +58,15 @@ export function Node({ node }: NodeProps) {
     const startX = e.clientX;
     const startY = e.clientY;
     const initialStart = { ...node.startPoint! };
+    const initialNodes = [...nodes];
+    let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        hasMoved = true;
+      }
       updateLinePoints(
         node.id,
         { x: initialStart.x + dx, y: initialStart.y + dy },
@@ -63,6 +77,9 @@ export function Node({ node }: NodeProps) {
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (hasMoved) {
+        saveHistoryState(initialNodes);
+      }
     };
     
     document.addEventListener('mousemove', handleMouseMove);
@@ -76,10 +93,15 @@ export function Node({ node }: NodeProps) {
     const startX = e.clientX;
     const startY = e.clientY;
     const initialEnd = { ...node.endPoint! };
+    const initialNodes = [...nodes];
+    let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        hasMoved = true;
+      }
       updateLinePoints(
         node.id,
         node.startPoint!,
@@ -90,6 +112,9 @@ export function Node({ node }: NodeProps) {
     const handleMouseUp = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      if (hasMoved) {
+        saveHistoryState(initialNodes);
+      }
     };
     
     document.addEventListener('mousemove', handleMouseMove);
@@ -108,6 +133,7 @@ export function Node({ node }: NodeProps) {
   } : undefined;
 
   const isLine = node.type === 'line' || node.type === 'arrow';
+  const isComment = node.type === 'comment';
 
   // Build text style object
   const textStyle: React.CSSProperties = {
@@ -134,20 +160,52 @@ export function Node({ node }: NodeProps) {
           moveNode(node.id, { x: d.x, y: d.y });
         }
       }}
-      onResizeStop={(_e, _direction, ref, _delta, position) => {
-        resizeNode(
-          node.id,
-          {
-            width: parseInt(ref.style.width, 10),
-            height: parseInt(ref.style.height, 10),
-          },
-          position
-        );
+      onDragStart={(e) => {
+        // Prevent drag triggers when editing comments
+        if (isComment && isCardOpen) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
       }}
-      bounds="parent"
+      onResizeStop={(_e, _direction, ref, _delta, position) => {
+        const newWidth = parseInt(ref.style.width, 10);
+        const newHeight = parseInt(ref.style.height, 10);
+        
+        if (selectToolMode === 'scale') {
+          const oldWidth = node.dimensions.width;
+          const factor = newWidth / oldWidth;
+          const currentFontSizeStr = node.style?.fontSize || '11px';
+          const currentFontSizeNum = parseFloat(currentFontSizeStr) || 11;
+          const newFontSizeNum = Math.max(8, Math.round(currentFontSizeNum * factor));
+          const newFontSizeStr = `${newFontSizeNum}px`;
+          
+          resizeNode(
+            node.id,
+            { width: newWidth, height: newHeight },
+            position
+          );
+          
+          updateNode({
+            ...node,
+            position,
+            dimensions: { width: newWidth, height: newHeight },
+            style: {
+              ...node.style,
+              fontSize: newFontSizeStr
+            }
+          });
+        } else {
+          resizeNode(
+            node.id,
+            { width: newWidth, height: newHeight },
+            position
+          );
+        }
+      }}
+      scale={zoom}
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
-        isLine
+        (isLine || isComment || activeTool === 'hand' || activeTool === 'erase')
           ? {
               top: false,
               bottom: false,
@@ -169,9 +227,15 @@ export function Node({ node }: NodeProps) {
               bottomRight: true,
             }
       }
-      resizeHandleComponent={activeHandles}
+      disableDragging={activeTool === 'erase' || activeTool === 'hand' || (isComment && isCardOpen)}
+      resizeHandleComponent={(isComment || activeTool === 'hand' || activeTool === 'erase') ? undefined : activeHandles}
       onMouseDown={(e: any) => {
+        if (activeTool === 'hand') return; // let mouse down bubble up to pan the canvas
         e.stopPropagation();
+        if (activeTool === 'erase') {
+          setNodes(nodes.filter(n => n.id !== node.id));
+          return;
+        }
         if (e.shiftKey) {
           selectNode(node.id, true);
           return;
@@ -180,15 +244,31 @@ export function Node({ node }: NodeProps) {
           selectNode(node.id, false);
         }
       }}
+      onMouseEnter={(e: any) => {
+        setIsHovered(true);
+        // Drag-erasing functionality
+        if (activeTool === 'erase' && e.buttons === 1) {
+          setNodes(nodes.filter(n => n.id !== node.id));
+        }
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
       onClick={(e: React.MouseEvent) => {
+        if (activeTool === 'hand') return;
         e.stopPropagation();
+        if (activeTool === 'erase') return;
         if (!e.shiftKey && selectedNodeIds.includes(node.id) && selectedNodeIds.length > 1) {
           selectNode(node.id, false);
         }
       }}
       style={{
         backgroundColor: 'transparent',
-        outline: isSelected ? '1.5px solid #0c8ce9' : 'none',
+        outline: activeTool === 'erase' && isHovered 
+          ? `${1.5 / zoom}px solid #f04438` 
+          : isSelected 
+            ? `${1.5 / zoom}px solid #0c8ce9` 
+            : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -416,6 +496,156 @@ export function Node({ node }: NodeProps) {
             })()}
           </svg>
         </div>
+      ) : node.type === 'path' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+          <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
+            <path
+              d={(() => {
+                const pts = node.points || [];
+                if (pts.length === 0) return '';
+                const xs = pts.map(p => p.x);
+                const ys = pts.map(p => p.y);
+                const minX = Math.min(...xs);
+                const minY = Math.min(...ys);
+                const maxX = Math.max(...xs);
+                const maxY = Math.max(...ys);
+                const origW = Math.max(1, maxX - minX);
+                const origH = Math.max(1, maxY - minY);
+                
+                const scaleX = node.dimensions.width / origW;
+                const scaleY = node.dimensions.height / origH;
+                
+                return `M ${pts[0].x * scaleX} ${pts[0].y * scaleY} ` + 
+                       pts.slice(1).map(p => `L ${p.x * scaleX} ${p.y * scaleY}`).join(' ');
+              })()}
+              fill="none"
+              stroke={node.style?.borderColor || '#0c8ce9'}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+      ) : node.type === 'comment' ? (
+        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+          {/* Comment Bubble Pin */}
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCardOpen(!isCardOpen);
+            }}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '16px 16px 16px 4px',
+              backgroundColor: '#ffc000',
+              border: '2px solid #ffffff',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.1s ease',
+              transform: isSelected ? 'scale(1.1)' : 'scale(1)'
+            }}
+            title={node.content || "Add comment"}
+          >
+            <span style={{ fontSize: '14px' }}>💬</span>
+          </div>
+
+          {/* Comment Details Card */}
+          {isCardOpen && (
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                left: '38px',
+                top: '0',
+                backgroundColor: 'var(--bg-panel)',
+                border: '1px solid var(--border-default)',
+                borderRadius: '8px',
+                padding: '12px',
+                width: '220px',
+                boxShadow: 'var(--shadow-lg)',
+                zIndex: 200,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Comment Pin</span>
+                <button
+                  onClick={() => setIsCardOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '10px' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {node.content ? (
+                <>
+                  <div style={{ fontSize: '11px', color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                    {node.content}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Just now</span>
+                    <button
+                      onClick={() => {
+                        setNodes(nodes.filter(n => n.id !== node.id));
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#f04438', cursor: 'pointer', fontSize: '10px' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <textarea
+                    placeholder="Type a comment..."
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      height: '60px',
+                      backgroundColor: 'var(--bg-hover)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: '4px',
+                      padding: '6px',
+                      color: 'var(--text-primary)',
+                      fontSize: '11px',
+                      outline: 'none',
+                      resize: 'none'
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const val = (e.target as HTMLTextAreaElement).value.trim();
+                        if (val) {
+                          updateNode({ ...node, content: val });
+                          setIsCardOpen(false);
+                        } else {
+                          setNodes(nodes.filter(n => n.id !== node.id));
+                        }
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (val) {
+                        updateNode({ ...node, content: val });
+                        setIsCardOpen(false);
+                      } else {
+                        setNodes(nodes.filter(n => n.id !== node.id));
+                      }
+                    }}
+                  />
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>Press Enter to save</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
         <div
           style={{
@@ -447,15 +677,15 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.startPoint!.x - node.position.x,
               top: node.startPoint!.y - node.position.y,
-              width: '8px',
-              height: '8px',
+              width: `${8 / zoom}px`,
+              height: `${8 / zoom}px`,
               backgroundColor: '#ffffff',
-              border: '2px solid #0c8ce9',
+              border: `${2 / zoom}px solid #0c8ce9`,
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
               zIndex: 30,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
             onMouseDown={handleStartDrag}
           />
@@ -465,15 +695,15 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.endPoint!.x - node.position.x,
               top: node.endPoint!.y - node.position.y,
-              width: '8px',
-              height: '8px',
+              width: `${8 / zoom}px`,
+              height: `${8 / zoom}px`,
               backgroundColor: '#ffffff',
-              border: '2px solid #0c8ce9',
+              border: `${2 / zoom}px solid #0c8ce9`,
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
               zIndex: 30,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
             onMouseDown={handleEndDrag}
           />

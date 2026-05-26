@@ -15,7 +15,7 @@
   background-color: var(--bg-canvas);
   background-image: radial-gradient(var(--border-default) 1px, transparent 1px);
   background-size: 16px 16px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .marqueeBox {
@@ -203,3 +203,101 @@
   border: none;
   border-radius: 2px;
 }
+
+/* Shapes Dropdown Split-Button and Popover */
+.shapeSelectorContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.shapeSelectorContainer .toolButton {
+  border-radius: 6px 0 0 6px;
+}
+
+.chevronButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 28px;
+  border-radius: 0 6px 6px 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin-left: -1px;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.chevronButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.chevronButtonActive {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.shapeDropdown {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 4px;
+  min-width: 170px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdownItemActive {
+  background-color: var(--bg-active);
+  color: var(--accent-blue);
+}
+
+.dropdownItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  color: inherit;
+}
+
+.dropdownItemLabel {
+  flex-grow: 1;
+}
+
+.dropdownItemShortcut {
+  font-size: 9px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  margin-left: 12px;
+  font-family: var(--font-mono, monospace);
+}
+

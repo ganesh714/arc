@@ -14,7 +14,13 @@ import {
   Plus,
   Minus as ZoomOutIcon,
   Bold,
-  Trash2
+  Trash2,
+  ChevronDown,
+  Pencil,
+  Eraser,
+  MessageSquare,
+  Scaling as ScalingIcon,
+  Hand
 } from 'lucide-react';
 
 export function Canvas() {
@@ -33,29 +39,138 @@ export function Canvas() {
     addLine,
     addArrow,
     zoom,
-    setZoom
+    setZoom,
+    activeTool,
+    setActiveTool,
+    selectToolMode,
+    setSelectToolMode,
+    undo,
+    redo,
+    copySelected,
+    pasteSelected,
+    cutSelected,
+    deleteSelected
   } = useDiagram();
 
-  const [activeTool, setActiveTool] = useState<string>('select');
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard Space detection for panning cursor
+  const [drawingPreview, setDrawingPreview] = useState<{
+    type: string;
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+    points?: { x: number; y: number }[];
+  } | null>(null);
+
+  const drawingPreviewRef = useRef(drawingPreview);
+  drawingPreviewRef.current = drawingPreview;
+
+  const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
+  const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow'>('box');
+
+  // Close shape and select dropdown on click away
+  useEffect(() => {
+    if (!shapeDropdownOpen && !selectDropdownOpen) return;
+    const handleOutsideClick = () => {
+      setShapeDropdownOpen(false);
+      setSelectDropdownOpen(false);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => {
+      window.removeEventListener('click', handleOutsideClick);
+    };
+  }, [shapeDropdownOpen, selectDropdownOpen]);
+
+  // Keyboard Space detection for panning cursor and tool hotkeys
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
       const targetTag = document.activeElement?.tagName;
       if (
         targetTag === 'INPUT' ||
         targetTag === 'TEXTAREA' ||
-        targetTag === 'SELECT'
+        targetTag === 'SELECT' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
       ) {
         return;
       }
       if (e.code === 'Space') {
         e.preventDefault();
         setSpacePressed(true);
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+
+      // Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && key === 'z') {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Copy / Paste / Cut
+      if ((e.ctrlKey || e.metaKey) && key === 'c') {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'v') {
+        e.preventDefault();
+        pasteSelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'x') {
+        e.preventDefault();
+        cutSelected();
+        return;
+      }
+
+      // Delete / Backspace
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteSelected();
+        return;
+      }
+
+      // Hotkeys for switching tools
+      if (key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('select');
+        setSelectToolMode('move');
+      } else if (key === 'k' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('select');
+        setSelectToolMode('scale');
+      } else if (key === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('hand');
+      } else if (key === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('pen');
+      } else if (key === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('erase');
+      } else if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('comment');
+      } else if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('box');
+        setCurrentShapeType('box');
+      } else if (key === 'o' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('circle');
+        setCurrentShapeType('circle');
+      } else if (key === 'l' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (e.shiftKey) {
+          setActiveTool('arrow');
+          setCurrentShapeType('arrow');
+        } else {
+          setActiveTool('line');
+          setCurrentShapeType('line');
+        }
       }
     };
 
@@ -71,7 +186,7 @@ export function Canvas() {
       window.removeEventListener('keydown', handleKeyDownGlobal);
       window.removeEventListener('keyup', handleKeyUpGlobal);
     };
-  }, []);
+  }, [undo, redo, copySelected, pasteSelected, cutSelected, deleteSelected]);
 
   // Wheel listener: Ctrl + scroll zooms, regular scroll pans (trackpad)
   useEffect(() => {
@@ -167,6 +282,7 @@ export function Canvas() {
     };
   }, [selectedNodeIds, setNodes, nodes]);
 
+  const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -194,7 +310,7 @@ export function Canvas() {
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const isMiddleClick = e.button === 1;
-    const isSpaceDrag = spacePressed;
+    const isSpaceDrag = spacePressed || activeTool === 'hand';
 
     if (isMiddleClick || isSpaceDrag) {
       e.preventDefault();
@@ -224,20 +340,229 @@ export function Canvas() {
       return;
     }
 
-    if (e.target !== e.currentTarget) return;
+    if (activeTool !== 'select') {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const startX = (e.clientX - rect.left) / zoom - panOffset.x;
+      const startY = (e.clientY - rect.top) / zoom - panOffset.y;
+
+      if (activeTool === 'comment') {
+        const id = crypto.randomUUID().split('-')[0];
+        const newNode: any = {
+          id,
+          type: 'comment',
+          position: { x: startX - 16, y: startY - 16 },
+          dimensions: { width: 32, height: 32 },
+          content: '',
+          style: {
+            backgroundColor: '#ffc000'
+          }
+        };
+        setNodes([...nodes, newNode]);
+        selectNode(id, false);
+        setActiveTool('select');
+        return;
+      }
+
+      if (activeTool === 'pen') {
+        const pointsList = [{ x: startX, y: startY }];
+        setDrawingPreview({
+          type: 'pen',
+          startX,
+          startY,
+          currentX: startX,
+          currentY: startY,
+          points: pointsList
+        });
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+          const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+          const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+          pointsList.push({ x: currentX, y: currentY });
+          setDrawingPreview({
+            type: 'pen',
+            startX,
+            startY,
+            currentX,
+            currentY,
+            points: [...pointsList]
+          });
+        };
+
+        const handleMouseUp = () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+
+          const currentPreview = drawingPreviewRef.current;
+          if (currentPreview && currentPreview.points && currentPreview.points.length > 1) {
+            const pts = currentPreview.points;
+            const xs = pts.map(p => p.x);
+            const ys = pts.map(p => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+
+            const w = Math.max(10, maxX - minX);
+            const h = Math.max(10, maxY - minY);
+
+            const relativePoints = pts.map(p => ({
+              x: p.x - minX,
+              y: p.y - minY
+            }));
+
+            const id = crypto.randomUUID().split('-')[0];
+            const newNode: any = {
+              id,
+              type: 'path',
+              position: { x: minX, y: minY },
+              dimensions: { width: w, height: h },
+              content: '',
+              style: {
+                borderColor: '#0c8ce9'
+              },
+              points: relativePoints
+            };
+
+            setNodes([...nodes, newNode]);
+            selectNode(id, false);
+          }
+
+          setDrawingPreview(null);
+          setActiveTool('select');
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        return;
+      }
+
+      // Regular shape drawing mode (box, circle, triangle, diamond, star, line, arrow)
+      setDrawingPreview({
+        type: activeTool,
+        startX,
+        startY,
+        currentX: startX,
+        currentY: startY
+      });
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+        const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+        setDrawingPreview(prev => prev ? { ...prev, currentX, currentY } : null);
+      };
+
+      const handleMouseUp = () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+
+        const currentPreview = drawingPreviewRef.current;
+        if (currentPreview) {
+          const sX = currentPreview.startX;
+          const sY = currentPreview.startY;
+          const cX = currentPreview.currentX;
+          const cY = currentPreview.currentY;
+
+          const left = Math.min(sX, cX);
+          const top = Math.min(sY, cY);
+          const width = Math.max(10, Math.abs(cX - sX));
+          const height = Math.max(10, Math.abs(cY - sY));
+
+          if (width > 5 || height > 5) {
+            const id = crypto.randomUUID().split('-')[0];
+            const isLineType = activeTool === 'line' || activeTool === 'arrow';
+            let newNode: any;
+
+            if (isLineType) {
+              newNode = {
+                id,
+                type: activeTool,
+                position: { x: left, y: top },
+                dimensions: { width, height },
+                content: '',
+                style: {
+                  borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
+                },
+                startPoint: { x: sX, y: sY },
+                endPoint: { x: cX, y: cY }
+              };
+            } else {
+              let defaultBg = 'var(--bg-hover)';
+              let defaultBorder = 'var(--border-active)';
+              let defaultText = 'Rectangle';
+              let customStyle: any = {};
+
+              if (activeTool === 'diamond') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#c69c3a';
+                defaultText = 'Diamond';
+                customStyle = { borderRadius: '2px' };
+              } else if (activeTool === 'circle') {
+                defaultText = 'Ellipse';
+              } else if (activeTool === 'triangle') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#2b8a4e';
+                defaultText = 'Triangle';
+              } else if (activeTool === 'star') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#9e7c1d';
+                defaultText = 'Star';
+              }
+
+              newNode = {
+                id,
+                type: activeTool,
+                position: { x: left, y: top },
+                dimensions: { width, height },
+                content: defaultText,
+                style: {
+                  backgroundColor: defaultBg,
+                  borderColor: defaultBorder,
+                  color: 'var(--text-primary)',
+                  ...customStyle
+                }
+              };
+            }
+
+            setNodes([...nodes, newNode]);
+            selectNode(id, false);
+          }
+        }
+
+        setDrawingPreview(null);
+        setActiveTool('select');
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return;
+    }
+
+    // Select tool — check if we should drag-select or interact with a node
+    if (e.button !== 0) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const startX = (e.clientX - rect.left) / zoom - panOffset.x;
     const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
-    setMarquee({
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY
-    });
+    // Begin marquee regardless of whether we hit a node or empty space.
+    // The marquee will only commit if the user dragged more than a threshold.
+    setMarquee({ startX, startY, currentX: startX, currentY: startY });
+    setIsDragSelecting(false);
+
+    // Record where we started for click-vs-drag detection
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startClientX;
+      const dy = moveEvent.clientY - startClientY;
+      const dragDist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dragDist > 4) {
+        setIsDragSelecting(true);
+      }
+
       const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
       const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
       setMarquee(prev => prev ? { ...prev, currentX, currentY } : null);
@@ -248,6 +573,7 @@ export function Canvas() {
       document.removeEventListener('mouseup', handleMouseUp);
 
       setMarquee(currentMarquee => {
+        setIsDragSelecting(false);
         if (!currentMarquee) return null;
 
         const left = Math.min(currentMarquee.startX, currentMarquee.currentX);
@@ -257,9 +583,11 @@ export function Canvas() {
         const width = right - left;
         const height = bottom - top;
 
-        if (width < 3 && height < 3) {
-          if (!upEvent.shiftKey) {
-            selectNode(null);
+        // Small drag (< 5px) = treat as a click, not a marquee
+        if (width < 5 && height < 5) {
+          // Only deselect if clicking directly on the canvas (not a node)
+          if (upEvent.target === upEvent.currentTarget || (upEvent.target as HTMLElement).classList.contains('canvas')) {
+            if (!upEvent.shiftKey) selectNode(null);
           }
           return null;
         }
@@ -270,13 +598,7 @@ export function Canvas() {
             const nodeTop = node.position.y;
             const nodeRight = node.position.x + node.dimensions.width;
             const nodeBottom = node.position.y + node.dimensions.height;
-
-            return (
-              nodeLeft < right &&
-              nodeRight > left &&
-              nodeTop < bottom &&
-              nodeBottom > top
-            );
+            return nodeLeft < right && nodeRight > left && nodeTop < bottom && nodeBottom > top;
           })
           .map(node => node.id);
 
@@ -294,14 +616,6 @@ export function Canvas() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleToolClick = (tool: string, action: () => void) => {
-    setActiveTool(tool);
-    action();
-    setTimeout(() => {
-      setActiveTool('select');
-    }, 200);
-  };
-
   const handleZoomIn = () => {
     setZoom(Math.min(3.0, zoom + 0.1));
   };
@@ -313,19 +627,6 @@ export function Canvas() {
   const handleZoomReset = () => {
     setZoom(1.0);
     setPanOffset({ x: 0, y: 0 });
-  };
-
-  // Helper to place shapes at current visible center of the canvas viewport
-  const getCanvasCenter = () => {
-    const canvasEl = canvasRef.current;
-    if (canvasEl) {
-      const rect = canvasEl.getBoundingClientRect();
-      return {
-        x: rect.width / 2 / zoom - panOffset.x,
-        y: rect.height / 2 / zoom - panOffset.y
-      };
-    }
-    return { x: 350 - panOffset.x, y: 200 - panOffset.y };
   };
 
   // Quick contextual changes
@@ -347,9 +648,31 @@ export function Canvas() {
     setSelectedNodeIds([]);
   };
 
+  const shapeIcons = {
+    box: <Square size={15} />,
+    circle: <Circle size={15} />,
+    triangle: <Triangle size={15} />,
+    diamond: <DiamondIcon size={15} />,
+    star: <StarIcon size={15} />,
+    line: <Minus size={15} />,
+    arrow: <ArrowRight size={15} />
+  };
+
+  const shapeLabels = {
+    box: 'Rectangle (R)',
+    circle: 'Ellipse (O)',
+    triangle: 'Triangle',
+    diamond: 'Diamond',
+    star: 'Star',
+    line: 'Line (L)',
+    arrow: 'Arrow (Shift+L)'
+  };
+
   const getCursor = () => {
     if (isPanning) return 'grabbing';
-    if (spacePressed) return 'grab';
+    if (spacePressed || activeTool === 'hand') return 'grab';
+    if (activeTool === 'erase') return 'cell';
+    if (isDragSelecting) return 'crosshair';
     return 'default';
   };
 
@@ -456,8 +779,189 @@ export function Canvas() {
               );
             })()}
 
+            {/* Live Drawing Preview */}
+            {drawingPreview && (() => {
+              const { type, startX, startY, currentX, currentY } = drawingPreview;
+              const left = Math.min(startX, currentX);
+              const top = Math.min(startY, currentY);
+              const width = Math.abs(currentX - startX);
+              const height = Math.abs(currentY - startY);
+
+              if (type === 'pen' && drawingPreview.points && drawingPreview.points.length > 0) {
+                const pts = drawingPreview.points;
+                const xs = pts.map(p => p.x);
+                const ys = pts.map(p => p.y);
+                const minX = Math.min(...xs);
+                const minY = Math.min(...ys);
+                const maxX = Math.max(...xs);
+                const maxY = Math.max(...ys);
+                const w = Math.max(1, maxX - minX);
+                const h = Math.max(1, maxY - minY);
+                
+                const d = `M ${pts[0].x - minX} ${pts[0].y - minY} ` + pts.slice(1).map(p => `L ${p.x - minX} ${p.y - minY}`).join(' ');
+
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${minX}px`,
+                    top: `${minY}px`,
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    pointerEvents: 'none',
+                    overflow: 'visible'
+                  }}>
+                    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+                      <path
+                        d={d}
+                        fill="none"
+                        stroke="#0c8ce9"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                );
+              }
+
+              if (type === 'line' || type === 'arrow') {
+                const minX = Math.min(startX, currentX);
+                const minY = Math.min(startY, currentY);
+                const w = Math.max(1, Math.abs(currentX - startX));
+                const h = Math.max(1, Math.abs(currentY - startY));
+                const x1 = startX - minX;
+                const y1 = startY - minY;
+                const x2 = currentX - minX;
+                const y2 = currentY - minY;
+
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${minX}px`,
+                    top: `${minY}px`,
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    pointerEvents: 'none',
+                    overflow: 'visible'
+                  }}>
+                    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+                      {type === 'arrow' && (
+                        <defs>
+                          <marker
+                            id="preview-arrowhead"
+                            markerWidth="6"
+                            markerHeight="5"
+                            refX="5"
+                            refY="2.5"
+                            orient="auto"
+                          >
+                            <polygon points="0 0, 6 2.5, 0 5" fill="#0c8ce9" />
+                          </marker>
+                        </defs>
+                      )}
+                      <line
+                        x1={x1}
+                        y1={y1}
+                        x2={x2}
+                        y2={y2}
+                        stroke="#0c8ce9"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        markerEnd={type === 'arrow' ? "url(#preview-arrowhead)" : undefined}
+                      />
+                    </svg>
+                  </div>
+                );
+              }
+
+              // Rendering box, circle, diamond, triangle, star
+              let innerElement = null;
+              if (type === 'box') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '4px'
+                  }} />
+                );
+              } else if (type === 'circle') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '50%'
+                  }} />
+                );
+              } else if (type === 'diamond') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div style={{
+                      width: '70.7%',
+                      height: '70.7%',
+                      transform: 'rotate(45deg)',
+                      border: '1.5px dashed #0c8ce9',
+                      backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                      boxSizing: 'border-box',
+                      borderRadius: '2px'
+                    }} />
+                  </div>
+                );
+              } else if (type === 'triangle') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="50,5 95,95 5,95"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'star') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ display: 'block' }}>
+                    <polygon
+                      points="50,5 64,36 98,36 70,57 81,91 50,70 19,91 30,57 2,36 36,36"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              }
+
+              return (
+                <div style={{
+                  position: 'absolute',
+                  left: `${left}px`,
+                  top: `${top}px`,
+                  width: `${width}px`,
+                  height: `${height}px`,
+                  pointerEvents: 'none'
+                }}>
+                  {innerElement}
+                </div>
+              );
+            })()}
+
             {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
-            {marquee && (() => {
+            {marquee && isDragSelecting && (() => {
               const left = Math.min(marquee.startX, marquee.currentX);
               const top = Math.min(marquee.startY, marquee.currentY);
               const width = Math.abs(marquee.currentX - marquee.startX);
@@ -481,69 +985,142 @@ export function Canvas() {
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
-          onClick={() => setActiveTool('select')}
-          title="Move/Select (V)"
+        <div className={styles.shapeSelectorContainer}>
+          <button 
+            className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
+            onClick={() => {
+              setActiveTool('select');
+            }}
+            title={selectToolMode === 'move' ? "Move (V)" : "Scale (K)"}
+          >
+            {selectToolMode === 'move' ? <MousePointer2 size={15} /> : <ScalingIcon size={15} />}
+          </button>
+          <button
+            className={`${styles.chevronButton} ${selectDropdownOpen ? styles.chevronButtonActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectDropdownOpen(!selectDropdownOpen);
+            }}
+            title="Select mode options"
+          >
+            <ChevronDown size={12} />
+          </button>
+
+          {selectDropdownOpen && (
+            <div className={styles.shapeDropdown} style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
+              <button
+                className={`${styles.dropdownItem} ${selectToolMode === 'move' ? styles.dropdownItemActive : ''}`}
+                onClick={() => {
+                  setSelectToolMode('move');
+                  setActiveTool('select');
+                  setSelectDropdownOpen(false);
+                }}
+              >
+                <span className={styles.dropdownItemIcon}><MousePointer2 size={14} /></span>
+                <span className={styles.dropdownItemLabel}>Move</span>
+                <span className={styles.dropdownItemShortcut}>V</span>
+              </button>
+              <button
+                className={`${styles.dropdownItem} ${selectToolMode === 'scale' ? styles.dropdownItemActive : ''}`}
+                onClick={() => {
+                  setSelectToolMode('scale');
+                  setActiveTool('select');
+                  setSelectDropdownOpen(false);
+                }}
+              >
+                <span className={styles.dropdownItemIcon}><ScalingIcon size={14} /></span>
+                <span className={styles.dropdownItemLabel}>Scale</span>
+                <span className={styles.dropdownItemShortcut}>K</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Hand tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'hand' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('hand')}
+          title="Hand / Pan Canvas (H)"
         >
-          <MousePointer2 size={15} />
+          <Hand size={15} />
         </button>
+
         <div className={styles.divider} />
         
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'box' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('box', () => addBox(getCanvasCenter()))}
-          title="Rectangle (R)"
+        <div className={styles.shapeSelectorContainer}>
+          <button
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'diamond', 'star', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            onClick={() => setActiveTool(currentShapeType)}
+            title={shapeLabels[currentShapeType]}
+          >
+            {shapeIcons[currentShapeType]}
+          </button>
+          <button
+            className={`${styles.chevronButton} ${shapeDropdownOpen ? styles.chevronButtonActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShapeDropdownOpen(!shapeDropdownOpen);
+            }}
+            title="More shapes"
+          >
+            <ChevronDown size={12} />
+          </button>
+
+          {shapeDropdownOpen && (
+            <div className={styles.shapeDropdown} onClick={(e) => e.stopPropagation()}>
+              {Object.entries(shapeIcons).map(([type, icon]) => {
+                const isSelected = currentShapeType === type;
+                return (
+                  <button
+                    key={type}
+                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                    onClick={() => {
+                      setCurrentShapeType(type as any);
+                      setActiveTool(type);
+                      setShapeDropdownOpen(false);
+                    }}
+                  >
+                    <span className={styles.dropdownItemIcon}>{icon}</span>
+                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                    <span className={styles.dropdownItemShortcut}>
+                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.divider} />
+
+        {/* Pen/Pencil drawing tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'pen' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('pen')}
+          title="Pen / Freehand (P)"
         >
-          <Square size={15} />
-        </button>
-        
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'circle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('circle', () => addCircle(getCanvasCenter()))}
-          title="Ellipse (O)"
-        >
-          <Circle size={15} />
+          <Pencil size={15} />
         </button>
 
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'triangle' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('triangle', () => addTriangle(getCanvasCenter()))}
-          title="Triangle"
+        {/* Eraser tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'erase' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('erase')}
+          title="Eraser (E)"
         >
-          <Triangle size={15} />
+          <Eraser size={15} />
         </button>
 
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'diamond' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('diamond', () => addDiamond(getCanvasCenter()))}
-          title="Diamond"
-        >
-          <DiamondIcon size={15} />
-        </button>
+        <div className={styles.divider} />
 
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'star' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('star', () => addStar(getCanvasCenter()))}
-          title="Star"
+        {/* Comments tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('comment')}
+          title="Add Comment (C)"
         >
-          <StarIcon size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'line' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('line', () => addLine(getCanvasCenter()))}
-          title="Line (L)"
-        >
-          <Minus size={15} />
-        </button>
-
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'arrow' ? styles.toolButtonActive : ''}`}
-          onClick={() => handleToolClick('arrow', () => addArrow(getCanvasCenter()))}
-          title="Arrow (Shift+L)"
-        >
-          <ArrowRight size={15} />
+          <MessageSquare size={15} />
         </button>
       </div>
 

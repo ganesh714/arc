@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { DiagramProvider } from '@/context/DiagramContext';
+import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
 import { Header } from '@/components/layout/Header';
+import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { Canvas } from '@/features/diagram/components/Canvas';
 
 function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
-  const [rightWidth, setRightWidth] = useState(240);
+  const [rightWidth, setRightWidth] = useState(340);
+  const { isSidebarOpen } = useDiagram();
 
   const startLeftResize = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ function MainAppContent() {
     const startWidth = rightWidth;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const newWidth = Math.max(180, Math.min(400, startWidth - (moveEvent.clientX - startX)));
+      const newWidth = Math.max(200, Math.min(500, startWidth - (moveEvent.clientX - startX)));
       setRightWidth(newWidth);
     };
     
@@ -48,62 +50,80 @@ function MainAppContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 overflow-hidden relative">
-      <Header />
-      
-      {/* Workspace Area */}
-      <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
-        {/* Left Sidebar wrapper */}
-        <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
-          <LeftSidebar />
-        </div>
+    <div className="flex h-screen w-full bg-slate-50 overflow-hidden relative">
+      {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
+      <div 
+        style={{ 
+          width: isSidebarOpen ? '200px' : '60px', 
+          minWidth: isSidebarOpen ? '200px' : '60px', 
+          height: '100%', 
+          position: 'relative',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          overflow: 'hidden',
+          flexShrink: 0
+        }}
+      >
+        <ProjectsSidebar />
+      </div>
 
-        {/* Left Resize Divider */}
-        <div
-          onMouseDown={startLeftResize}
-          style={{
-            width: '4px',
-            cursor: 'col-resize',
-            backgroundColor: 'transparent',
-            position: 'relative',
-            zIndex: 49,
-            display: 'flex',
-            justifyContent: 'center',
-            height: '100%',
-            flexShrink: 0
-          }}
-          className="group"
-        >
-          <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-        </div>
+      {/* Main Content Area (Header + Workspace) */}
+      <div className="flex flex-col flex-1 h-full relative overflow-hidden">
+        <Header />
+        
+        {/* Workspace Area */}
+        <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
+          {/* Left Sidebar wrapper */}
+          <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
+            <LeftSidebar />
+          </div>
 
-        {/* Main Canvas */}
-        <div className="flex-1 h-full relative overflow-hidden">
-          <Canvas />
-        </div>
+          {/* Left Resize Divider */}
+          <div
+            onMouseDown={startLeftResize}
+            style={{
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              position: 'relative',
+              zIndex: 49,
+              display: 'flex',
+              justifyContent: 'center',
+              height: '100%',
+              flexShrink: 0
+            }}
+            className="group"
+          >
+            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+          </div>
 
-        {/* Right Resize Divider */}
-        <div
-          onMouseDown={startRightResize}
-          style={{
-            width: '4px',
-            cursor: 'col-resize',
-            backgroundColor: 'transparent',
-            position: 'relative',
-            zIndex: 49,
-            display: 'flex',
-            justifyContent: 'center',
-            height: '100%',
-            flexShrink: 0
-          }}
-          className="group"
-        >
-          <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-        </div>
+          {/* Main Canvas */}
+          <div className="flex-1 h-full relative overflow-hidden">
+            <Canvas />
+          </div>
 
-        {/* Right Sidebar wrapper */}
-        <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
-          <SidePanel />
+          {/* Right Resize Divider */}
+          <div
+            onMouseDown={startRightResize}
+            style={{
+              width: '4px',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              position: 'relative',
+              zIndex: 49,
+              display: 'flex',
+              justifyContent: 'center',
+              height: '100%',
+              flexShrink: 0
+            }}
+            className="group"
+          >
+            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+          </div>
+
+          {/* Right Sidebar wrapper */}
+          <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
+            <SidePanel />
+          </div>
         </div>
       </div>
     </div>

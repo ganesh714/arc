@@ -1,6 +1,14 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
+
+export interface Project {
+  id: string;
+  name: string;
+  category: string;
+  nodes: DiagramNode[];
+  updatedAt: number;
+}
 
 interface DiagramContextType {
   nodes: DiagramNode[];
@@ -20,22 +28,270 @@ interface DiagramContextType {
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
   selectNode: (id: string | null, multi?: boolean) => void;
   setSelectedNodeIds: (ids: string[]) => void;
-  setNodes: (nodes: DiagramNode[]) => void;
+  setNodes: (nodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => void;
   bringToFront: (ids: string[]) => void;
   sendToBack: (ids: string[]) => void;
   alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   zoom: number;
   setZoom: (zoom: number) => void;
+  activeTool: string;
+  setActiveTool: (tool: string) => void;
+  selectToolMode: 'move' | 'scale';
+  setSelectToolMode: (mode: 'move' | 'scale') => void;
+  projects: Project[];
+  activeProjectId: string;
+  switchProject: (id: string) => void;
+  addProject: (name: string, category?: string) => void;
+  
+  // Sidebar state
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  
+  // History states/functions
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  saveHistoryState: (customNodes: DiagramNode[]) => void;
+  
+  // Clipboard functions
+  copySelected: () => void;
+  pasteSelected: () => void;
+  cutSelected: () => void;
+  deleteSelected: () => void;
+  
+  // Theme state
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 
+const initialProjects: Project[] = [
+  {
+    id: 'project-1',
+    name: 'Loom Diagram',
+    category: 'Loom Diagrams',
+    updatedAt: Date.now(),
+    nodes: [
+      {
+        id: 'node-1',
+        type: 'box',
+        position: { x: 80, y: 80 },
+        dimensions: { width: 160, height: 100 },
+        content: 'Figma Canvas',
+        style: {
+          backgroundColor: '#2c2c2c',
+          borderColor: '#555555',
+          color: '#e3e3e3'
+        }
+      },
+      {
+        id: 'node-2',
+        type: 'circle',
+        position: { x: 340, y: 80 },
+        dimensions: { width: 100, height: 100 },
+        content: 'Brainstorm',
+        style: {
+          backgroundColor: '#2c2c2c',
+          borderColor: '#555555',
+          color: '#e3e3e3'
+        }
+      },
+      {
+        id: 'node-3',
+        type: 'arrow',
+        position: { x: 240, y: 120 },
+        dimensions: { width: 100, height: 20 },
+        content: '',
+        style: {
+          borderColor: '#0c8ce9'
+        },
+        startPoint: { x: 240, y: 130 },
+        endPoint: { x: 340, y: 130 }
+      }
+    ]
+  },
+  {
+    id: 'project-2',
+    name: 'Personal Flowchart',
+    category: 'Loom Diagrams',
+    updatedAt: Date.now() - 3600000,
+    nodes: []
+  },
+  {
+    id: 'project-3',
+    name: 'Personal Wireframe',
+    category: 'Website Wireframes',
+    updatedAt: Date.now() - 86400000,
+    nodes: []
+  }
+];
+
 export function DiagramProvider({ children }: { children: ReactNode }) {
-  const [nodes, setNodes] = useState<DiagramNode[]>([]);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
+  const [nodes, setNodesState] = useState<DiagramNode[]>(initialProjects[0].nodes);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState<number>(1.0);
+  const [activeTool, setActiveTool] = useState<string>('select');
+  const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
+  
+  // History stack states
+  const [past, setPast] = useState<DiagramNode[][]>([]);
+  const [future, setFuture] = useState<DiagramNode[][]>([]);
+  
+  // Clipboard state
+  const [clipboard, setClipboard] = useState<DiagramNode[]>([]);
+
+  // Sidebar open/close state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+
+  // Theme state initialization with persistence and system preference
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('loom-theme') as 'light' | 'dark';
+    if (savedTheme) return savedTheme;
+    
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const nextTheme = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('loom-theme', nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      return nextTheme;
+    });
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('loom-theme', theme);
+  }, [theme]);
+
+  // Synced setNodes state wrapper
+  const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
+    setNodesState(prev => {
+      const resolvedNodes = typeof newNodes === 'function' ? newNodes(prev) : newNodes;
+      
+      // Update projects array and last modified timestamp synchronously
+      setProjects(prevProjects => 
+        prevProjects.map(p => 
+          p.id === activeProjectId 
+            ? { ...p, nodes: resolvedNodes, updatedAt: Date.now() } 
+            : p
+        )
+      );
+      
+      return resolvedNodes;
+    });
+  };
+
+  // Save specific nodes list to history
+  const saveHistoryState = (customNodes: DiagramNode[]) => {
+    setPast(prev => [...prev, customNodes]);
+    setFuture([]);
+  };
+
+  const undo = () => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    
+    setFuture(prev => [nodes, ...prev]);
+    setNodesState(previous);
+    setPast(newPast);
+    
+    // Sync change back to active project
+    setProjects(prevProjects => 
+      prevProjects.map(p => 
+        p.id === activeProjectId 
+          ? { ...p, nodes: previous, updatedAt: Date.now() } 
+          : p
+      )
+    );
+  };
+
+  const redo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    
+    setPast(prev => [...prev, nodes]);
+    setNodesState(next);
+    setFuture(newFuture);
+    
+    // Sync change back to active project
+    setProjects(prevProjects => 
+      prevProjects.map(p => 
+        p.id === activeProjectId 
+          ? { ...p, nodes: next, updatedAt: Date.now() } 
+          : p
+      )
+    );
+  };
+
+  const copySelected = () => {
+    if (selectedNodeIds.length === 0) return;
+    const selectedNodes = nodes.filter(node => selectedNodeIds.includes(node.id));
+    setClipboard(selectedNodes);
+  };
+
+  const cutSelected = () => {
+    if (selectedNodeIds.length === 0) return;
+    saveHistoryState(nodes);
+    const selectedNodes = nodes.filter(node => selectedNodeIds.includes(node.id));
+    setClipboard(selectedNodes);
+    setNodes(prev => prev.filter(node => !selectedNodeIds.includes(node.id)));
+    setSelectedNodeIds([]);
+  };
+
+  const deleteSelected = () => {
+    if (selectedNodeIds.length === 0) return;
+    saveHistoryState(nodes);
+    setNodes(prev => prev.filter(node => !selectedNodeIds.includes(node.id)));
+    setSelectedNodeIds([]);
+  };
+
+  const pasteSelected = () => {
+    if (clipboard.length === 0) return;
+    saveHistoryState(nodes);
+    
+    const newNodes = clipboard.map(node => {
+      const newId = crypto.randomUUID().split('-')[0];
+      const offsetPos = {
+        x: node.position.x + 20,
+        y: node.position.y + 20
+      };
+      
+      const extra: Partial<DiagramNode> = {};
+      if (node.startPoint && node.endPoint) {
+        extra.startPoint = {
+          x: node.startPoint.x + 20,
+          y: node.startPoint.y + 20
+        };
+        extra.endPoint = {
+          x: node.endPoint.x + 20,
+          y: node.endPoint.y + 20
+        };
+      }
+      
+      return {
+        ...node,
+        id: newId,
+        position: offsetPos,
+        ...extra
+      };
+    });
+    
+    setNodes(prev => [...prev, ...newNodes]);
+    setSelectedNodeIds(newNodes.map(n => n.id));
+    setClipboard(newNodes);
+  };
 
   const addBox = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 150;
     const height = 100;
     const newNode: DiagramNode = {
@@ -54,6 +310,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addDiamond = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 120;
     const height = 120;
     const newNode: DiagramNode = {
@@ -73,6 +330,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addCircle = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 100;
     const height = 100;
     const newNode: DiagramNode = {
@@ -91,6 +349,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addTriangle = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 120;
     const height = 100;
     const newNode: DiagramNode = {
@@ -109,6 +368,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addStar = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 110;
     const height = 110;
     const newNode: DiagramNode = {
@@ -127,6 +387,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addLine = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 200;
     const height = 20;
     const startX = position ? position.x - width / 2 : 150;
@@ -147,6 +408,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const addArrow = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     const width = 200;
     const height = 20;
     const startX = position ? position.x - width / 2 : 150;
@@ -187,10 +449,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const updateNode = (updatedNode: DiagramNode) => {
+    saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
   };
 
   const updateMultipleNodes = (ids: string[], updates: Partial<DiagramNode>) => {
+    saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => {
       if (ids.includes(node.id)) {
         const newStyle = updates.style 
@@ -207,6 +471,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const moveNode = (id: string, position: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => {
       if (node.id === id) {
         if (node.startPoint && node.endPoint) {
@@ -226,6 +491,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const moveSelectedNodes = (draggedNodeId: string, position: { x: number; y: number }) => {
+    saveHistoryState(nodes);
     setNodes((prev) => {
       const draggedNode = prev.find(n => n.id === draggedNodeId);
       if (!draggedNode) return prev;
@@ -270,6 +536,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     dimensions: { width: number; height: number }, 
     position: { x: number; y: number }
   ) => {
+    saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => 
       node.id === id ? { ...node, dimensions, position } : node
     ));
@@ -290,6 +557,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const bringToFront = (ids: string[]) => {
+    saveHistoryState(nodes);
     setNodes((prev) => {
       const selected = prev.filter((node) => ids.includes(node.id));
       const unselected = prev.filter((node) => !ids.includes(node.id));
@@ -298,6 +566,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const sendToBack = (ids: string[]) => {
+    saveHistoryState(nodes);
     setNodes((prev) => {
       const selected = prev.filter((node) => ids.includes(node.id));
       const unselected = prev.filter((node) => !ids.includes(node.id));
@@ -308,6 +577,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const alignSelected = (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     if (selectedNodeIds.length === 0) return;
 
+    saveHistoryState(nodes);
     setNodes((prev) => {
       const selectedNodes = prev.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'line' && n.type !== 'arrow');
       if (selectedNodes.length === 0) return prev;
@@ -391,6 +661,33 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const switchProject = (targetId: string) => {
+    const target = projects.find(p => p.id === targetId);
+    setNodesState(target ? target.nodes : []);
+    setSelectedNodeIds([]);
+    setActiveProjectId(targetId);
+    setPast([]);
+    setFuture([]);
+  };
+
+  const addProject = (name: string, category: string = 'Loom Diagrams') => {
+    const newId = crypto.randomUUID().split('-')[0];
+    const newProj: Project = {
+      id: newId,
+      name,
+      category,
+      updatedAt: Date.now(),
+      nodes: []
+    };
+    
+    setProjects(prev => [...prev, newProj]);
+    setNodesState([]);
+    setSelectedNodeIds([]);
+    setActiveProjectId(newId);
+    setPast([]);
+    setFuture([]);
+  };
+
   return (
     <DiagramContext.Provider value={{ 
       nodes, 
@@ -415,7 +712,36 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       sendToBack,
       alignSelected,
       zoom,
-      setZoom
+      setZoom,
+      activeTool,
+      setActiveTool,
+      selectToolMode,
+      setSelectToolMode,
+      projects,
+      activeProjectId,
+      switchProject,
+      addProject,
+      
+      // Sidebar
+      isSidebarOpen,
+      toggleSidebar,
+      
+      // History
+      undo,
+      redo,
+      canUndo: past.length > 0,
+      canRedo: future.length > 0,
+      saveHistoryState,
+      
+      // Clipboard
+      copySelected,
+      pasteSelected,
+      cutSelected,
+      deleteSelected,
+
+      // Theme
+      theme,
+      toggleTheme
     }}>
       {children}
     </DiagramContext.Provider>

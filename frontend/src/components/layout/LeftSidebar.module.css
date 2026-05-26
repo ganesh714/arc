@@ -6,6 +6,7 @@
   height: 100%;
   user-select: none;
   z-index: 40;
+  overflow-x: hidden;
 }
 
 .tabs {
@@ -41,6 +42,7 @@
 .panelContent {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }

@@ -4,10 +4,10 @@ import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import styles from './Header.module.css';
-import { FolderInput, FileDown } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon } from 'lucide-react';
 
 export function Header() {
-  const { nodes } = useDiagram();
+  const { nodes, theme, toggleTheme } = useDiagram();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [exportData, setExportData] = useState('');
@@ -39,6 +39,20 @@ export function Header() {
         </div>
 
         <div className={styles.actions}>
+          <button 
+            className={styles.btn} 
+            onClick={toggleTheme} 
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            style={{
+              padding: '6px 8px',
+              minWidth: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
           <button className={styles.btn} onClick={() => setIsImportOpen(true)}>
             <FolderInput size={14} />
             <span>Import JSON</span>

@@ -9,6 +9,7 @@
   z-index: 50;
   position: relative;
   user-select: none;
+  overflow: hidden;
 }
 
 .leftSection {

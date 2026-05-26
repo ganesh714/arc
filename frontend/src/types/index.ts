@@ -27,7 +27,7 @@ export interface Point {
 
 export interface DiagramNode {
   id: string;
-  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star';
+  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment';
   position: Position;
   dimensions: Dimensions;
   content: string;
@@ -38,4 +38,5 @@ export interface DiagramNode {
   lineStyle?: 'solid' | 'dashed';
   lineCurve?: 'straight' | 'curved';
   arrowType?: 'none' | 'single' | 'double';
+  points?: Point[];
 }
