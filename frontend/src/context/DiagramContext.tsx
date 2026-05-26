@@ -43,6 +43,10 @@ interface DiagramContextType {
   switchProject: (id: string) => void;
   addProject: (name: string, category?: string) => void;
   
+  // Sidebar state
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  
   // History states/functions
   undo: () => void;
   redo: () => void;
@@ -135,6 +139,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   
   // Clipboard state
   const [clipboard, setClipboard] = useState<DiagramNode[]>([]);
+
+  // Sidebar open/close state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
@@ -687,6 +695,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       activeProjectId,
       switchProject,
       addProject,
+      
+      // Sidebar
+      isSidebarOpen,
+      toggleSidebar,
       
       // History
       undo,
