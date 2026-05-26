@@ -401,6 +401,154 @@ export function Node({ node }: NodeProps) {
             </div>
           </div>
         </div>
+      ) : node.type === 'pill' ? (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `rotate(${node.rotation || 0}deg)`,
+            backgroundColor: node.style?.backgroundColor || '#2c2c2c',
+            border: `1.5px solid ${node.style?.borderColor || '#555555'}`,
+            borderRadius: '999px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            boxShadow: node.style?.boxShadow || 'none'
+          }}
+        >
+          <div style={{ ...textStyle, padding: '8px 20px' }}>
+            {node.content}
+          </div>
+        </div>
+      ) : node.type === 'hexagon' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)`, filter: shadowFilter }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+            <polygon 
+              points="25,5 75,5 100,50 75,95 25,95 0,50" 
+              fill={node.style?.backgroundColor || '#2e2438'} 
+              stroke={node.style?.borderColor || '#824ea0'} 
+              strokeWidth="2" 
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ ...textStyle, padding: '10px' }}>
+              {node.content}
+            </div>
+          </div>
+        </div>
+      ) : node.type === 'parallelogram' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)`, filter: shadowFilter }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+            <polygon 
+              points="20,5 100,5 80,95 0,95" 
+              fill={node.style?.backgroundColor || '#242e38'} 
+              stroke={node.style?.borderColor || '#4e82a0'} 
+              strokeWidth="2" 
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              width: '100%', 
+              height: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ ...textStyle, padding: '10px 20px' }}>
+              {node.content}
+            </div>
+          </div>
+        </div>
+      ) : node.type === 'database' ? (
+        <div style={{ width: '100%', height: '100%', position: 'relative', transform: `rotate(${node.rotation || 0}deg)`, filter: shadowFilter }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+            <path 
+              d="M 5,20 C 5,10 95,10 95,20 L 95,80 C 95,90 5,90 5,80 Z" 
+              fill={node.style?.backgroundColor || '#382424'} 
+              stroke={node.style?.borderColor || '#a04e4e'} 
+              strokeWidth="2" 
+              vectorEffect="non-scaling-stroke"
+            />
+            <path 
+              d="M 5,20 C 5,30 95,30 95,20" 
+              fill="none" 
+              stroke={node.style?.borderColor || '#a04e4e'} 
+              strokeWidth="2" 
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: '25%', 
+              left: 0, 
+              width: '100%', 
+              height: '75%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              pointerEvents: 'none' 
+            }}
+          >
+            <div style={{ ...textStyle, padding: '10px' }}>
+              {node.content}
+            </div>
+          </div>
+        </div>
+      ) : node.type === 'note' ? (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `rotate(${node.rotation || 0}deg)`,
+            backgroundColor: node.style?.backgroundColor || '#fef3c7',
+            border: `1.5px solid ${node.style?.borderColor || '#f59e0b'}`,
+            borderRadius: '2px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            padding: '12px',
+            boxShadow: node.style?.boxShadow || '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+            clipPath: 'polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%)'
+          }}
+        >
+          {/* Note fold */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '15%',
+            height: '15%',
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            borderLeft: `1px solid ${node.style?.borderColor || '#f59e0b'}`,
+            borderTop: `1px solid ${node.style?.borderColor || '#f59e0b'}`,
+          }} />
+          <div style={{ ...textStyle, color: node.style?.color || '#92400e' }}>
+            {node.content}
+          </div>
+        </div>
       ) : isLine ? (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>

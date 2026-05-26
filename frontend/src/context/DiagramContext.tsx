@@ -18,6 +18,11 @@ interface DiagramContextType {
   addCircle: (position?: { x: number; y: number }) => void;
   addTriangle: (position?: { x: number; y: number }) => void;
   addStar: (position?: { x: number; y: number }) => void;
+  addPill: (position?: { x: number; y: number }) => void;
+  addHexagon: (position?: { x: number; y: number }) => void;
+  addParallelogram: (position?: { x: number; y: number }) => void;
+  addDatabase: (position?: { x: number; y: number }) => void;
+  addNote: (position?: { x: number; y: number }) => void;
   addLine: (position?: { x: number; y: number }) => void;
   addArrow: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
@@ -368,6 +373,103 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
+  const addPill = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 150;
+    const height = 60;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'pill',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 250 },
+      dimensions: { width, height },
+      content: 'New Pill',
+      style: {
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3',
+        borderRadius: '30px'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addHexagon = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 120;
+    const height = 100;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'hexagon',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 250 },
+      dimensions: { width, height },
+      content: 'New Hexagon',
+      style: {
+        backgroundColor: '#2e2438',
+        borderColor: '#824ea0',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addParallelogram = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 150;
+    const height = 100;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'parallelogram',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 250, y: 250 },
+      dimensions: { width, height },
+      content: 'New Parallelogram',
+      style: {
+        backgroundColor: '#242e38',
+        borderColor: '#4e82a0',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addDatabase = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 100;
+    const height = 120;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'database',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 350, y: 250 },
+      dimensions: { width, height },
+      content: 'New DB',
+      style: {
+        backgroundColor: '#382424',
+        borderColor: '#a04e4e',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addNote = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 140;
+    const height = 140;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'note',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 450, y: 250 },
+      dimensions: { width, height },
+      content: 'New Note',
+      style: {
+        backgroundColor: '#fef3c7',
+        borderColor: '#f59e0b',
+        color: '#92400e',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
   const addLine = (position?: { x: number; y: number }) => {
     saveHistoryState(nodes);
     const width = 200;
@@ -677,9 +779,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addBox, 
       addDiamond, 
       addCircle, 
-      addTriangle, 
+      addTriangle,
       addStar,
-      addLine, 
+      addPill,
+      addHexagon,
+      addParallelogram,
+      addDatabase,
+      addNote,
+      addLine,
+ 
       addArrow, 
       updateLinePoints, 
       updateNode, 

@@ -22,7 +22,10 @@ import {
   Scaling as ScalingIcon,
   Hand,
   Undo2,
-  Redo2
+  Redo2,
+  Hexagon,
+  Database,
+  StickyNote
 } from 'lucide-react';
 
 export function Canvas() {
@@ -38,6 +41,11 @@ export function Canvas() {
     addCircle,
     addTriangle,
     addStar,
+    addPill,
+    addHexagon,
+    addParallelogram,
+    addDatabase,
+    addNote,
     addLine,
     addArrow,
     zoom,
@@ -79,7 +87,7 @@ export function Canvas() {
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note'>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -324,8 +332,14 @@ export function Canvas() {
     else if (type === 'circle') addCircle({ x, y });
     else if (type === 'triangle') addTriangle({ x, y });
     else if (type === 'star') addStar({ x, y });
+    else if (type === 'pill') addPill({ x, y });
+    else if (type === 'hexagon') addHexagon({ x, y });
+    else if (type === 'parallelogram') addParallelogram({ x, y });
+    else if (type === 'database') addDatabase({ x, y });
+    else if (type === 'note') addNote({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
+
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -529,6 +543,26 @@ export function Canvas() {
                 defaultBg = 'var(--bg-hover)';
                 defaultBorder = '#9e7c1d';
                 defaultText = 'Star';
+              } else if (activeTool === 'pill') {
+                defaultText = 'Pill';
+                customStyle = { borderRadius: '999px' };
+              } else if (activeTool === 'hexagon') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#824ea0';
+                defaultText = 'Hexagon';
+              } else if (activeTool === 'parallelogram') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#4e82a0';
+                defaultText = 'Parallelogram';
+              } else if (activeTool === 'database') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#a04e4e';
+                defaultText = 'Database';
+              } else if (activeTool === 'note') {
+                defaultBg = '#fef3c7';
+                defaultBorder = '#f59e0b';
+                defaultText = 'Note';
+                customStyle = { color: '#92400e' };
               }
 
               newNode = {
@@ -677,20 +711,30 @@ export function Canvas() {
 
   const shapeIcons = {
     box: <Square size={15} />,
+    pill: <Square size={15} style={{ borderRadius: '6px' }} />,
     circle: <Circle size={15} />,
     triangle: <Triangle size={15} />,
+    hexagon: <Hexagon size={15} />,
     diamond: <DiamondIcon size={15} />,
+    parallelogram: <Square size={15} style={{ transform: 'skewX(-15deg)' }} />,
     star: <StarIcon size={15} />,
+    database: <Database size={15} />,
+    note: <StickyNote size={15} />,
     line: <Minus size={15} />,
     arrow: <ArrowRight size={15} />
   };
 
   const shapeLabels = {
     box: 'Rectangle (R)',
+    pill: 'Pill',
     circle: 'Ellipse (O)',
     triangle: 'Triangle',
+    hexagon: 'Hexagon',
     diamond: 'Diamond',
+    parallelogram: 'Parallelogram',
     star: 'Star',
+    database: 'Database',
+    note: 'Sticky Note',
     line: 'Line (L)',
     arrow: 'Arrow (Shift+L)'
   };
@@ -1098,7 +1142,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'diamond', 'star', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1117,7 +1161,8 @@ export function Canvas() {
 
           {shapeDropdownOpen && (
             <div className={styles.shapeDropdown} onClick={(e) => e.stopPropagation()}>
-              {Object.entries(shapeIcons).map(([type, icon]) => {
+              <div className={styles.dropdownCategory}>Basic Shapes</div>
+              {['box', 'circle', 'triangle', 'star', 'pill'].map((type) => {
                 const isSelected = currentShapeType === type;
                 return (
                   <button
@@ -1129,10 +1174,53 @@ export function Canvas() {
                       setShapeDropdownOpen(false);
                     }}
                   >
-                    <span className={styles.dropdownItemIcon}>{icon}</span>
+                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
                     <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
                     <span className={styles.dropdownItemShortcut}>
-                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
+                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : ''}
+                    </span>
+                  </button>
+                );
+              })}
+              
+              <div className={styles.dropdownDivider} />
+              <div className={styles.dropdownCategory}>Flowchart</div>
+              {['diamond', 'hexagon', 'parallelogram', 'database', 'note'].map((type) => {
+                const isSelected = currentShapeType === type;
+                return (
+                  <button
+                    key={type}
+                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                    onClick={() => {
+                      setCurrentShapeType(type as any);
+                      setActiveTool(type);
+                      setShapeDropdownOpen(false);
+                    }}
+                  >
+                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                  </button>
+                );
+              })}
+
+              <div className={styles.dropdownDivider} />
+              <div className={styles.dropdownCategory}>Connectors</div>
+              {['line', 'arrow'].map((type) => {
+                const isSelected = currentShapeType === type;
+                return (
+                  <button
+                    key={type}
+                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                    onClick={() => {
+                      setCurrentShapeType(type as any);
+                      setActiveTool(type);
+                      setShapeDropdownOpen(false);
+                    }}
+                  >
+                    <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                    <span className={styles.dropdownItemShortcut}>
+                      {type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
                     </span>
                   </button>
                 );

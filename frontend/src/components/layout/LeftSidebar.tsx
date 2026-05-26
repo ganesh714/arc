@@ -11,7 +11,10 @@ import {
   ArrowRight, 
   Trash2, 
   FolderSync,
-  GripVertical
+  GripVertical,
+  Hexagon,
+  Database,
+  StickyNote
 } from 'lucide-react';
 
 export function LeftSidebar() {
@@ -27,14 +30,24 @@ export function LeftSidebar() {
     switch (type) {
       case 'box':
         return <Square size={size} className={styles.layerIcon} />;
+      case 'pill':
+        return <Square size={size} style={{ borderRadius: '3px' }} className={styles.layerIcon} />;
       case 'circle':
         return <Circle size={size} className={styles.layerIcon} />;
       case 'triangle':
         return <Triangle size={size} className={styles.layerIcon} />;
+      case 'hexagon':
+        return <Hexagon size={size} className={styles.layerIcon} />;
       case 'diamond':
         return <Diamond size={size} className={styles.layerIcon} />;
+      case 'parallelogram':
+        return <Square size={size} style={{ transform: 'skewX(-15deg)' }} className={styles.layerIcon} />;
       case 'star':
         return <Layers size={size} style={{ color: '#d69e2e' }} className={styles.layerIcon} />;
+      case 'database':
+        return <Database size={size} className={styles.layerIcon} />;
+      case 'note':
+        return <StickyNote size={size} className={styles.layerIcon} />;
       case 'line':
         return <Minus size={size} className={styles.layerIcon} />;
       case 'arrow':
