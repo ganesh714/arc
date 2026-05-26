@@ -50,7 +50,7 @@ export function SidePanel() {
             <span className={styles.sectionTitle}>Page</span>
             <div className={styles.row}>
               <span className={styles.rowLabel}>Background</span>
-              <div className={styles.colorPickerWrapper} style={{ maxWidth: '120px' }}>
+              <div className={styles.colorPickerWrapper}>
                 <input
                   type="color"
                   value={canvasBg}
@@ -275,11 +275,11 @@ export function SidePanel() {
     <div className={styles.section}>
       <span className={styles.sectionTitle}>Layer Depth</span>
       <div className={styles.grid}>
-        <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '24px' }}>
+        <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
           <ArrowUp size={12} />
           <span>To Front</span>
         </button>
-        <button className={styles.select} onClick={() => sendToBack(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '24px' }}>
+        <button className={styles.select} onClick={() => sendToBack(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
           <ArrowDown size={12} />
           <span>To Back</span>
         </button>
@@ -332,18 +332,16 @@ export function SidePanel() {
           </button>
         </div>
 
-        {/* Alignment controls directly below header */}
         <AlignmentToolbar />
 
         <div className={styles.propertiesContent}>
           {allShapes && (
             <>
-              {/* Layout Properties */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Layout</span>
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Rotation</span>
-                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                  <div className={styles.sliderContainer}>
                     <input
                       type="range"
                       min="0"
@@ -352,7 +350,7 @@ export function SidePanel() {
                       onChange={(e) => handleMultipleChange('rotation', parseInt(e.target.value, 10))}
                       className={styles.slider}
                     />
-                    <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                    <div className={styles.inputWrapper}>
                       <input
                         type="number"
                         min="0"
@@ -369,7 +367,7 @@ export function SidePanel() {
                 {noCircles && (
                   <div className={styles.row}>
                     <span className={styles.rowLabel}>Corner</span>
-                    <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                    <div className={styles.sliderContainer}>
                       <input
                         type="range"
                         min="0"
@@ -378,7 +376,7 @@ export function SidePanel() {
                         onChange={(e) => handleMultipleChange('borderRadius', `${e.target.value}px`)}
                         className={styles.slider}
                       />
-                      <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                      <div className={styles.inputWrapper}>
                         <input
                           type="number"
                           min="0"
@@ -392,10 +390,9 @@ export function SidePanel() {
                   </div>
                 )}
 
-                {/* Opacity for Mixed Selection */}
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Opacity</span>
-                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                  <div className={styles.sliderContainer}>
                     <input
                       type="range"
                       min="0"
@@ -404,7 +401,7 @@ export function SidePanel() {
                       onChange={(e) => handleMultipleChange('opacity', String(Number(e.target.value) / 100))}
                       className={styles.slider}
                     />
-                    <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                    <div className={styles.inputWrapper}>
                       <input
                         type="number"
                         min="0"
@@ -424,10 +421,8 @@ export function SidePanel() {
                 </div>
               </div>
 
-              {/* Depth Section */}
               <DepthArrangement ids={selectedNodeIds} />
 
-              {/* Text Styling (Typography) Section */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Typography</span>
                 <div className={styles.row}>
@@ -448,7 +443,7 @@ export function SidePanel() {
                 </div>
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Format</span>
-                  <div className={styles.toggleGroup} style={{ width: '120px' }}>
+                  <div className={styles.toggleGroup}>
                     <button
                       className={`${styles.toggleButton} ${commonFontWeight === 'bold' ? styles.toggleButtonActive : ''}`}
                       onClick={() => handleMultipleChange('fontWeight', commonFontWeight === 'bold' ? 'normal' : 'bold')}
@@ -481,7 +476,6 @@ export function SidePanel() {
                 </div>
               </div>
 
-              {/* Fill & Stroke Properties */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Fill & Stroke</span>
                 <div className={styles.row}>
@@ -495,7 +489,7 @@ export function SidePanel() {
                     <span className={styles.colorHex}>{commonBg}</span>
                   </div>
                 </div>
-                <div className={styles.row} style={{ marginTop: '8px' }}>
+                <div className={styles.row}>
                   <span className={styles.rowLabel}>Stroke</span>
                   <div className={styles.colorPickerWrapper}>
                     <input
@@ -508,12 +502,11 @@ export function SidePanel() {
                 </div>
               </div>
 
-              {/* Drop Shadows (Effects) Section */}
               <div className={styles.section}>
-                <span className={styles.sectionTitle}>Effects (Shadow)</span>
+                <span className={styles.sectionTitle}>Effects</span>
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Blur</span>
-                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                  <div className={styles.sliderContainer}>
                     <input
                       type="range"
                       min="0"
@@ -522,7 +515,7 @@ export function SidePanel() {
                       onChange={(e) => handleMultipleShadowChange('blur', e.target.value)}
                       className={styles.slider}
                     />
-                    <div className={styles.inputWrapper} style={{ width: '35px' }}>
+                    <div className={styles.inputWrapper}>
                       <input
                         type="number"
                         value={commonShadow.blur}
@@ -532,27 +525,30 @@ export function SidePanel() {
                     </div>
                   </div>
                 </div>
-                <div className={styles.grid}>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>X</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={commonShadow.x}
-                      onChange={(e) => handleMultipleShadowChange('x', e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>Y</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={commonShadow.y}
-                      onChange={(e) => handleMultipleShadowChange('y', e.target.value)}
-                    />
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Offset</span>
+                  <div className={styles.grid}>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>X</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={commonShadow.x}
+                        onChange={(e) => handleMultipleShadowChange('x', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>Y</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={commonShadow.y}
+                        onChange={(e) => handleMultipleShadowChange('y', e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className={styles.row} style={{ marginTop: '8px' }}>
+                <div className={styles.row}>
                   <span className={styles.rowLabel}>Color</span>
                   <div className={styles.colorPickerWrapper}>
                     <input
@@ -568,67 +564,60 @@ export function SidePanel() {
           )}
 
           {allConnectors && (
-            <>
-              {/* Stroke Properties */}
-              <div className={styles.section}>
-                <span className={styles.sectionTitle}>Stroke</span>
-                <div className={styles.row} style={{ marginBottom: '8px' }}>
-                  <span className={styles.rowLabel}>Color</span>
-                  <div className={styles.colorPickerWrapper}>
-                    <input
-                      type="color"
-                      value={commonBorder}
-                      onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
-                    />
-                    <span className={styles.colorHex}>{commonBorder}</span>
-                  </div>
-                </div>
-
-                <div className={styles.row}>
-                  <span className={styles.rowLabel}>Route</span>
-                  <select
-                    className={styles.select}
-                    value={commonLineCurve}
-                    onChange={(e) => handleMultipleChange('lineCurve', e.target.value as 'straight' | 'curved')}
-                  >
-                    <option value="straight">Straight</option>
-                    <option value="curved">Curved</option>
-                  </select>
-                </div>
-
-                <div className={styles.row}>
-                  <span className={styles.rowLabel}>Pattern</span>
-                  <select
-                    className={styles.select}
-                    value={commonLineStyle}
-                    onChange={(e) => handleMultipleChange('lineStyle', e.target.value as 'solid' | 'dashed')}
-                  >
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                  </select>
-                </div>
-
-                <div className={styles.row}>
-                  <span className={styles.rowLabel}>Arrows</span>
-                  <select
-                    className={styles.select}
-                    value={commonArrowType}
-                    onChange={(e) => handleMultipleChange('arrowType', e.target.value as 'none' | 'single' | 'double')}
-                  >
-                    <option value="none">None</option>
-                    <option value="single">Single End</option>
-                    <option value="double">Double Ended</option>
-                  </select>
+            <div className={styles.section}>
+              <span className={styles.sectionTitle}>Connector</span>
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Color</span>
+                <div className={styles.colorPickerWrapper}>
+                  <input
+                    type="color"
+                    value={commonBorder}
+                    onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                  />
+                  <span className={styles.colorHex}>{commonBorder}</span>
                 </div>
               </div>
-            </>
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Route</span>
+                <select
+                  className={styles.select}
+                  value={commonLineCurve}
+                  onChange={(e) => handleMultipleChange('lineCurve', e.target.value as 'straight' | 'curved')}
+                >
+                  <option value="straight">Straight</option>
+                  <option value="curved">Curved</option>
+                </select>
+              </div>
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Pattern</span>
+                <select
+                  className={styles.select}
+                  value={commonLineStyle}
+                  onChange={(e) => handleMultipleChange('lineStyle', e.target.value as 'solid' | 'dashed')}
+                >
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                </select>
+              </div>
+              <div className={styles.row}>
+                <span className={styles.rowLabel}>Arrows</span>
+                <select
+                  className={styles.select}
+                  value={commonArrowType}
+                  onChange={(e) => handleMultipleChange('arrowType', e.target.value as 'none' | 'single' | 'double')}
+                >
+                  <option value="none">None</option>
+                  <option value="single">Single End</option>
+                  <option value="double">Double Ended</option>
+                </select>
+              </div>
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // Single Selection Inspection
   const isLine = node.type === 'line' || node.type === 'arrow';
   const shadow = getShadowParts(node.style?.boxShadow);
 
@@ -641,55 +630,59 @@ export function SidePanel() {
         </button>
       </div>
 
-      {/* Alignment controls directly below header (Figma style) */}
       <AlignmentToolbar />
 
       <div className={styles.propertiesContent}>
-        {/* Geometry / Layout Section */}
         <div className={styles.section}>
           <span className={styles.sectionTitle}>Alignment & Dimensions</span>
-          <div className={styles.grid}>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputLabel}>X</span>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={Math.round(node.position.x)}
-                onChange={(e) => handlePositionChange('x', parseInt(e.target.value, 10))}
-              />
-            </div>
-            <div className={styles.inputWrapper}>
-              <span className={styles.inputLabel}>Y</span>
-              <input
-                type="number"
-                className={styles.numberInput}
-                value={Math.round(node.position.y)}
-                onChange={(e) => handlePositionChange('y', parseInt(e.target.value, 10))}
-              />
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Position</span>
+            <div className={styles.grid}>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputLabel}>X</span>
+                <input
+                  type="number"
+                  className={styles.numberInput}
+                  value={Math.round(node.position.x)}
+                  onChange={(e) => handlePositionChange('x', parseInt(e.target.value, 10))}
+                />
+              </div>
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputLabel}>Y</span>
+                <input
+                  type="number"
+                  className={styles.numberInput}
+                  value={Math.round(node.position.y)}
+                  onChange={(e) => handlePositionChange('y', parseInt(e.target.value, 10))}
+                />
+              </div>
             </div>
           </div>
 
           {!isLine ? (
-            <div className={styles.grid}>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputLabel}>W</span>
-                <input
-                  type="number"
-                  className={styles.numberInput}
-                  value={Math.round(node.dimensions.width)}
-                  onChange={(e) => handleDimensionChange('width', parseInt(e.target.value, 10))}
-                  min={20}
-                />
-              </div>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputLabel}>H</span>
-                <input
-                  type="number"
-                  className={styles.numberInput}
-                  value={Math.round(node.dimensions.height)}
-                  onChange={(e) => handleDimensionChange('height', parseInt(e.target.value, 10))}
-                  min={20}
-                />
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Size</span>
+              <div className={styles.grid}>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputLabel}>W</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(node.dimensions.width)}
+                    onChange={(e) => handleDimensionChange('width', parseInt(e.target.value, 10))}
+                    min={20}
+                  />
+                </div>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputLabel}>H</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={Math.round(node.dimensions.height)}
+                    onChange={(e) => handleDimensionChange('height', parseInt(e.target.value, 10))}
+                    min={20}
+                  />
+                </div>
               </div>
             </div>
           ) : node.startPoint && node.endPoint && (() => {
@@ -703,83 +696,73 @@ export function SidePanel() {
 
             return (
               <>
-                <div style={{ margin: '8px 0 4px 0', fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600' }}>Line Points</div>
-                <div className={styles.grid}>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>SX</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={Math.round(start.x)}
-                      onChange={(e) => handleStartPointChange('x', parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>SY</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={Math.round(start.y)}
-                      onChange={(e) => handleStartPointChange('y', parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                </div>
-                <div className={styles.grid}>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>EX</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={Math.round(end.x)}
-                      onChange={(e) => handleEndPointChange('x', parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                  <div className={styles.inputWrapper}>
-                    <span className={styles.inputLabel}>EY</span>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={Math.round(end.y)}
-                      onChange={(e) => handleEndPointChange('y', parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.row} style={{ marginTop: '8px' }}>
-                  <span className={styles.rowLabel}>Length</span>
-                  <div className={styles.inputWrapper} style={{ width: '60px' }}>
-                    <input
-                      type="number"
-                      className={styles.numberInput}
-                      value={length}
-                      onChange={(e) => handleLengthChange(parseInt(e.target.value, 10))}
-                      min={5}
-                    />
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', marginLeft: '2px' }}>px</span>
-                  </div>
-                </div>
-                
                 <div className={styles.row}>
-                  <span className={styles.rowLabel}>Angle</span>
-                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      value={angle}
-                      onChange={(e) => handleAngleChange(parseInt(e.target.value, 10))}
-                      className={styles.slider}
-                    />
-                    <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                  <span className={styles.rowLabel}>Start</span>
+                  <div className={styles.grid}>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>SX</span>
                       <input
                         type="number"
-                        min="0"
-                        max="360"
+                        className={styles.numberInput}
+                        value={Math.round(start.x)}
+                        onChange={(e) => handleStartPointChange('x', parseInt(e.target.value, 10))}
+                      />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>SY</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={Math.round(start.y)}
+                        onChange={(e) => handleStartPointChange('y', parseInt(e.target.value, 10))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>End</span>
+                  <div className={styles.grid}>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>EX</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={Math.round(end.x)}
+                        onChange={(e) => handleEndPointChange('x', parseInt(e.target.value, 10))}
+                      />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>EY</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={Math.round(end.y)}
+                        onChange={(e) => handleEndPointChange('y', parseInt(e.target.value, 10))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Line</span>
+                  <div className={styles.sliderContainer}>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>L</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
+                        value={length}
+                        onChange={(e) => handleLengthChange(parseInt(e.target.value, 10))}
+                        min={5}
+                      />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputLabel}>A</span>
+                      <input
+                        type="number"
+                        className={styles.numberInput}
                         value={angle}
                         onChange={(e) => handleAngleChange(parseInt(e.target.value, 10) || 0)}
-                        className={styles.numberInput}
                       />
-                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>°</span>
                     </div>
                   </div>
                 </div>
@@ -788,9 +771,9 @@ export function SidePanel() {
           })()}
 
           {!isLine && (
-            <div className={styles.row} style={{ marginTop: '8px' }}>
+            <div className={styles.row}>
               <span className={styles.rowLabel}>Rotation</span>
-              <div className={styles.sliderContainer} style={{ width: '120px' }}>
+              <div className={styles.sliderContainer}>
                 <input
                   type="range"
                   min="0"
@@ -799,7 +782,7 @@ export function SidePanel() {
                   onChange={(e) => updateNode({ ...node, rotation: parseInt(e.target.value, 10) })}
                   className={styles.slider}
                 />
-                <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                <div className={styles.inputWrapper}>
                   <input
                     type="number"
                     min="0"
@@ -817,7 +800,7 @@ export function SidePanel() {
           {!isLine && node.type !== 'circle' && (
             <div className={styles.row}>
               <span className={styles.rowLabel}>Corner</span>
-              <div className={styles.sliderContainer} style={{ width: '120px' }}>
+              <div className={styles.sliderContainer}>
                 <input
                   type="range"
                   min="0"
@@ -826,7 +809,7 @@ export function SidePanel() {
                   onChange={(e) => handleChange('borderRadius', `${e.target.value}px`)}
                   className={styles.slider}
                 />
-                <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                <div className={styles.inputWrapper}>
                   <input
                     type="number"
                     min="0"
@@ -840,10 +823,9 @@ export function SidePanel() {
             </div>
           )}
 
-          {/* Opacity Control */}
-          <div className={styles.row} style={{ marginTop: '8px' }}>
+          <div className={styles.row}>
             <span className={styles.rowLabel}>Opacity</span>
-            <div className={styles.sliderContainer} style={{ width: '120px' }}>
+            <div className={styles.sliderContainer}>
               <input
                 type="range"
                 min="0"
@@ -852,7 +834,7 @@ export function SidePanel() {
                 onChange={(e) => handleChange('opacity', String(Number(e.target.value) / 100))}
                 className={styles.slider}
               />
-              <div className={styles.inputWrapper} style={{ width: '45px' }}>
+              <div className={styles.inputWrapper}>
                 <input
                   type="number"
                   min="0"
@@ -872,10 +854,8 @@ export function SidePanel() {
           </div>
         </div>
 
-        {/* Depth Section */}
         <DepthArrangement ids={selectedNodeIds} />
 
-        {/* Text Content Section */}
         {!isLine && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Content</span>
@@ -889,7 +869,6 @@ export function SidePanel() {
           </div>
         )}
 
-        {/* Typography properties */}
         {!isLine && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Typography</span>
@@ -911,7 +890,7 @@ export function SidePanel() {
             </div>
             <div className={styles.row}>
               <span className={styles.rowLabel}>Format</span>
-              <div className={styles.toggleGroup} style={{ width: '120px' }}>
+              <div className={styles.toggleGroup}>
                 <button
                   className={`${styles.toggleButton} ${node.style?.fontWeight === 'bold' ? styles.toggleButtonActive : ''}`}
                   onClick={() => handleChange('fontWeight', node.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
@@ -945,11 +924,11 @@ export function SidePanel() {
           </div>
         )}
 
-        {/* Fill color picker */}
         {!isLine && (
           <div className={styles.section}>
+            <span className={styles.sectionTitle}>Fill</span>
             <div className={styles.row}>
-              <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Fill</span>
+              <span className={styles.rowLabel}>Color</span>
               <div className={styles.colorPickerWrapper}>
                 <input
                   type="color"
@@ -962,10 +941,10 @@ export function SidePanel() {
           </div>
         )}
 
-        {/* Stroke Section */}
         <div className={styles.section}>
-          <div className={styles.row} style={{ marginBottom: isLine ? '8px' : '0' }}>
-            <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Stroke</span>
+          <span className={styles.sectionTitle}>Stroke</span>
+          <div className={styles.row}>
+            <span className={styles.rowLabel}>Color</span>
             <div className={styles.colorPickerWrapper}>
               <input
                 type="color"
@@ -991,7 +970,6 @@ export function SidePanel() {
                   <option value="curved">Curved</option>
                 </select>
               </div>
-
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Pattern</span>
                 <select
@@ -1003,7 +981,6 @@ export function SidePanel() {
                   <option value="dashed">Dashed</option>
                 </select>
               </div>
-
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Arrows</span>
                 <select
@@ -1020,11 +997,11 @@ export function SidePanel() {
           )}
         </div>
 
-        {/* Text styles section (Color) */}
         {!isLine && (
           <div className={styles.section}>
+            <span className={styles.sectionTitle}>Text</span>
             <div className={styles.row}>
-              <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Text Color</span>
+              <span className={styles.rowLabel}>Color</span>
               <div className={styles.colorPickerWrapper}>
                 <input
                   type="color"
@@ -1037,13 +1014,12 @@ export function SidePanel() {
           </div>
         )}
 
-        {/* Shadow Effects (Drop Shadows) Section */}
         {!isLine && (
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Effects (Shadow)</span>
+            <span className={styles.sectionTitle}>Effects</span>
             <div className={styles.row}>
               <span className={styles.rowLabel}>Blur</span>
-              <div className={styles.sliderContainer} style={{ width: '120px' }}>
+              <div className={styles.sliderContainer}>
                 <input
                   type="range"
                   min="0"
@@ -1052,7 +1028,7 @@ export function SidePanel() {
                   onChange={(e) => handleShadowChange('blur', e.target.value)}
                   className={styles.slider}
                 />
-                <div className={styles.inputWrapper} style={{ width: '35px' }}>
+                <div className={styles.inputWrapper}>
                   <input
                     type="number"
                     value={shadow.blur}
@@ -1062,27 +1038,30 @@ export function SidePanel() {
                 </div>
               </div>
             </div>
-            <div className={styles.grid}>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputLabel}>X</span>
-                <input
-                  type="number"
-                  className={styles.numberInput}
-                  value={shadow.x}
-                  onChange={(e) => handleShadowChange('x', e.target.value)}
-                />
-              </div>
-              <div className={styles.inputWrapper}>
-                <span className={styles.inputLabel}>Y</span>
-                <input
-                  type="number"
-                  className={styles.numberInput}
-                  value={shadow.y}
-                  onChange={(e) => handleShadowChange('y', e.target.value)}
-                />
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Offset</span>
+              <div className={styles.grid}>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputLabel}>X</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={shadow.x}
+                    onChange={(e) => handleShadowChange('x', e.target.value)}
+                  />
+                </div>
+                <div className={styles.inputWrapper}>
+                  <span className={styles.inputLabel}>Y</span>
+                  <input
+                    type="number"
+                    className={styles.numberInput}
+                    value={shadow.y}
+                    onChange={(e) => handleShadowChange('y', e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-            <div className={styles.row} style={{ marginTop: '8px' }}>
+            <div className={styles.row}>
               <span className={styles.rowLabel}>Color</span>
               <div className={styles.colorPickerWrapper}>
                 <input
