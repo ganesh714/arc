@@ -54,8 +54,8 @@ function MainAppContent() {
       {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
       <div 
         style={{ 
-          width: isSidebarOpen ? '60px' : '0px', 
-          minWidth: isSidebarOpen ? '60px' : '0px', 
+          width: isSidebarOpen ? '200px' : '0px', 
+          minWidth: isSidebarOpen ? '200px' : '0px', 
           height: '100%', 
           position: 'relative',
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
