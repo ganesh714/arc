@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DiagramProvider } from '@/context/DiagramContext';
 import { Header } from '@/components/layout/Header';
+import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { Canvas } from '@/features/diagram/components/Canvas';
@@ -53,6 +54,11 @@ function MainAppContent() {
       
       {/* Workspace Area */}
       <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
+        {/* Projects Sidebar wrapper (Static leftmost column) */}
+        <div style={{ width: '160px', minWidth: '160px', height: '100%', position: 'relative' }}>
+          <ProjectsSidebar />
+        </div>
+
         {/* Left Sidebar wrapper */}
         <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
           <LeftSidebar />
