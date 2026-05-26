@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Folder, Plus, Check, X, FolderKanban } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
@@ -41,7 +42,7 @@ export function ProjectsSidebar() {
           onClick={toggleSidebar} 
           title="Expand sidebar"
         >
-          <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
+          <Logo className={styles.logo} />
         </div>
 
         <div className={styles.divider} />
@@ -84,7 +85,7 @@ export function ProjectsSidebar() {
         style={{ cursor: 'pointer' }}
       >
         <div className={styles.logoWrapper}>
-          <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
+          <Logo className={styles.logo} />
           <span className={styles.logoText}>Loom</span>
         </div>
       </div>
