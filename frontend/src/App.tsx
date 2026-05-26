@@ -9,7 +9,7 @@ import { Canvas } from '@/features/diagram/components/Canvas';
 function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(240);
-  const { isSidebarOpen, toggleSidebar } = useDiagram();
+  const { isSidebarOpen } = useDiagram();
 
   const startLeftResize = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,8 +54,8 @@ function MainAppContent() {
       {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
       <div 
         style={{ 
-          width: isSidebarOpen ? '200px' : '0px', 
-          minWidth: isSidebarOpen ? '200px' : '0px', 
+          width: isSidebarOpen ? '200px' : '60px', 
+          minWidth: isSidebarOpen ? '200px' : '60px', 
           height: '100%', 
           position: 'relative',
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -72,39 +72,6 @@ function MainAppContent() {
         
         {/* Workspace Area */}
         <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
-          {/* Collapse Toggle floating button when sidebar is closed (uses main logo image) */}
-          {!isSidebarOpen && (
-            <button
-              onClick={toggleSidebar}
-              style={{
-                position: 'absolute',
-                left: '14px',
-                top: '12px',
-                zIndex: 100,
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 0,
-                transition: 'transform 0.15s ease'
-              }}
-              title="Expand sidebar"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
-              <img src="/main logo.png" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} alt="Loom Logo" />
-            </button>
-          )}
-
           {/* Left Sidebar wrapper */}
           <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
             <LeftSidebar />
