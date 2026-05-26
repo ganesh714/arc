@@ -142,6 +142,13 @@ export function Canvas() {
         return;
       }
 
+      // Escape to deselect
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        selectNode(null);
+        return;
+      }
+
       // Hotkeys for switching tools
       if (key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('select');
@@ -585,8 +592,11 @@ export function Canvas() {
 
         // Small drag (< 5px) = treat as a click, not a marquee
         if (width < 5 && height < 5) {
-          // Only deselect if clicking directly on the canvas (not a node)
-          if (upEvent.target === upEvent.currentTarget || (upEvent.target as HTMLElement).classList.contains('canvas')) {
+          // Only deselect if clicking directly on the canvas background
+          const target = upEvent.target as HTMLElement;
+          const isCanvasBackground = target === canvasRef.current || target.classList.contains(styles.canvas);
+          
+          if (isCanvasBackground) {
             if (!upEvent.shiftKey) selectNode(null);
           }
           return null;
