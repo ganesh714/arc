@@ -10,12 +10,17 @@ import {
   Minus, 
   ArrowRight, 
   Trash2, 
-  FolderSync
+  FolderSync,
+  GripVertical
 } from 'lucide-react';
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<'layers' | 'assets'>('layers');
   const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds } = useDiagram();
+  
+  // Drag and drop states for layer reordering
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const getNodeIcon = (type: string) => {
     const size = 12;
@@ -28,6 +33,8 @@ export function LeftSidebar() {
         return <Triangle size={size} className={styles.layerIcon} />;
       case 'diamond':
         return <Diamond size={size} className={styles.layerIcon} />;
+      case 'star':
+        return <Layers size={size} style={{ color: '#d69e2e' }} className={styles.layerIcon} />;
       case 'line':
         return <Minus size={size} className={styles.layerIcon} />;
       case 'arrow':
@@ -52,6 +59,45 @@ export function LeftSidebar() {
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds(selectedNodeIds.filter(selectedId => selectedId !== id));
   };
+
+  // Reorder HTML5 drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    // Required for Firefox
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    // Convert display indexes (reversed) back to original nodes array indexes
+    const dragOriginalIdx = nodes.length - 1 - draggedIndex;
+    const dropOriginalIdx = nodes.length - 1 - targetIndex;
+
+    const newNodes = [...nodes];
+    const [removed] = newNodes.splice(dragOriginalIdx, 1);
+    newNodes.splice(dropOriginalIdx, 0, removed);
+
+    setNodes(newNodes);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Display nodes list reversed so top layer in display is top layer on canvas
+  const displayNodes = [...nodes].reverse();
 
   return (
     <div className={styles.container}>
@@ -86,15 +132,27 @@ export function LeftSidebar() {
               </div>
             ) : (
               <div className={styles.layerList}>
-                {nodes.map((node) => {
+                {displayNodes.map((node, index) => {
                   const isSelected = selectedNodeIds.includes(node.id);
+                  const isDragging = draggedIndex === index;
+                  const isDragOver = dragOverIndex === index;
+
                   return (
                     <div 
                       key={node.id}
-                      className={`${styles.layerItem} ${isSelected ? styles.selectedLayer : ''}`}
+                      className={`${styles.layerItem} ${isSelected ? styles.selectedLayer : ''} ${isDragging ? styles.draggingLayer : ''} ${isDragOver ? styles.dragOverLayer : ''}`}
                       onClick={(e) => selectNode(node.id, e.shiftKey)}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
                     >
                       <div className={styles.layerLeft}>
+                        {/* Grip handle indicator */}
+                        <div className={styles.gripHandle} title="Drag to reorder layer">
+                          <GripVertical size={11} />
+                        </div>
                         {getNodeIcon(node.type)}
                         <span className={styles.layerName}>{getNodeLabel(node)}</span>
                       </div>

@@ -193,6 +193,7 @@ export function Node({ node }: NodeProps) {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: isSelected ? 30 : 1,
+        opacity: node.style?.opacity !== undefined ? Number(node.style.opacity) : 1,
       }}
     >
       {node.type === 'diamond' ? (

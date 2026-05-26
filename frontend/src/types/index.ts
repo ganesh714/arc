@@ -17,6 +17,7 @@ export interface NodeStyle {
   boxShadow?: string;
   fontWeight?: string;
   textAlign?: 'left' | 'center' | 'right';
+  opacity?: string;
 }
 
 export interface Point {

@@ -306,11 +306,42 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   };
 
   const alignSelected = (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
-    if (selectedNodeIds.length <= 1) return;
+    if (selectedNodeIds.length === 0) return;
 
     setNodes((prev) => {
       const selectedNodes = prev.filter(n => selectedNodeIds.includes(n.id) && n.type !== 'line' && n.type !== 'arrow');
-      if (selectedNodes.length <= 1) return prev;
+      if (selectedNodes.length === 0) return prev;
+
+      if (selectedNodes.length === 1) {
+        const node = selectedNodes[0];
+        const canvasWidth = 1000;
+        const canvasHeight = 800;
+        let newX = node.position.x;
+        let newY = node.position.y;
+
+        switch (alignmentType) {
+          case 'left':
+            newX = 0;
+            break;
+          case 'right':
+            newX = canvasWidth - node.dimensions.width;
+            break;
+          case 'center':
+            newX = (canvasWidth - node.dimensions.width) / 2;
+            break;
+          case 'top':
+            newY = 0;
+            break;
+          case 'bottom':
+            newY = canvasHeight - node.dimensions.height;
+            break;
+          case 'middle':
+            newY = (canvasHeight - node.dimensions.height) / 2;
+            break;
+        }
+
+        return prev.map(n => n.id === node.id ? { ...n, position: { x: newX, y: newY } } : n);
+      }
 
       const lefts = selectedNodes.map(n => n.position.x);
       const rights = selectedNodes.map(n => n.position.x + n.dimensions.width);
