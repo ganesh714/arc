@@ -141,7 +141,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [clipboard, setClipboard] = useState<DiagramNode[]>([]);
 
   // Sidebar open/close state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
   // Synced setNodes state wrapper
