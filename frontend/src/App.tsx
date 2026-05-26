@@ -50,7 +50,7 @@ function MainAppContent() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 overflow-hidden relative">
+    <div className="flex h-screen w-full bg-[var(--bg-canvas)] overflow-hidden relative">
       {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
       <div 
         style={{ 
@@ -71,7 +71,7 @@ function MainAppContent() {
         <Header />
         
         {/* Workspace Area */}
-        <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
+        <div className="flex flex-1 relative overflow-hidden">
           {/* Left Sidebar wrapper */}
           <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
             <LeftSidebar />
@@ -85,7 +85,7 @@ function MainAppContent() {
               cursor: 'col-resize',
               backgroundColor: 'transparent',
               position: 'relative',
-              zIndex: 49,
+              zIndex: 10,
               display: 'flex',
               justifyContent: 'center',
               height: '100%',
@@ -109,7 +109,7 @@ function MainAppContent() {
               cursor: 'col-resize',
               backgroundColor: 'transparent',
               position: 'relative',
-              zIndex: 49,
+              zIndex: 10,
               display: 'flex',
               justifyContent: 'center',
               height: '100%',
