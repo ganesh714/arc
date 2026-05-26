@@ -9,32 +9,39 @@ interface NodeProps {
 }
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints } = useDiagram();
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
 
-  // Figma resize handle
+  // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const FigmaHandle = ({ position }: { position: string }) => {
+    const handleSize = 6 / zoom;
+    const borderSize = 1.5 / zoom;
+    const offsetPos = -3 / zoom;
+    const shadowSize = 1 / zoom;
+    const shadowBlur = 2 / zoom;
+    const borderRadius = 1 / zoom;
+
     const offsets: Record<string, React.CSSProperties> = {
-      topLeft: { top: '-3px', left: '-3px', cursor: 'nwse-resize' },
-      topRight: { top: '-3px', right: '-3px', cursor: 'nesw-resize' },
-      bottomLeft: { bottom: '-3px', left: '-3px', cursor: 'nesw-resize' },
-      bottomRight: { bottom: '-3px', right: '-3px', cursor: 'nwse-resize' },
-      top: { top: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-      bottom: { bottom: '-3px', left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
-      left: { left: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
-      right: { right: '-3px', top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+      topLeft: { top: `${offsetPos}px`, left: `${offsetPos}px`, cursor: 'nwse-resize' },
+      topRight: { top: `${offsetPos}px`, right: `${offsetPos}px`, cursor: 'nesw-resize' },
+      bottomLeft: { bottom: `${offsetPos}px`, left: `${offsetPos}px`, cursor: 'nesw-resize' },
+      bottomRight: { bottom: `${offsetPos}px`, right: `${offsetPos}px`, cursor: 'nwse-resize' },
+      top: { top: `${offsetPos}px`, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      bottom: { bottom: `${offsetPos}px`, left: '50%', transform: 'translateX(-50%)', cursor: 'ns-resize' },
+      left: { left: `${offsetPos}px`, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
+      right: { right: `${offsetPos}px`, top: '50%', transform: 'translateY(-50%)', cursor: 'ew-resize' },
     };
 
     return (
       <div
         style={{
-          width: '6px',
-          height: '6px',
+          width: `${handleSize}px`,
+          height: `${handleSize}px`,
           backgroundColor: '#ffffff',
-          border: '1.5px solid #0c8ce9',
-          borderRadius: '1px',
+          border: `${borderSize}px solid #0c8ce9`,
+          borderRadius: `${borderRadius}px`,
           position: 'absolute',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          boxShadow: `0 ${shadowSize}px ${shadowBlur}px rgba(0,0,0,0.3)`,
           pointerEvents: 'none',
           ...offsets[position],
         }}
@@ -144,7 +151,7 @@ export function Node({ node }: NodeProps) {
           position
         );
       }}
-      bounds="parent"
+      scale={zoom}
       className={`${styles.node} ${isSelected ? styles.selected : ''}`}
       enableResizing={
         isLine
@@ -188,7 +195,7 @@ export function Node({ node }: NodeProps) {
       }}
       style={{
         backgroundColor: 'transparent',
-        outline: isSelected ? '1.5px solid #0c8ce9' : 'none',
+        outline: isSelected ? `${1.5 / zoom}px solid #0c8ce9` : 'none',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -447,15 +454,15 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.startPoint!.x - node.position.x,
               top: node.startPoint!.y - node.position.y,
-              width: '8px',
-              height: '8px',
+              width: `${8 / zoom}px`,
+              height: `${8 / zoom}px`,
               backgroundColor: '#ffffff',
-              border: '2px solid #0c8ce9',
+              border: `${2 / zoom}px solid #0c8ce9`,
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
               zIndex: 30,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
             onMouseDown={handleStartDrag}
           />
@@ -465,15 +472,15 @@ export function Node({ node }: NodeProps) {
               position: 'absolute',
               left: node.endPoint!.x - node.position.x,
               top: node.endPoint!.y - node.position.y,
-              width: '8px',
-              height: '8px',
+              width: `${8 / zoom}px`,
+              height: `${8 / zoom}px`,
               backgroundColor: '#ffffff',
-              border: '2px solid #0c8ce9',
+              border: `${2 / zoom}px solid #0c8ce9`,
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
               zIndex: 30,
-              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
             onMouseDown={handleEndDrag}
           />
