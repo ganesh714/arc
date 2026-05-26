@@ -163,7 +163,7 @@ function MainAppContent() {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
   );
 }
 
