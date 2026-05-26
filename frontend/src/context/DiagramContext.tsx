@@ -2,6 +2,12 @@ import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 
+export interface Project {
+  id: string;
+  name: string;
+  nodes: DiagramNode[];
+}
+
 interface DiagramContextType {
   nodes: DiagramNode[];
   selectedNodeIds: string[];
@@ -26,14 +32,83 @@ interface DiagramContextType {
   alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   zoom: number;
   setZoom: (zoom: number) => void;
+  // New toolbar states
+  activeTool: string;
+  setActiveTool: (tool: string) => void;
+  selectToolMode: 'move' | 'scale';
+  setSelectToolMode: (mode: 'move' | 'scale') => void;
+  // New project states
+  projects: Project[];
+  activeProjectId: string;
+  switchProject: (id: string) => void;
+  addProject: (name: string) => void;
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 
+const initialProjects: Project[] = [
+  {
+    id: 'project-1',
+    name: 'Loom Diagram',
+    nodes: [
+      {
+        id: 'node-1',
+        type: 'box',
+        position: { x: 80, y: 80 },
+        dimensions: { width: 160, height: 100 },
+        content: 'Figma Canvas',
+        style: {
+          backgroundColor: '#2c2c2c',
+          borderColor: '#555555',
+          color: '#e3e3e3'
+        }
+      },
+      {
+        id: 'node-2',
+        type: 'circle',
+        position: { x: 340, y: 80 },
+        dimensions: { width: 100, height: 100 },
+        content: 'Brainstorm',
+        style: {
+          backgroundColor: '#2c2c2c',
+          borderColor: '#555555',
+          color: '#e3e3e3'
+        }
+      },
+      {
+        id: 'node-3',
+        type: 'arrow',
+        position: { x: 240, y: 120 },
+        dimensions: { width: 100, height: 20 },
+        content: '',
+        style: {
+          borderColor: '#0c8ce9'
+        },
+        startPoint: { x: 240, y: 130 },
+        endPoint: { x: 340, y: 130 }
+      }
+    ]
+  },
+  {
+    id: 'project-2',
+    name: 'Website Wireframe',
+    nodes: []
+  },
+  {
+    id: 'project-3',
+    name: 'Mobile App Flow',
+    nodes: []
+  }
+];
+
 export function DiagramProvider({ children }: { children: ReactNode }) {
-  const [nodes, setNodes] = useState<DiagramNode[]>([]);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
+  const [nodes, setNodes] = useState<DiagramNode[]>(initialProjects[0].nodes);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState<number>(1.0);
+  const [activeTool, setActiveTool] = useState<string>('select');
+  const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
 
   const addBox = (position?: { x: number; y: number }) => {
     const width = 150;
@@ -389,6 +464,38 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         };
       });
     });
+  const switchProject = (targetId: string) => {
+    setProjects(prev => {
+      // Save current nodes to the active project we're leaving
+      const updatedProjects = prev.map(p => p.id === activeProjectId ? { ...p, nodes } : p);
+      
+      // Load nodes of target project
+      const target = updatedProjects.find(p => p.id === targetId);
+      setNodes(target ? target.nodes : []);
+      setSelectedNodeIds([]);
+      
+      return updatedProjects;
+    });
+    setActiveProjectId(targetId);
+  };
+
+  const addProject = (name: string) => {
+    const newId = crypto.randomUUID().split('-')[0];
+    const newProj: Project = {
+      id: newId,
+      name,
+      nodes: []
+    };
+    
+    setProjects(prev => {
+      // Save current nodes to the active project we're leaving
+      const updatedProjects = prev.map(p => p.id === activeProjectId ? { ...p, nodes } : p);
+      return [...updatedProjects, newProj];
+    });
+    
+    setNodes([]);
+    setSelectedNodeIds([]);
+    setActiveProjectId(newId);
   };
 
   return (
@@ -415,7 +522,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       sendToBack,
       alignSelected,
       zoom,
-      setZoom
+      setZoom,
+      activeTool,
+      setActiveTool,
+      selectToolMode,
+      setSelectToolMode,
+      projects,
+      activeProjectId,
+      switchProject,
+      addProject
     }}>
       {children}
     </DiagramContext.Provider>
