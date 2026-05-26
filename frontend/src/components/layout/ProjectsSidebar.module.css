@@ -14,14 +14,51 @@
   border-bottom: 1px solid var(--border-default);
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
-.title {
+.logoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logoIcon {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
   font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+  line-height: 1;
+}
+
+.logoText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.collapseBtn {
+  background: transparent;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.collapseBtn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* Search Box Styling */
