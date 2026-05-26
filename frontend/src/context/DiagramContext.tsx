@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 
@@ -172,65 +172,47 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
-    setNodesState(prev => {
-      const resolvedNodes = typeof newNodes === 'function' ? newNodes(prev) : newNodes;
-      
-      // Update projects array and last modified timestamp synchronously
-      setProjects(prevProjects => 
-        prevProjects.map(p => 
-          p.id === activeProjectId 
-            ? { ...p, nodes: resolvedNodes, updatedAt: Date.now() } 
-            : p
-        )
-      );
-      
-      return resolvedNodes;
-    });
+    setNodesState(newNodes);
   };
+
+  // Sync nodes state to projects array whenever nodes change
+  useEffect(() => {
+    setProjects(prevProjects => 
+      prevProjects.map(p => 
+        p.id === activeProjectId 
+          ? { ...p, nodes, updatedAt: Date.now() } 
+          : p
+      )
+    );
+  }, [nodes, activeProjectId]);
 
   // Save specific nodes list to history
-  const saveHistoryState = (customNodes: DiagramNode[]) => {
-    setPast(prev => [...prev, customNodes]);
+  const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
+    setPast(prev => [...prev, [...customNodes]]);
     setFuture([]);
-  };
+  }, []);
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (past.length === 0) return;
+    
     const previous = past[past.length - 1];
     const newPast = past.slice(0, past.length - 1);
     
-    setFuture(prev => [nodes, ...prev]);
-    setNodesState(previous);
+    setFuture(prev => [[...nodes], ...prev]);
+    setNodesState([...previous]);
     setPast(newPast);
-    
-    // Sync change back to active project
-    setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes: previous, updatedAt: Date.now() } 
-          : p
-      )
-    );
-  };
+  }, [past, nodes, activeProjectId]);
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (future.length === 0) return;
+    
     const next = future[0];
     const newFuture = future.slice(1);
     
-    setPast(prev => [...prev, nodes]);
-    setNodesState(next);
+    setPast(prev => [...prev, [...nodes]]);
+    setNodesState([...next]);
     setFuture(newFuture);
-    
-    // Sync change back to active project
-    setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes: next, updatedAt: Date.now() } 
-          : p
-      )
-    );
-  };
+  }, [future, nodes, activeProjectId]);
 
   const copySelected = () => {
     if (selectedNodeIds.length === 0) return;

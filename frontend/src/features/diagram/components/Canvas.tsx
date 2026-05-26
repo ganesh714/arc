@@ -46,6 +46,7 @@ export function Canvas() {
     setSelectToolMode,
     undo,
     redo,
+    saveHistoryState,
     copySelected,
     pasteSelected,
     cutSelected,
@@ -67,7 +68,10 @@ export function Canvas() {
   } | null>(null);
 
   const drawingPreviewRef = useRef(drawingPreview);
-  drawingPreviewRef.current = drawingPreview;
+  
+  useEffect(() => {
+    drawingPreviewRef.current = drawingPreview;
+  }, [drawingPreview]);
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
@@ -109,7 +113,11 @@ export function Canvas() {
       // Undo / Redo
       if ((e.ctrlKey || e.metaKey) && key === 'z') {
         e.preventDefault();
-        undo();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && key === 'y') {
@@ -280,6 +288,7 @@ export function Canvas() {
         }
         return node;
       });
+      saveHistoryState(nodes);
       setNodes(updatedNodes);
     };
 
@@ -287,7 +296,7 @@ export function Canvas() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, setNodes, nodes]);
+  }, [selectedNodeIds, setNodes, nodes, saveHistoryState]);
 
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
@@ -365,6 +374,7 @@ export function Canvas() {
             backgroundColor: '#ffc000'
           }
         };
+        saveHistoryState(nodes);
         setNodes([...nodes, newNode]);
         selectNode(id, false);
         setActiveTool('select');
@@ -431,6 +441,7 @@ export function Canvas() {
               points: relativePoints
             };
 
+            saveHistoryState(nodes);
             setNodes([...nodes, newNode]);
             selectNode(id, false);
           }
@@ -531,6 +542,7 @@ export function Canvas() {
               };
             }
 
+            saveHistoryState(nodes);
             setNodes([...nodes, newNode]);
             selectNode(id, false);
           }
@@ -654,6 +666,7 @@ export function Canvas() {
   };
 
   const handleDeleteNode = (id: string) => {
+    saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds([]);
   };
