@@ -33,8 +33,13 @@ export function ProjectsSidebar() {
 
   return (
     <div className={styles.sidebar}>
-      {/* Top Logo */}
-      <div className={styles.logoContainer}>
+      {/* Top Logo - Clickable to collapse sidebar */}
+      <div 
+        className={styles.logoContainer} 
+        onClick={toggleSidebar} 
+        title="Collapse sidebar"
+        style={{ cursor: 'pointer' }}
+      >
         <img src="/main logo.png" className={styles.logo} alt="Loom Logo" />
       </div>
 
@@ -62,8 +67,10 @@ export function ProjectsSidebar() {
             </div>
           );
         })}
+      </div>
 
-        {/* Add Project Button */}
+      {/* Footer / Add Project Button (in place of collapse icon) */}
+      <div className={styles.footer}>
         <div className={styles.itemWrapper}>
           <button
             className={styles.addBtn}
@@ -102,13 +109,6 @@ export function ProjectsSidebar() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Collapse Sidebar Button at the bottom */}
-      <div className={styles.footer}>
-        <button className={styles.collapseBtn} onClick={toggleSidebar} title="Collapse sidebar">
-          <PanelLeftClose size={16} />
-        </button>
       </div>
     </div>
   );
