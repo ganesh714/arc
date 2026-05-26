@@ -8,7 +8,7 @@ import { Canvas } from '@/features/diagram/components/Canvas';
 
 function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
-  const [rightWidth, setRightWidth] = useState(240);
+  const [rightWidth, setRightWidth] = useState(340);
   const { isSidebarOpen } = useDiagram();
 
   const startLeftResize = (e: React.MouseEvent) => {
@@ -36,7 +36,7 @@ function MainAppContent() {
     const startWidth = rightWidth;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const newWidth = Math.max(180, Math.min(400, startWidth - (moveEvent.clientX - startX)));
+      const newWidth = Math.max(200, Math.min(500, startWidth - (moveEvent.clientX - startX)));
       setRightWidth(newWidth);
     };
     
