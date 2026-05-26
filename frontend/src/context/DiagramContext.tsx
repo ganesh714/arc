@@ -148,11 +148,18 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
-  // Theme state
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  // Theme state initialization with persistence and system preference
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('loom-theme') as 'light' | 'dark';
+    if (savedTheme) return savedTheme;
+    
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
   const toggleTheme = () => {
     setTheme(prev => {
       const nextTheme = prev === 'light' ? 'dark' : 'light';
+      localStorage.setItem('loom-theme', nextTheme);
       document.documentElement.setAttribute('data-theme', nextTheme);
       return nextTheme;
     });
@@ -160,7 +167,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-  }, []);
+    localStorage.setItem('loom-theme', theme);
+  }, [theme]);
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
