@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 
@@ -59,6 +59,10 @@ interface DiagramContextType {
   pasteSelected: () => void;
   cutSelected: () => void;
   deleteSelected: () => void;
+  
+  // Theme state
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
@@ -143,6 +147,20 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   // Sidebar open/close state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const nextTheme = prev === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      return nextTheme;
+    });
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
@@ -711,7 +729,11 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       copySelected,
       pasteSelected,
       cutSelected,
-      deleteSelected
+      deleteSelected,
+
+      // Theme
+      theme,
+      toggleTheme
     }}>
       {children}
     </DiagramContext.Provider>
