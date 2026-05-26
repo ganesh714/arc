@@ -310,6 +310,8 @@ export function SidePanel() {
     const commonLineCurve = getCommonValue('lineCurve', 'straight');
     const commonLineStyle = getCommonValue('lineStyle', 'solid');
     const commonArrowType = getCommonValue('arrowType', 'none');
+    const commonOpacityVal = getCommonStyleValue('opacity', '1');
+    const commonOpacity = Math.round((commonOpacityVal !== undefined ? Number(commonOpacityVal) : 1) * 100);
 
     // Multi-selection Typography properties
     const commonFontSize = getCommonStyleValue('fontSize', '11px');
@@ -389,6 +391,37 @@ export function SidePanel() {
                     </div>
                   </div>
                 )}
+
+                {/* Opacity for Mixed Selection */}
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Opacity</span>
+                  <div className={styles.sliderContainer} style={{ width: '120px' }}>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={commonOpacity}
+                      onChange={(e) => handleMultipleChange('opacity', String(Number(e.target.value) / 100))}
+                      className={styles.slider}
+                    />
+                    <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={commonOpacity}
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value, 10);
+                          if (isNaN(val)) val = 100;
+                          val = Math.max(0, Math.min(100, val));
+                          handleMultipleChange('opacity', String(val / 100));
+                        }}
+                        className={styles.numberInput}
+                      />
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Depth Section */}
@@ -448,29 +481,30 @@ export function SidePanel() {
                 </div>
               </div>
 
-              {/* Fill Properties */}
+              {/* Fill & Stroke Properties */}
               <div className={styles.section}>
-                <span className={styles.sectionTitle}>Fill</span>
-                <div className={styles.colorPickerWrapper}>
-                  <input
-                    type="color"
-                    value={commonBg}
-                    onChange={(e) => handleMultipleChange('backgroundColor', e.target.value)}
-                  />
-                  <span className={styles.colorHex}>{commonBg}</span>
+                <span className={styles.sectionTitle}>Fill & Stroke</span>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Fill</span>
+                  <div className={styles.colorPickerWrapper}>
+                    <input
+                      type="color"
+                      value={commonBg}
+                      onChange={(e) => handleMultipleChange('backgroundColor', e.target.value)}
+                    />
+                    <span className={styles.colorHex}>{commonBg}</span>
+                  </div>
                 </div>
-              </div>
-
-              {/* Stroke Properties */}
-              <div className={styles.section}>
-                <span className={styles.sectionTitle}>Stroke</span>
-                <div className={styles.colorPickerWrapper} style={{ marginBottom: '8px' }}>
-                  <input
-                    type="color"
-                    value={commonBorder}
-                    onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
-                  />
-                  <span className={styles.colorHex}>{commonBorder}</span>
+                <div className={styles.row} style={{ marginTop: '8px' }}>
+                  <span className={styles.rowLabel}>Stroke</span>
+                  <div className={styles.colorPickerWrapper}>
+                    <input
+                      type="color"
+                      value={commonBorder}
+                      onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                    />
+                    <span className={styles.colorHex}>{commonBorder}</span>
+                  </div>
                 </div>
               </div>
 
@@ -518,13 +552,16 @@ export function SidePanel() {
                     />
                   </div>
                 </div>
-                <div className={styles.colorPickerWrapper} style={{ marginTop: '8px' }}>
-                  <input
-                    type="color"
-                    value={commonShadow.color}
-                    onChange={(e) => handleMultipleShadowChange('color', e.target.value)}
-                  />
-                  <span className={styles.colorHex}>{commonShadow.color}</span>
+                <div className={styles.row} style={{ marginTop: '8px' }}>
+                  <span className={styles.rowLabel}>Color</span>
+                  <div className={styles.colorPickerWrapper}>
+                    <input
+                      type="color"
+                      value={commonShadow.color}
+                      onChange={(e) => handleMultipleShadowChange('color', e.target.value)}
+                    />
+                    <span className={styles.colorHex}>{commonShadow.color}</span>
+                  </div>
                 </div>
               </div>
             </>
@@ -535,13 +572,16 @@ export function SidePanel() {
               {/* Stroke Properties */}
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Stroke</span>
-                <div className={styles.colorPickerWrapper} style={{ marginBottom: '10px' }}>
-                  <input
-                    type="color"
-                    value={commonBorder}
-                    onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
-                  />
-                  <span className={styles.colorHex}>{commonBorder}</span>
+                <div className={styles.row} style={{ marginBottom: '8px' }}>
+                  <span className={styles.rowLabel}>Color</span>
+                  <div className={styles.colorPickerWrapper}>
+                    <input
+                      type="color"
+                      value={commonBorder}
+                      onChange={(e) => handleMultipleChange('borderColor', e.target.value)}
+                    />
+                    <span className={styles.colorHex}>{commonBorder}</span>
+                  </div>
                 </div>
 
                 <div className={styles.row}>
@@ -600,6 +640,9 @@ export function SidePanel() {
           <CloseIcon size={12} />
         </button>
       </div>
+
+      {/* Alignment controls directly below header (Figma style) */}
+      <AlignmentToolbar />
 
       <div className={styles.propertiesContent}>
         {/* Geometry / Layout Section */}
@@ -796,6 +839,37 @@ export function SidePanel() {
               </div>
             </div>
           )}
+
+          {/* Opacity Control */}
+          <div className={styles.row} style={{ marginTop: '8px' }}>
+            <span className={styles.rowLabel}>Opacity</span>
+            <div className={styles.sliderContainer} style={{ width: '120px' }}>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={Math.round((node.style?.opacity !== undefined ? Number(node.style.opacity) : 1) * 100)}
+                onChange={(e) => handleChange('opacity', String(Number(e.target.value) / 100))}
+                className={styles.slider}
+              />
+              <div className={styles.inputWrapper} style={{ width: '45px' }}>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={Math.round((node.style?.opacity !== undefined ? Number(node.style.opacity) : 1) * 100)}
+                  onChange={(e) => {
+                    let val = parseInt(e.target.value, 10);
+                    if (isNaN(val)) val = 100;
+                    val = Math.max(0, Math.min(100, val));
+                    handleChange('opacity', String(val / 100));
+                  }}
+                  className={styles.numberInput}
+                />
+                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>%</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Depth Section */}
@@ -874,30 +948,34 @@ export function SidePanel() {
         {/* Fill color picker */}
         {!isLine && (
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Fill</span>
-            <div className={styles.colorPickerWrapper}>
-              <input
-                type="color"
-                value={node.style?.backgroundColor || '#2c2c2c'}
-                onChange={(e) => handleChange('backgroundColor', e.target.value)}
-              />
-              <span className={styles.colorHex}>{node.style?.backgroundColor || '#2c2c2c'}</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Fill</span>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={node.style?.backgroundColor || '#2c2c2c'}
+                  onChange={(e) => handleChange('backgroundColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>{node.style?.backgroundColor || '#2c2c2c'}</span>
+              </div>
             </div>
           </div>
         )}
 
         {/* Stroke Section */}
         <div className={styles.section}>
-          <span className={styles.sectionTitle}>Stroke</span>
-          <div className={styles.colorPickerWrapper} style={{ marginBottom: '10px' }}>
-            <input
-              type="color"
-              value={node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
-              onChange={(e) => handleChange('borderColor', e.target.value)}
-            />
-            <span className={styles.colorHex}>
-              {node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
-            </span>
+          <div className={styles.row} style={{ marginBottom: isLine ? '8px' : '0' }}>
+            <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Stroke</span>
+            <div className={styles.colorPickerWrapper}>
+              <input
+                type="color"
+                value={node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
+                onChange={(e) => handleChange('borderColor', e.target.value)}
+              />
+              <span className={styles.colorHex}>
+                {node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
+              </span>
+            </div>
           </div>
 
           {isLine && (
@@ -945,14 +1023,16 @@ export function SidePanel() {
         {/* Text styles section (Color) */}
         {!isLine && (
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Text Color</span>
-            <div className={styles.colorPickerWrapper}>
-              <input
-                type="color"
-                value={node.style?.color || '#e3e3e3'}
-                onChange={(e) => handleChange('color', e.target.value)}
-              />
-              <span className={styles.colorHex}>{node.style?.color || '#e3e3e3'}</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel} style={{ fontWeight: '600', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-muted)' }}>Text Color</span>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={node.style?.color || '#e3e3e3'}
+                  onChange={(e) => handleChange('color', e.target.value)}
+                />
+                <span className={styles.colorHex}>{node.style?.color || '#e3e3e3'}</span>
+              </div>
             </div>
           </div>
         )}
@@ -1002,13 +1082,16 @@ export function SidePanel() {
                 />
               </div>
             </div>
-            <div className={styles.colorPickerWrapper} style={{ marginTop: '8px' }}>
-              <input
-                type="color"
-                value={shadow.color}
-                onChange={(e) => handleShadowChange('color', e.target.value)}
-              />
-              <span className={styles.colorHex}>{shadow.color}</span>
+            <div className={styles.row} style={{ marginTop: '8px' }}>
+              <span className={styles.rowLabel}>Color</span>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={shadow.color}
+                  onChange={(e) => handleShadowChange('color', e.target.value)}
+                />
+                <span className={styles.colorHex}>{shadow.color}</span>
+              </div>
             </div>
           </div>
         )}
