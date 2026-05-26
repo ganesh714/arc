@@ -5,7 +5,6 @@ import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { Canvas } from '@/features/diagram/components/Canvas';
-import { PanelLeftOpen } from 'lucide-react';
 
 function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
@@ -73,39 +72,36 @@ function MainAppContent() {
         
         {/* Workspace Area */}
         <div className="flex flex-1 relative overflow-hidden bg-[#1e1e1e]">
-          {/* Collapse Toggle floating button when sidebar is closed */}
+          {/* Collapse Toggle floating button when sidebar is closed (uses main logo image) */}
           {!isSidebarOpen && (
             <button
               onClick={toggleSidebar}
               style={{
                 position: 'absolute',
-                left: '12px',
+                left: '14px',
                 top: '12px',
                 zIndex: 100,
-                width: '28px',
-                height: '28px',
-                borderRadius: '6px',
-                backgroundColor: 'var(--bg-panel)',
-                border: '1px solid var(--border-default)',
-                color: 'var(--text-secondary)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                backgroundColor: 'transparent',
+                border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                transition: 'all 0.15s ease'
+                padding: 0,
+                transition: 'transform 0.15s ease'
               }}
               title="Expand sidebar"
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
-                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.transform = 'scale(1.08)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-panel)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              <PanelLeftOpen size={14} />
+              <img src="/main logo.png" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} alt="Loom Logo" />
             </button>
           )}
 
