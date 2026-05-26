@@ -15,7 +15,11 @@ import {
   Minus as ZoomOutIcon,
   Bold,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  Pencil,
+  Eraser,
+  MessageSquare,
+  Scaling as ScalingIcon
 } from 'lucide-react';
 
 export function Canvas() {
@@ -26,18 +30,14 @@ export function Canvas() {
     setSelectedNodeIds,
     setNodes,
     updateNode,
-    addBox,
-    addDiamond,
-    addCircle,
-    addTriangle,
-    addStar,
-    addLine,
-    addArrow,
     zoom,
-    setZoom
+    setZoom,
+    activeTool,
+    setActiveTool,
+    selectToolMode,
+    setSelectToolMode
   } = useDiagram();
 
-  const [activeTool, setActiveTool] = useState<string>('select');
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -49,25 +49,28 @@ export function Canvas() {
     startY: number;
     currentX: number;
     currentY: number;
+    points?: { x: number; y: number }[];
   } | null>(null);
 
   const drawingPreviewRef = useRef(drawingPreview);
   drawingPreviewRef.current = drawingPreview;
 
+  const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
   const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow'>('box');
 
-  // Close shape dropdown on click away
+  // Close shape and select dropdown on click away
   useEffect(() => {
-    if (!shapeDropdownOpen) return;
+    if (!shapeDropdownOpen && !selectDropdownOpen) return;
     const handleOutsideClick = () => {
       setShapeDropdownOpen(false);
+      setSelectDropdownOpen(false);
     };
     window.addEventListener('click', handleOutsideClick);
     return () => {
       window.removeEventListener('click', handleOutsideClick);
     };
-  }, [shapeDropdownOpen]);
+  }, [shapeDropdownOpen, selectDropdownOpen]);
 
   // Keyboard Space detection for panning cursor and tool hotkeys
   useEffect(() => {
@@ -91,6 +94,16 @@ export function Canvas() {
       const key = e.key.toLowerCase();
       if (key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('select');
+        setSelectToolMode('move');
+      } else if (key === 'k' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('select');
+        setSelectToolMode('scale');
+      } else if (key === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('pen');
+      } else if (key === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('erase');
+      } else if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('comment');
       } else if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('box');
         setCurrentShapeType('box');
@@ -274,12 +287,103 @@ export function Canvas() {
     }
 
     if (activeTool !== 'select') {
-      // Shape drawing mode!
       e.preventDefault();
       const rect = e.currentTarget.getBoundingClientRect();
       const startX = (e.clientX - rect.left) / zoom - panOffset.x;
       const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
+      if (activeTool === 'comment') {
+        const id = crypto.randomUUID().split('-')[0];
+        const newNode: any = {
+          id,
+          type: 'comment',
+          position: { x: startX - 16, y: startY - 16 },
+          dimensions: { width: 32, height: 32 },
+          content: '',
+          style: {
+            backgroundColor: '#ffc000'
+          }
+        };
+        setNodes([...nodes, newNode]);
+        selectNode(id, false);
+        setActiveTool('select');
+        return;
+      }
+
+      if (activeTool === 'pen') {
+        const pointsList = [{ x: startX, y: startY }];
+        setDrawingPreview({
+          type: 'pen',
+          startX,
+          startY,
+          currentX: startX,
+          currentY: startY,
+          points: pointsList
+        });
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+          const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+          const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+          pointsList.push({ x: currentX, y: currentY });
+          setDrawingPreview({
+            type: 'pen',
+            startX,
+            startY,
+            currentX,
+            currentY,
+            points: [...pointsList]
+          });
+        };
+
+        const handleMouseUp = () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+
+          const currentPreview = drawingPreviewRef.current;
+          if (currentPreview && currentPreview.points && currentPreview.points.length > 1) {
+            const pts = currentPreview.points;
+            const xs = pts.map(p => p.x);
+            const ys = pts.map(p => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+
+            const w = Math.max(10, maxX - minX);
+            const h = Math.max(10, maxY - minY);
+
+            const relativePoints = pts.map(p => ({
+              x: p.x - minX,
+              y: p.y - minY
+            }));
+
+            const id = crypto.randomUUID().split('-')[0];
+            const newNode: any = {
+              id,
+              type: 'path',
+              position: { x: minX, y: minY },
+              dimensions: { width: w, height: h },
+              content: '',
+              style: {
+                borderColor: '#0c8ce9'
+              },
+              points: relativePoints
+            };
+
+            setNodes([...nodes, newNode]);
+            selectNode(id, false);
+          }
+
+          setDrawingPreview(null);
+          setActiveTool('select');
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        return;
+      }
+
+      // Regular shape drawing mode (box, circle, triangle, diamond, star, line, arrow)
       setDrawingPreview({
         type: activeTool,
         startX,
@@ -619,6 +723,44 @@ export function Canvas() {
               const width = Math.abs(currentX - startX);
               const height = Math.abs(currentY - startY);
 
+              if (type === 'pen' && drawingPreview.points && drawingPreview.points.length > 0) {
+                const pts = drawingPreview.points;
+                const xs = pts.map(p => p.x);
+                const ys = pts.map(p => p.y);
+                const minX = Math.min(...xs);
+                const minY = Math.min(...ys);
+                const maxX = Math.max(...xs);
+                const maxY = Math.max(...ys);
+                const w = Math.max(1, maxX - minX);
+                const h = Math.max(1, maxY - minY);
+                
+                const d = `M ${pts[0].x - minX} ${pts[0].y - minY} ` + pts.slice(1).map(p => `L ${p.x - minX} ${p.y - minY}`).join(' ');
+
+                return (
+                  <div style={{
+                    position: 'absolute',
+                    left: `${minX}px`,
+                    top: `${minY}px`,
+                    width: `${w}px`,
+                    height: `${h}px`,
+                    pointerEvents: 'none',
+                    overflow: 'visible'
+                  }}>
+                    <svg width="100%" height="100%" style={{ overflow: 'visible' }}>
+                      <path
+                        d={d}
+                        fill="none"
+                        stroke="#0c8ce9"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                );
+              }
+
               if (type === 'line' || type === 'arrow') {
                 const minX = Math.min(startX, currentX);
                 const minY = Math.min(startY, currentY);
@@ -779,18 +921,62 @@ export function Canvas() {
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
-        <button 
-          className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
-          onClick={() => setActiveTool('select')}
-          title="Move/Select (V)"
-        >
-          <MousePointer2 size={15} />
-        </button>
+        <div className={styles.shapeSelectorContainer}>
+          <button 
+            className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
+            onClick={() => {
+              setActiveTool('select');
+            }}
+            title={selectToolMode === 'move' ? "Move (V)" : "Scale (K)"}
+          >
+            {selectToolMode === 'move' ? <MousePointer2 size={15} /> : <ScalingIcon size={15} />}
+          </button>
+          <button
+            className={`${styles.chevronButton} ${selectDropdownOpen ? styles.chevronButtonActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectDropdownOpen(!selectDropdownOpen);
+            }}
+            title="Select mode options"
+          >
+            <ChevronDown size={12} />
+          </button>
+
+          {selectDropdownOpen && (
+            <div className={styles.shapeDropdown} style={{ left: 0 }} onClick={(e) => e.stopPropagation()}>
+              <button
+                className={`${styles.dropdownItem} ${selectToolMode === 'move' ? styles.dropdownItemActive : ''}`}
+                onClick={() => {
+                  setSelectToolMode('move');
+                  setActiveTool('select');
+                  setSelectDropdownOpen(false);
+                }}
+              >
+                <span className={styles.dropdownItemIcon}><MousePointer2 size={14} /></span>
+                <span className={styles.dropdownItemLabel}>Move</span>
+                <span className={styles.dropdownItemShortcut}>V</span>
+              </button>
+              <button
+                className={`${styles.dropdownItem} ${selectToolMode === 'scale' ? styles.dropdownItemActive : ''}`}
+                onClick={() => {
+                  setSelectToolMode('scale');
+                  setActiveTool('select');
+                  setSelectDropdownOpen(false);
+                }}
+              >
+                <span className={styles.dropdownItemIcon}><ScalingIcon size={14} /></span>
+                <span className={styles.dropdownItemLabel}>Scale</span>
+                <span className={styles.dropdownItemShortcut}>K</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className={styles.divider} />
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${activeTool !== 'select' ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'diamond', 'star', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -832,6 +1018,37 @@ export function Canvas() {
             </div>
           )}
         </div>
+
+        <div className={styles.divider} />
+
+        {/* Pen/Pencil drawing tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'pen' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('pen')}
+          title="Pen / Freehand (P)"
+        >
+          <Pencil size={15} />
+        </button>
+
+        {/* Eraser tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'erase' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('erase')}
+          title="Eraser (E)"
+        >
+          <Eraser size={15} />
+        </button>
+
+        <div className={styles.divider} />
+
+        {/* Comments tool */}
+        <button
+          className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
+          onClick={() => setActiveTool('comment')}
+          title="Add Comment (C)"
+        >
+          <MessageSquare size={15} />
+        </button>
       </div>
 
       {/* Floating Zoom HUD (Fixed overlay inside wrapper) */}
