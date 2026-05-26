@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { Folder, Plus, Check, X, PanelLeftClose } from 'lucide-react';
+import { Folder, Plus, Check, X } from 'lucide-react';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
