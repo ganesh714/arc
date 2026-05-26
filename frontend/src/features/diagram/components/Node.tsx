@@ -1,3 +1,4 @@
+import { MessageSquare } from 'lucide-react';
 import React, { useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
@@ -685,22 +686,23 @@ export function Node({ node }: NodeProps) {
               setIsCardOpen(!isCardOpen);
             }}
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '16px 16px 16px 4px',
-              backgroundColor: '#ffc000',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50% 50% 50% 4px',
+              backgroundColor: 'var(--accent-purple)',
               border: '2px solid #ffffff',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              boxShadow: 'var(--shadow-lg)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              transition: 'transform 0.1s ease',
-              transform: isSelected ? 'scale(1.1)' : 'scale(1)'
+              transition: 'all 0.15s ease',
+              transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+              color: 'white'
             }}
             title={node.content || "Add comment"}
           >
-            <span style={{ fontSize: '14px' }}>💬</span>
+            <MessageSquare size={14} strokeWidth={2.5} />
           </div>
 
           {/* Comment Details Card */}
@@ -710,14 +712,14 @@ export function Node({ node }: NodeProps) {
               onMouseDown={(e) => e.stopPropagation()}
               style={{
                 position: 'absolute',
-                left: '38px',
+                left: '34px',
                 top: '0',
-                backgroundColor: 'var(--bg-panel)',
+                backgroundColor: 'var(--bg-panel-solid)',
                 border: '1px solid var(--border-default)',
                 borderRadius: '8px',
                 padding: '12px',
-                width: '220px',
-                boxShadow: 'var(--shadow-lg)',
+                width: '240px',
+                boxShadow: 'var(--shadow-depth)',
                 zIndex: 200,
                 display: 'flex',
                 flexDirection: 'column',
@@ -725,7 +727,10 @@ export function Node({ node }: NodeProps) {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Comment Pin</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-purple)' }} />
+                  <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>Comment</span>
+                </div>
                 <button
                   onClick={() => setIsCardOpen(false)}
                   style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '10px' }}

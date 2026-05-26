@@ -87,7 +87,7 @@ export function Canvas() {
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment'>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -720,6 +720,7 @@ export function Canvas() {
     star: <StarIcon size={15} />,
     database: <Database size={15} />,
     note: <StickyNote size={15} />,
+    comment: <MessageSquare size={15} style={{ color: 'var(--accent-purple)' }} />,
     line: <Minus size={15} />,
     arrow: <ArrowRight size={15} />
   };
@@ -735,6 +736,7 @@ export function Canvas() {
     star: 'Star',
     database: 'Database',
     note: 'Sticky Note',
+    comment: 'Comment (C)',
     line: 'Line (L)',
     arrow: 'Arrow (Shift+L)'
   };
@@ -1142,7 +1144,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1232,6 +1234,21 @@ export function Canvas() {
                     </button>
                   );
                 })}
+                
+                <div className={styles.dropdownDivider} style={{ margin: '8px 4px' }} />
+                <div className={styles.dropdownCategory}>Collaboration</div>
+                <button
+                  className={`${styles.dropdownItem} ${activeTool === 'comment' ? styles.dropdownItemActive : ''}`}
+                  onClick={() => {
+                    setCurrentShapeType('comment');
+                    setActiveTool('comment');
+                    setShapeDropdownOpen(false);
+                  }}
+                >
+                  <span className={styles.dropdownItemIcon} style={{ color: 'var(--accent-purple)' }}><MessageSquare size={14} /></span>
+                  <span className={styles.dropdownItemLabel}>Comment</span>
+                  <span className={styles.dropdownItemShortcut}>C</span>
+                </button>
               </div>
             </div>
           )}
@@ -1255,17 +1272,6 @@ export function Canvas() {
           title="Eraser (E)"
         >
           <Eraser size={15} />
-        </button>
-
-        <div className={styles.divider} />
-
-        {/* Comments tool */}
-        <button
-          className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
-          onClick={() => setActiveTool('comment')}
-          title="Add Comment (C)"
-        >
-          <MessageSquare size={15} />
         </button>
       </div>
 
