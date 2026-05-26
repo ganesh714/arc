@@ -42,7 +42,13 @@ export function Canvas() {
     activeTool,
     setActiveTool,
     selectToolMode,
-    setSelectToolMode
+    setSelectToolMode,
+    undo,
+    redo,
+    copySelected,
+    pasteSelected,
+    cutSelected,
+    deleteSelected
   } = useDiagram();
 
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -97,8 +103,45 @@ export function Canvas() {
         return;
       }
 
-      // Hotkeys for switching tools
       const key = e.key.toLowerCase();
+
+      // Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && key === 'z') {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Copy / Paste / Cut
+      if ((e.ctrlKey || e.metaKey) && key === 'c') {
+        e.preventDefault();
+        copySelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'v') {
+        e.preventDefault();
+        pasteSelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === 'x') {
+        e.preventDefault();
+        cutSelected();
+        return;
+      }
+
+      // Delete / Backspace
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        deleteSelected();
+        return;
+      }
+
+      // Hotkeys for switching tools
       if (key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('select');
         setSelectToolMode('move');
@@ -140,7 +183,7 @@ export function Canvas() {
       window.removeEventListener('keydown', handleKeyDownGlobal);
       window.removeEventListener('keyup', handleKeyUpGlobal);
     };
-  }, []);
+  }, [undo, redo, copySelected, pasteSelected, cutSelected, deleteSelected]);
 
   // Wheel listener: Ctrl + scroll zooms, regular scroll pans (trackpad)
   useEffect(() => {
