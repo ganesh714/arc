@@ -12,7 +12,9 @@ import {
   ArrowRight,
   Star as StarIcon,
   Plus,
-  Minus as ZoomOutIcon
+  Minus as ZoomOutIcon,
+  Bold,
+  Trash2
 } from 'lucide-react';
 
 export function Canvas() {
@@ -22,6 +24,7 @@ export function Canvas() {
     selectNode,
     setSelectedNodeIds,
     setNodes,
+    updateNode,
     addBox,
     addDiamond,
     addCircle,
@@ -218,9 +221,145 @@ export function Canvas() {
     setZoom(1.0);
   };
 
+  // Quick contextual changes
+  const selectedNode = selectedNodeIds.length === 1 ? nodes.find(n => n.id === selectedNodeIds[0]) : null;
+
+  const handleQuickChange = (field: string, value: string) => {
+    if (!selectedNode) return;
+    updateNode({
+      ...selectedNode,
+      style: {
+        ...selectedNode.style,
+        [field]: value
+      }
+    });
+  };
+
+  const handleDeleteNode = (id: string) => {
+    setNodes(nodes.filter(n => n.id !== id));
+    setSelectedNodeIds([]);
+  };
+
   return (
     <div className={styles.canvasWrapper}>
-      {/* Figma Floating Toolbar */}
+      {/* Main Canvas Area */}
+      <div 
+        className={styles.canvas} 
+        onMouseDown={handleMouseDown}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Scaled viewport container */}
+        <div style={{
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top left',
+          width: `${100 / zoom}%`,
+          height: `${100 / zoom}%`,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          pointerEvents: 'none'
+        }}>
+          <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+            {nodes.map((node) => (
+              <Node key={node.id} node={node} />
+            ))}
+
+            {/* Floating Contextual Menu directly above the selected shape */}
+            {selectedNode && (() => {
+              const isLine = selectedNode.type === 'line' || selectedNode.type === 'arrow';
+              
+              // Menu layout dimensions logic
+              const menuTop = selectedNode.position.y < 50 
+                ? (selectedNode.position.y + selectedNode.dimensions.height + 8) 
+                : (selectedNode.position.y - 40);
+                
+              const menuLeft = Math.max(10, selectedNode.position.x + (selectedNode.dimensions.width / 2) - 80);
+
+              return (
+                <div 
+                  className={styles.contextMenu}
+                  style={{
+                    top: `${menuTop}px`,
+                    left: `${menuLeft}px`
+                  }}
+                >
+                  {/* Fill Color Picker (Only if shape) */}
+                  {!isLine && (
+                    <div className={styles.contextColorWrapper} title="Fill Color">
+                      <input 
+                        type="color" 
+                        className={styles.contextColorPicker}
+                        value={selectedNode.style?.backgroundColor || '#2c2c2c'}
+                        onChange={(e) => handleQuickChange('backgroundColor', e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  {/* Border / Line Color Picker */}
+                  <div className={styles.contextColorWrapper} title={isLine ? "Line Color" : "Stroke Color"}>
+                    <input 
+                      type="color" 
+                      className={styles.contextColorPicker}
+                      value={selectedNode.style?.borderColor || (isLine ? '#888888' : '#555555')}
+                      onChange={(e) => handleQuickChange('borderColor', e.target.value)}
+                    />
+                  </div>
+
+                  {/* Text Bold Toggle (Only if shape) */}
+                  {!isLine && (
+                    <>
+                      <div className={styles.divider} style={{ height: '12px' }} />
+                      <button 
+                        className={`${styles.contextBtn} ${selectedNode.style?.fontWeight === 'bold' ? styles.contextBtnActive : ''}`}
+                        onClick={() => handleQuickChange('fontWeight', selectedNode.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
+                        title="Toggle Bold Text"
+                      >
+                        <Bold size={11} />
+                      </button>
+                    </>
+                  )}
+
+                  <div className={styles.divider} style={{ height: '12px' }} />
+
+                  {/* Delete Element */}
+                  <button 
+                    className={styles.contextBtn} 
+                    onClick={() => handleDeleteNode(selectedNode.id)} 
+                    title="Delete element"
+                    style={{ color: '#f04438' }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Marquee Selection */}
+        {marquee && (() => {
+          const left = Math.min(marquee.startX, marquee.currentX) * zoom;
+          const top = Math.min(marquee.startY, marquee.currentY) * zoom;
+          const width = Math.abs(marquee.currentX - marquee.startX) * zoom;
+          const height = Math.abs(marquee.currentY - marquee.startY) * zoom;
+          
+          return (
+            <div 
+              className={styles.marqueeBox}
+              style={{
+                left,
+                top,
+                width,
+                height
+              }}
+            />
+          );
+        })()}
+
+      </div>
+
+      {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
         <button 
           className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
@@ -288,7 +427,7 @@ export function Canvas() {
         </button>
       </div>
 
-      {/* Floating Zoom HUD */}
+      {/* Floating Zoom HUD (Fixed overlay inside wrapper) */}
       <div className={styles.zoomHUD}>
         <button className={styles.zoomBtn} onClick={handleZoomOut} title="Zoom Out">
           <ZoomOutIcon size={10} />
@@ -299,51 +438,6 @@ export function Canvas() {
         <button className={styles.zoomBtn} onClick={handleZoomIn} title="Zoom In">
           <Plus size={10} />
         </button>
-      </div>
-
-      <div 
-        className={styles.canvas} 
-        onMouseDown={handleMouseDown}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-      >
-        {/* Scaled viewport container */}
-        <div style={{
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top left',
-          width: `${100 / zoom}%`,
-          height: `${100 / zoom}%`,
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          pointerEvents: 'none'
-        }}>
-          <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
-            {nodes.map((node) => (
-              <Node key={node.id} node={node} />
-            ))}
-          </div>
-        </div>
-
-        {/* Marquee Selection (stays standard overlay scale) */}
-        {marquee && (() => {
-          const left = Math.min(marquee.startX, marquee.currentX) * zoom;
-          const top = Math.min(marquee.startY, marquee.currentY) * zoom;
-          const width = Math.abs(marquee.currentX - marquee.startX) * zoom;
-          const height = Math.abs(marquee.currentY - marquee.startY) * zoom;
-          
-          return (
-            <div 
-              className={styles.marqueeBox}
-              style={{
-                left,
-                top,
-                width,
-                height
-              }}
-            />
-          );
-        })()}
       </div>
     </div>
   );
