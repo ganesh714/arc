@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './SidePanel.module.css';
@@ -28,7 +29,58 @@ export function SidePanel() {
 
   const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
 
-  if (selectedNodes.length === 0) return null;
+  const [canvasBg, setCanvasBg] = useState(() => {
+    return '#1e1e1e';
+  });
+
+  const handleCanvasBgChange = (color: string) => {
+    setCanvasBg(color);
+    document.documentElement.style.setProperty('--bg-canvas', color);
+  };
+
+  if (selectedNodes.length === 0) {
+    return (
+      <div className={styles.overlay}>
+        <div className={styles.header}>
+          <h3>Design</h3>
+        </div>
+        <div className={styles.propertiesContent}>
+          {/* Canvas Settings */}
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Page</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Background</span>
+              <div className={styles.colorPickerWrapper} style={{ maxWidth: '120px' }}>
+                <input
+                  type="color"
+                  value={canvasBg}
+                  onChange={(e) => handleCanvasBgChange(e.target.value)}
+                />
+                <span className={styles.colorHex}>{canvasBg}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Layer stats */}
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Document Info</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Total Layers</span>
+              <span className="text-xs text-slate-400 font-bold">{nodes.length}</span>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Selection</span>
+              <span className="text-xs text-slate-500 italic">None selected</span>
+            </div>
+          </div>
+          
+          <div className="p-4 text-xs text-slate-500 text-center bg-[#1e1e1e] m-3 rounded border border-dashed border-neutral-800">
+            Select a layer on the canvas or layers list to inspect and edit its properties.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const node = selectedNodes[0];
 
