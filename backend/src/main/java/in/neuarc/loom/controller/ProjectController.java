@@ -21,10 +21,10 @@ public class ProjectController {
 
     private final ProjectService projectService;
 
-    @GetMapping
-    @Operation(summary = "Get all projects")
-    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get all projects for a specific user")
+    public ResponseEntity<List<ProjectDTO>> getProjectsByUser(@PathVariable UUID userId) {
+        return ResponseEntity.ok(projectService.getProjectsByUserId(userId));
     }
 
     @GetMapping("/{id}")
