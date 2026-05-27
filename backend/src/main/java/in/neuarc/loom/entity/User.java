@@ -34,4 +34,7 @@ public class User {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Project> projects;
 }
