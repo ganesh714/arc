@@ -1,18 +1,34 @@
 import { useState } from 'react';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { Canvas } from '@/features/diagram/components/Canvas';
+import { LandingPage } from '@/features/landing/LandingPage';
+import { useAuth } from '@/context/AuthContext';
 
 function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
   const { isSidebarOpen } = useDiagram();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#08090d]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0c8ce9]"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
 
   const startLeftResize = (e: React.MouseEvent) => {
-    e.preventDefault();
+...
     const startX = e.clientX;
     const startWidth = leftWidth;
     
@@ -132,9 +148,11 @@ function MainAppContent() {
 
 export function App() {
   return (
-    <DiagramProvider>
-      <MainAppContent />
-    </DiagramProvider>
+    <AuthProvider>
+      <DiagramProvider>
+        <MainAppContent />
+      </DiagramProvider>
+    </AuthProvider>
   );
 }
 

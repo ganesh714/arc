@@ -14,7 +14,8 @@ import {
   GripVertical,
   Hexagon,
   Database,
-  StickyNote
+  StickyNote,
+  User as UserIcon
 } from 'lucide-react';
 
 export function LeftSidebar() {
@@ -193,6 +194,32 @@ export function LeftSidebar() {
             <span className={styles.emptyDesc}>Publish components to access reusable assets and drag them here.</span>
           </div>
         )}
+      </div>
+
+      <div style={{ 
+        marginTop: 'auto', 
+        padding: '12px', 
+        borderTop: '1px solid var(--border-default)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <div style={{ 
+          width: '32px', 
+          height: '32px', 
+          borderRadius: '50%', 
+          backgroundColor: 'var(--bg-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <UserIcon size={16} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Workspace Profile</span>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Personal Account</span>
+        </div>
       </div>
     </div>
   );
