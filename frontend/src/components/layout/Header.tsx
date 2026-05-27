@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
+import { useAuth } from '@/context/AuthContext';
 import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme } = useDiagram();
+  const { user, isAuthenticated, login, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [exportData, setExportData] = useState('');
@@ -61,6 +63,26 @@ export function Header() {
             <FileDown size={14} />
             <span>Export Code</span>
           </button>
+
+          <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 8px' }} />
+
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img 
+                src={user?.picture} 
+                alt={user?.name} 
+                style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--border-default)' }} 
+              />
+              <button className={styles.btn} onClick={logout} style={{ padding: '4px 8px', fontSize: '11px' }}>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={login} style={{ backgroundColor: '#4285F4' }}>
+              <LogIn size={14} />
+              <span>Sign in</span>
+            </button>
+          )}
         </div>
       </header>
       <ExportModal 

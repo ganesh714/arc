@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Header } from '@/components/layout/Header';
 import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
@@ -132,9 +133,11 @@ function MainAppContent() {
 
 export function App() {
   return (
-    <DiagramProvider>
-      <MainAppContent />
-    </DiagramProvider>
+    <AuthProvider>
+      <DiagramProvider>
+        <MainAppContent />
+      </DiagramProvider>
+    </AuthProvider>
   );
 }
 
