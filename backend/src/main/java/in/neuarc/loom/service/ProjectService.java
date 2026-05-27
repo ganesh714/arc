@@ -2,8 +2,10 @@ package in.neuarc.loom.service;
 
 import in.neuarc.loom.dto.ProjectDTO;
 import in.neuarc.loom.entity.Project;
+import in.neuarc.loom.entity.User;
 import in.neuarc.loom.mapper.ProjectMapper;
 import in.neuarc.loom.repository.ProjectRepository;
+import in.neuarc.loom.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,24 +20,26 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMapper projectMapper;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<ProjectDTO> getAllProjects() {
+    public List<ProjectDTO> getProjectsByUserId(UUID userId) {
+        // In a real scenario, we'd use a custom repository method: projectRepository.findByUserId(userId)
+        // For now, filtering the list to demonstrate logic
         return projectRepository.findAll().stream()
+                .filter(p -> p.getUser().getId().equals(userId))
                 .map(projectMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public ProjectDTO getProjectById(UUID id) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found with id: " + id));
-        return projectMapper.toDTO(project);
     }
 
     @Transactional
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Project project = projectMapper.toEntity(projectDTO);
+        
+        User user = userRepository.findById(projectDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        project.setUser(user);
+
         Project savedProject = projectRepository.save(project);
         return projectMapper.toDTO(savedProject);
     }

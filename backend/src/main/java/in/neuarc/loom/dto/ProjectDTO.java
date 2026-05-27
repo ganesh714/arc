@@ -9,6 +9,7 @@ import java.util.UUID;
 @Data
 public class ProjectDTO {
     private UUID id;
+    private UUID userId;
 
     @NotBlank(message = "Project name is required")
     private String name;
