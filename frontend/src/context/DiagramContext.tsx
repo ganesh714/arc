@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 
@@ -18,6 +18,11 @@ interface DiagramContextType {
   addCircle: (position?: { x: number; y: number }) => void;
   addTriangle: (position?: { x: number; y: number }) => void;
   addStar: (position?: { x: number; y: number }) => void;
+  addPill: (position?: { x: number; y: number }) => void;
+  addHexagon: (position?: { x: number; y: number }) => void;
+  addParallelogram: (position?: { x: number; y: number }) => void;
+  addDatabase: (position?: { x: number; y: number }) => void;
+  addNote: (position?: { x: number; y: number }) => void;
   addLine: (position?: { x: number; y: number }) => void;
   addArrow: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
@@ -172,65 +177,47 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
-    setNodesState(prev => {
-      const resolvedNodes = typeof newNodes === 'function' ? newNodes(prev) : newNodes;
-      
-      // Update projects array and last modified timestamp synchronously
-      setProjects(prevProjects => 
-        prevProjects.map(p => 
-          p.id === activeProjectId 
-            ? { ...p, nodes: resolvedNodes, updatedAt: Date.now() } 
-            : p
-        )
-      );
-      
-      return resolvedNodes;
-    });
+    setNodesState(newNodes);
   };
+
+  // Sync nodes state to projects array whenever nodes change
+  useEffect(() => {
+    setProjects(prevProjects => 
+      prevProjects.map(p => 
+        p.id === activeProjectId 
+          ? { ...p, nodes, updatedAt: Date.now() } 
+          : p
+      )
+    );
+  }, [nodes, activeProjectId]);
 
   // Save specific nodes list to history
-  const saveHistoryState = (customNodes: DiagramNode[]) => {
-    setPast(prev => [...prev, customNodes]);
+  const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
+    setPast(prev => [...prev, [...customNodes]]);
     setFuture([]);
-  };
+  }, []);
 
-  const undo = () => {
+  const undo = useCallback(() => {
     if (past.length === 0) return;
+    
     const previous = past[past.length - 1];
     const newPast = past.slice(0, past.length - 1);
     
-    setFuture(prev => [nodes, ...prev]);
-    setNodesState(previous);
+    setFuture(prev => [[...nodes], ...prev]);
+    setNodesState([...previous]);
     setPast(newPast);
-    
-    // Sync change back to active project
-    setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes: previous, updatedAt: Date.now() } 
-          : p
-      )
-    );
-  };
+  }, [past, nodes, activeProjectId]);
 
-  const redo = () => {
+  const redo = useCallback(() => {
     if (future.length === 0) return;
+    
     const next = future[0];
     const newFuture = future.slice(1);
     
-    setPast(prev => [...prev, nodes]);
-    setNodesState(next);
+    setPast(prev => [...prev, [...nodes]]);
+    setNodesState([...next]);
     setFuture(newFuture);
-    
-    // Sync change back to active project
-    setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes: next, updatedAt: Date.now() } 
-          : p
-      )
-    );
-  };
+  }, [future, nodes, activeProjectId]);
 
   const copySelected = () => {
     if (selectedNodeIds.length === 0) return;
@@ -381,6 +368,103 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         backgroundColor: '#38301b',
         borderColor: '#9e7c1d',
         color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addPill = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 150;
+    const height = 60;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'pill',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 250 },
+      dimensions: { width, height },
+      content: 'New Pill',
+      style: {
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3',
+        borderRadius: '30px'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addHexagon = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 120;
+    const height = 100;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'hexagon',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 250 },
+      dimensions: { width, height },
+      content: 'New Hexagon',
+      style: {
+        backgroundColor: '#2e2438',
+        borderColor: '#824ea0',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addParallelogram = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 150;
+    const height = 100;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'parallelogram',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 250, y: 250 },
+      dimensions: { width, height },
+      content: 'New Parallelogram',
+      style: {
+        backgroundColor: '#242e38',
+        borderColor: '#4e82a0',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addDatabase = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 100;
+    const height = 120;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'database',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 350, y: 250 },
+      dimensions: { width, height },
+      content: 'New DB',
+      style: {
+        backgroundColor: '#382424',
+        borderColor: '#a04e4e',
+        color: '#e3e3e3'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addNote = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 140;
+    const height = 140;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'note',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 450, y: 250 },
+      dimensions: { width, height },
+      content: 'New Note',
+      style: {
+        backgroundColor: '#fef3c7',
+        borderColor: '#f59e0b',
+        color: '#92400e',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
       }
     };
     setNodes((prev) => [...prev, newNode]);
@@ -695,9 +779,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addBox, 
       addDiamond, 
       addCircle, 
-      addTriangle, 
+      addTriangle,
       addStar,
-      addLine, 
+      addPill,
+      addHexagon,
+      addParallelogram,
+      addDatabase,
+      addNote,
+      addLine,
+ 
       addArrow, 
       updateLinePoints, 
       updateNode, 

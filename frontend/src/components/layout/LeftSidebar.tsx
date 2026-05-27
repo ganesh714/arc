@@ -11,12 +11,15 @@ import {
   ArrowRight, 
   Trash2, 
   FolderSync,
-  GripVertical
+  GripVertical,
+  Hexagon,
+  Database,
+  StickyNote
 } from 'lucide-react';
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<'layers' | 'assets'>('layers');
-  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds } = useDiagram();
+  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState } = useDiagram();
   
   // Drag and drop states for layer reordering
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -27,14 +30,24 @@ export function LeftSidebar() {
     switch (type) {
       case 'box':
         return <Square size={size} className={styles.layerIcon} />;
+      case 'pill':
+        return <Square size={size} style={{ borderRadius: '3px' }} className={styles.layerIcon} />;
       case 'circle':
         return <Circle size={size} className={styles.layerIcon} />;
       case 'triangle':
         return <Triangle size={size} className={styles.layerIcon} />;
+      case 'hexagon':
+        return <Hexagon size={size} className={styles.layerIcon} />;
       case 'diamond':
         return <Diamond size={size} className={styles.layerIcon} />;
+      case 'parallelogram':
+        return <Square size={size} style={{ transform: 'skewX(-15deg)' }} className={styles.layerIcon} />;
       case 'star':
         return <Layers size={size} style={{ color: '#d69e2e' }} className={styles.layerIcon} />;
+      case 'database':
+        return <Database size={size} className={styles.layerIcon} />;
+      case 'note':
+        return <StickyNote size={size} className={styles.layerIcon} />;
       case 'line':
         return <Minus size={size} className={styles.layerIcon} />;
       case 'arrow':
@@ -56,6 +69,7 @@ export function LeftSidebar() {
 
   const handleDeleteNode = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds(selectedNodeIds.filter(selectedId => selectedId !== id));
   };
@@ -86,6 +100,7 @@ export function LeftSidebar() {
     const [removed] = newNodes.splice(dragOriginalIdx, 1);
     newNodes.splice(dropOriginalIdx, 0, removed);
 
+    saveHistoryState(nodes);
     setNodes(newNodes);
     setDraggedIndex(null);
     setDragOverIndex(null);

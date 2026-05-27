@@ -27,7 +27,7 @@ export interface Point {
 
 export interface DiagramNode {
   id: string;
-  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment';
+  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note';
   position: Position;
   dimensions: Dimensions;
   content: string;

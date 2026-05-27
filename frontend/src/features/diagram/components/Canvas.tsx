@@ -20,7 +20,12 @@ import {
   Eraser,
   MessageSquare,
   Scaling as ScalingIcon,
-  Hand
+  Hand,
+  Undo2,
+  Redo2,
+  Hexagon,
+  Database,
+  StickyNote
 } from 'lucide-react';
 
 export function Canvas() {
@@ -36,6 +41,11 @@ export function Canvas() {
     addCircle,
     addTriangle,
     addStar,
+    addPill,
+    addHexagon,
+    addParallelogram,
+    addDatabase,
+    addNote,
     addLine,
     addArrow,
     zoom,
@@ -46,6 +56,9 @@ export function Canvas() {
     setSelectToolMode,
     undo,
     redo,
+    canUndo,
+    canRedo,
+    saveHistoryState,
     copySelected,
     pasteSelected,
     cutSelected,
@@ -67,11 +80,14 @@ export function Canvas() {
   } | null>(null);
 
   const drawingPreviewRef = useRef(drawingPreview);
-  drawingPreviewRef.current = drawingPreview;
+  
+  useEffect(() => {
+    drawingPreviewRef.current = drawingPreview;
+  }, [drawingPreview]);
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment'>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -109,7 +125,11 @@ export function Canvas() {
       // Undo / Redo
       if ((e.ctrlKey || e.metaKey) && key === 'z') {
         e.preventDefault();
-        undo();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
         return;
       }
       if ((e.ctrlKey || e.metaKey) && key === 'y') {
@@ -280,6 +300,7 @@ export function Canvas() {
         }
         return node;
       });
+      saveHistoryState(nodes);
       setNodes(updatedNodes);
     };
 
@@ -287,7 +308,7 @@ export function Canvas() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedNodeIds, setNodes, nodes]);
+  }, [selectedNodeIds, setNodes, nodes, saveHistoryState]);
 
   const [isDragSelecting, setIsDragSelecting] = useState(false);
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
@@ -311,8 +332,14 @@ export function Canvas() {
     else if (type === 'circle') addCircle({ x, y });
     else if (type === 'triangle') addTriangle({ x, y });
     else if (type === 'star') addStar({ x, y });
+    else if (type === 'pill') addPill({ x, y });
+    else if (type === 'hexagon') addHexagon({ x, y });
+    else if (type === 'parallelogram') addParallelogram({ x, y });
+    else if (type === 'database') addDatabase({ x, y });
+    else if (type === 'note') addNote({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
+
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -365,6 +392,7 @@ export function Canvas() {
             backgroundColor: '#ffc000'
           }
         };
+        saveHistoryState(nodes);
         setNodes([...nodes, newNode]);
         selectNode(id, false);
         setActiveTool('select');
@@ -431,6 +459,7 @@ export function Canvas() {
               points: relativePoints
             };
 
+            saveHistoryState(nodes);
             setNodes([...nodes, newNode]);
             selectNode(id, false);
           }
@@ -514,6 +543,26 @@ export function Canvas() {
                 defaultBg = 'var(--bg-hover)';
                 defaultBorder = '#9e7c1d';
                 defaultText = 'Star';
+              } else if (activeTool === 'pill') {
+                defaultText = 'Pill';
+                customStyle = { borderRadius: '999px' };
+              } else if (activeTool === 'hexagon') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#824ea0';
+                defaultText = 'Hexagon';
+              } else if (activeTool === 'parallelogram') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#4e82a0';
+                defaultText = 'Parallelogram';
+              } else if (activeTool === 'database') {
+                defaultBg = 'var(--bg-hover)';
+                defaultBorder = '#a04e4e';
+                defaultText = 'Database';
+              } else if (activeTool === 'note') {
+                defaultBg = '#fef3c7';
+                defaultBorder = '#f59e0b';
+                defaultText = 'Note';
+                customStyle = { color: '#92400e' };
               }
 
               newNode = {
@@ -531,6 +580,7 @@ export function Canvas() {
               };
             }
 
+            saveHistoryState(nodes);
             setNodes([...nodes, newNode]);
             selectNode(id, false);
           }
@@ -654,26 +704,39 @@ export function Canvas() {
   };
 
   const handleDeleteNode = (id: string) => {
+    saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
     setSelectedNodeIds([]);
   };
 
   const shapeIcons = {
     box: <Square size={15} />,
+    pill: <Square size={15} style={{ borderRadius: '6px' }} />,
     circle: <Circle size={15} />,
     triangle: <Triangle size={15} />,
+    hexagon: <Hexagon size={15} />,
     diamond: <DiamondIcon size={15} />,
+    parallelogram: <Square size={15} style={{ transform: 'skewX(-15deg)' }} />,
     star: <StarIcon size={15} />,
+    database: <Database size={15} />,
+    note: <StickyNote size={15} />,
+    comment: <MessageSquare size={15} style={{ color: 'var(--accent-purple)' }} />,
     line: <Minus size={15} />,
     arrow: <ArrowRight size={15} />
   };
 
   const shapeLabels = {
     box: 'Rectangle (R)',
+    pill: 'Pill',
     circle: 'Ellipse (O)',
     triangle: 'Triangle',
+    hexagon: 'Hexagon',
     diamond: 'Diamond',
+    parallelogram: 'Parallelogram',
     star: 'Star',
+    database: 'Database',
+    note: 'Sticky Note',
+    comment: 'Comment (C)',
     line: 'Line (L)',
     arrow: 'Arrow (Shift+L)'
   };
@@ -993,6 +1056,28 @@ export function Canvas() {
         </div>
       </div>
 
+      {/* Floating History Toolbar - Top Center */}
+      <div className={styles.historyToolbar}>
+        <button 
+          className={styles.toolButton} 
+          onClick={undo} 
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        >
+          <Undo2 size={16} />
+        </button>
+        <button 
+          className={styles.toolButton} 
+          onClick={redo} 
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        >
+          <Redo2 size={16} />
+        </button>
+      </div>
+
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
         <div className={styles.shapeSelectorContainer}>
@@ -1059,7 +1144,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'diamond', 'star', 'line', 'arrow'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1078,26 +1163,78 @@ export function Canvas() {
 
           {shapeDropdownOpen && (
             <div className={styles.shapeDropdown} onClick={(e) => e.stopPropagation()}>
-              {Object.entries(shapeIcons).map(([type, icon]) => {
-                const isSelected = currentShapeType === type;
-                return (
-                  <button
-                    key={type}
-                    className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
-                    onClick={() => {
-                      setCurrentShapeType(type as any);
-                      setActiveTool(type);
-                      setShapeDropdownOpen(false);
-                    }}
-                  >
-                    <span className={styles.dropdownItemIcon}>{icon}</span>
-                    <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
-                    <span className={styles.dropdownItemShortcut}>
-                      {type === 'box' ? 'R' : type === 'circle' ? 'O' : type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
-                    </span>
-                  </button>
-                );
-              })}
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Basic Shapes</div>
+                {['box', 'circle', 'triangle', 'star', 'pill'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                      <span className={styles.dropdownItemShortcut}>
+                        {type === 'box' ? 'R' : type === 'circle' ? 'O' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <div className={styles.columnDivider} />
+
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Flowchart</div>
+                {['diamond', 'hexagon', 'parallelogram', 'database', 'note'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={styles.columnDivider} />
+
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Connectors</div>
+                {['line', 'arrow'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
+                      <span className={styles.dropdownItemShortcut}>
+                        {type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -1124,11 +1261,15 @@ export function Canvas() {
 
         <div className={styles.divider} />
 
-        {/* Comments tool */}
+        {/* Standalone Comment tool - Theme consistent */}
         <button
           className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
-          onClick={() => setActiveTool('comment')}
-          title="Add Comment (C)"
+          onClick={() => {
+            setActiveTool('comment');
+            setCurrentShapeType('comment');
+          }}
+          title="Comment (C)"
+          style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}
         >
           <MessageSquare size={15} />
         </button>
