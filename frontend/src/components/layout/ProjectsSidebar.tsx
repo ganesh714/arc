@@ -5,7 +5,7 @@ import { Folder, Plus, Check, X, FolderKanban, LogIn } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import styles from './ProjectsSidebar.module.css';
 
-export function ProjectsSidebar() {
+export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
   const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
   const { isGuest, login } = useAuth();
   
@@ -86,8 +86,8 @@ export function ProjectsSidebar() {
       {/* Top Logo - Clickable to collapse sidebar */}
       <div 
         className={styles.logoContainer} 
-        onClick={toggleSidebar} 
-        title="Collapse sidebar"
+        onClick={onBackToDashboard} 
+        title="Go to Dashboard"
         style={{ cursor: 'pointer' }}
       >
         <div className={styles.logoWrapper}>

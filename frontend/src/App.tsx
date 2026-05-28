@@ -9,11 +9,34 @@ import { Canvas } from '@/features/diagram/components/Canvas';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { useAuth } from '@/context/AuthContext';
 
+import { useState, useEffect } from 'react';
+import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { Header } from '@/components/layout/Header';
+import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
+import { LeftSidebar } from '@/components/layout/LeftSidebar';
+import { SidePanel } from '@/components/layout/SidePanel';
+import { Canvas } from '@/features/diagram/components/Canvas';
+import { LandingPage } from '@/features/landing/LandingPage';
+import { Dashboard } from '@/features/dashboard/Dashboard';
+import { useAuth } from '@/context/AuthContext';
+
+type AppView = 'landing' | 'dashboard' | 'workspace';
+
 function MainAppContent() {
+  const [view, setView] = useState<AppView>('landing');
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
   const { isSidebarOpen } = useDiagram();
   const { isAuthenticated, isGuest, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated || isGuest) {
+      setView('dashboard');
+    } else {
+      setView('landing');
+    }
+  }, [isAuthenticated, isGuest]);
 
   if (isLoading) {
     return (
@@ -23,8 +46,12 @@ function MainAppContent() {
     );
   }
 
-  if (!isAuthenticated && !isGuest) {
+  if (view === 'landing') {
     return <LandingPage />;
+  }
+
+  if (view === 'dashboard') {
+    return <Dashboard onEnterWorkspace={() => setView('workspace')} />;
   }
 
   const startLeftResize = (e: React.MouseEvent) => {
@@ -79,7 +106,7 @@ function MainAppContent() {
           flexShrink: 0
         }}
       >
-        <ProjectsSidebar />
+        <ProjectsSidebar onBackToDashboard={() => setView('dashboard')} />
       </div>
 
       {/* Main Content Area (Header + Workspace) */}
