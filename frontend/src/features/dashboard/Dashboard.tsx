@@ -25,7 +25,7 @@ interface DashboardProps {
 
 export function Dashboard({ onEnterWorkspace }: DashboardProps) {
   const { projects, addProject, switchProject } = useDiagram();
-  const { user, logout } = useAuth();
+  const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
 
@@ -99,9 +99,23 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
             <Settings size={18} />
             <span>Settings</span>
           </div>
-          <div className={styles.navLink} onClick={logout}>
-            <X size={18} />
-            <span>Sign out</span>
+          
+          <div style={{ margin: '16px 12px', padding: '12px', background: '#12141a', borderRadius: '12px', border: '1px solid #1a1d26' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={16} color="#0c8ce9" />}
+              </div>
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
+                <div style={{ fontSize: '10px', color: '#666' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
+              </div>
+            </div>
+            <button 
+              onClick={logout}
+              style={{ width: '100%', background: '#1a1d26', border: 'none', color: '#888', padding: '6px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <X size={12} /> Sign out
+            </button>
           </div>
         </nav>
       </aside>
@@ -176,10 +190,10 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
                 onClick={() => handleProjectClick(project.id)}
               >
                 <div className={styles.preview}>
+                  <div className={styles.previewGradient} />
                   <div className={styles.cardIcon}>
                     <FolderKanban size={64} strokeWidth={1} />
-                  </div>
-                  {project.nodes.length > 0 && (
+                  </div>                  {project.nodes.length > 0 && (
                     <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: '#0c8ce920', padding: '6px', borderRadius: '50%' }}>
                       <Sparkles size={14} color="#0c8ce9" />
                     </div>

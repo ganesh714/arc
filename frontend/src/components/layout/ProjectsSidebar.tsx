@@ -78,7 +78,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
           </button>
 
           <div 
-            onClick={toggleSidebar}
+            onClick={isGuest ? login : toggleSidebar}
             style={{ 
               width: '32px', 
               height: '32px', 
@@ -92,6 +92,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
               overflow: 'hidden',
               marginTop: '8px'
             }}
+            title={isGuest ? "Sign in to save" : "View Profile"}
           >
             {isGuest ? (
               <LogIn size={14} color="#f59e0b" />

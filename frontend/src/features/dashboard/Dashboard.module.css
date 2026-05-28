@@ -141,19 +141,25 @@
 .statCard {
   background-color: #12141a;
   border: 1px solid #1a1d26;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex: 1;
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  border-color: #333;
+  transform: translateY(-2px);
 }
 
 .statIcon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   background-color: #161922;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,24 +207,35 @@
 
 .preview {
   height: 180px;
-  background-color: #08090d;
+  background-color: #0b0c10;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid #1a1d26;
+  background-image: 
+    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.preview::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(12, 140, 233, 0.05) 0%, transparent 100%);
 }
 
 .cardIcon {
   color: #1a1d26;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
 }
 
 .card:hover .cardIcon {
   color: #0c8ce9;
-  opacity: 0.2;
-  transform: scale(1.1);
+  opacity: 0.3;
+  transform: scale(1.1) rotate(5deg);
 }
 
 .info {
@@ -278,4 +295,3 @@
   margin: 0;
   font-size: 24px;
 }
-
