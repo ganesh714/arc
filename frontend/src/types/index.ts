@@ -25,6 +25,11 @@ export interface Point {
   y: number;
 }
 
+export interface Connection {
+  nodeId: string;
+  anchor: 'top' | 'bottom' | 'left' | 'right';
+}
+
 export interface DiagramNode {
   id: string;
   type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note';
@@ -35,6 +40,8 @@ export interface DiagramNode {
   rotation?: number;
   startPoint?: Point;
   endPoint?: Point;
+  startConnection?: Connection;
+  endConnection?: Connection;
   lineStyle?: 'solid' | 'dashed';
   lineCurve?: 'straight' | 'curved';
   arrowType?: 'none' | 'single' | 'double';

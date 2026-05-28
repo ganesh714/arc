@@ -7,10 +7,12 @@ import styles from './Node.module.css';
 
 interface NodeProps {
   node: DiagramNode;
-}
+import { useAuth } from '@/context/AuthContext';
+import { MessageSquare } from 'lucide-react';
 
 export function Node({ node }: NodeProps) {
   const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
+  const { isGuest } = useAuth();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
@@ -63,16 +65,55 @@ export function Node({ node }: NodeProps) {
     let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+      const dx = (moveEvent.clientX - startX) / zoom;
+      const dy = (moveEvent.clientY - startY) / zoom;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
         hasMoved = true;
       }
-      updateLinePoints(
-        node.id,
-        { x: initialStart.x + dx, y: initialStart.y + dy },
-        node.endPoint!
-      );
+
+      const currentX = initialStart.x + dx;
+      const currentY = initialStart.y + dy;
+
+      // Snapping logic
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let minDistance = 20 / zoom;
+
+      nodes.forEach(n => {
+        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') return;
+        ['top', 'bottom', 'left', 'right'].forEach(a => {
+          let ax = n.position.x;
+          let ay = n.position.y;
+          if (a === 'top') { ax += n.dimensions.width/2; }
+          else if (a === 'bottom') { ax += n.dimensions.width/2; ay += n.dimensions.height; }
+          else if (a === 'left') { ay += n.dimensions.height/2; }
+          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height/2; }
+
+          const dist = Math.sqrt(Math.pow(currentX - ax, 2) + Math.pow(currentY - ay, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: a as any, x: ax, y: ay };
+          }
+        });
+      });
+
+      if (bestAnchor) {
+        updateNode({
+          ...node,
+          startPoint: { x: bestAnchor.x, y: bestAnchor.y },
+          startConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
+        });
+      } else {
+        updateNode({
+          ...node,
+          startPoint: { x: currentX, y: currentY },
+          startConnection: undefined,
+          position: { x: Math.min(currentX, node.endPoint!.x), y: Math.min(currentY, node.endPoint!.y) },
+          dimensions: { 
+            width: Math.max(15, Math.abs(node.endPoint!.x - currentX)), 
+            height: Math.max(15, Math.abs(node.endPoint!.y - currentY)) 
+          }
+        });
+      }
     };
     
     const handleMouseUp = () => {
@@ -98,16 +139,55 @@ export function Node({ node }: NodeProps) {
     let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+      const dx = (moveEvent.clientX - startX) / zoom;
+      const dy = (moveEvent.clientY - startY) / zoom;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
         hasMoved = true;
       }
-      updateLinePoints(
-        node.id,
-        node.startPoint!,
-        { x: initialEnd.x + dx, y: initialEnd.y + dy }
-      );
+
+      const currentX = initialEnd.x + dx;
+      const currentY = initialEnd.y + dy;
+
+      // Snapping logic
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let minDistance = 20 / zoom;
+
+      nodes.forEach(n => {
+        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') return;
+        ['top', 'bottom', 'left', 'right'].forEach(a => {
+          let ax = n.position.x;
+          let ay = n.position.y;
+          if (a === 'top') { ax += n.dimensions.width/2; }
+          else if (a === 'bottom') { ax += n.dimensions.width/2; ay += n.dimensions.height; }
+          else if (a === 'left') { ay += n.dimensions.height/2; }
+          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height/2; }
+
+          const dist = Math.sqrt(Math.pow(currentX - ax, 2) + Math.pow(currentY - ay, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: a as any, x: ax, y: ay };
+          }
+        });
+      });
+
+      if (bestAnchor) {
+        updateNode({
+          ...node,
+          endPoint: { x: bestAnchor.x, y: bestAnchor.y },
+          endConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
+        });
+      } else {
+        updateNode({
+          ...node,
+          endPoint: { x: currentX, y: currentY },
+          endConnection: undefined,
+          position: { x: Math.min(node.startPoint!.x, currentX), y: Math.min(node.startPoint!.y, currentY) },
+          dimensions: { 
+            width: Math.max(15, Math.abs(currentX - node.startPoint!.x)), 
+            height: Math.max(15, Math.abs(currentY - node.startPoint!.y)) 
+          }
+        });
+      }
     };
     
     const handleMouseUp = () => {

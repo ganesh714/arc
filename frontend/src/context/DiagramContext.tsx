@@ -556,22 +556,61 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   const moveNode = (id: string, position: { x: number; y: number }) => {
     saveHistoryState(nodes);
-    setNodes((prev) => prev.map(node => {
-      if (node.id === id) {
-        if (node.startPoint && node.endPoint) {
-          const dx = position.x - node.position.x;
-          const dy = position.y - node.position.y;
-          return {
-            ...node,
-            position,
-            startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
-            endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
-          };
+    setNodes((prev) => {
+      const updatedNodes = prev.map(node => {
+        if (node.id === id) {
+          if (node.startPoint && node.endPoint) {
+            const dx = position.x - node.position.x;
+            const dy = position.y - node.position.y;
+            return {
+              ...node,
+              position,
+              startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+              endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+            };
+          }
+          return { ...node, position };
         }
-        return { ...node, position };
-      }
-      return node;
-    }));
+        return node;
+      });
+
+      // Update any lines/arrows connected to this node
+      return updatedNodes.map(node => {
+        if ((node.type === 'line' || node.type === 'arrow') && (node.startConnection?.nodeId === id || node.endConnection?.nodeId === id)) {
+          const newNode = { ...node };
+          const movedNode = updatedNodes.find(n => n.id === id)!;
+
+          if (node.startConnection?.nodeId === id) {
+            newNode.startPoint = getAnchorPoint(movedNode, node.startConnection.anchor);
+          }
+          if (node.endConnection?.nodeId === id) {
+            newNode.endPoint = getAnchorPoint(movedNode, node.endConnection.anchor);
+          }
+
+          // Recalculate bounding box for the line
+          const minX = Math.min(newNode.startPoint!.x, newNode.endPoint!.x);
+          const minY = Math.min(newNode.startPoint!.y, newNode.endPoint!.y);
+          const width = Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x));
+          const height = Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y));
+          
+          newNode.position = { x: minX, y: minY };
+          newNode.dimensions = { width, height };
+          return newNode;
+        }
+        return node;
+      });
+    });
+  };
+
+  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right') => {
+    const { x, y } = node.position;
+    const { width, height } = node.dimensions;
+    switch (anchor) {
+      case 'top': return { x: x + width / 2, y };
+      case 'bottom': return { x: x + width / 2, y: y + height };
+      case 'left': return { x, y: y + height / 2 };
+      case 'right': return { x: x + width, y: y + height / 2 };
+    }
   };
 
   const moveSelectedNodes = (draggedNodeId: string, position: { x: number; y: number }) => {
@@ -585,29 +624,50 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
       if (dx === 0 && dy === 0) return prev;
 
-      return prev.map(node => {
-        if (selectedNodeIds.includes(node.id)) {
-          if (node.id === draggedNodeId) {
-            if (node.startPoint && node.endPoint) {
-              return {
-                ...node,
-                position,
-                startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
-                endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
-              };
-            }
-            return { ...node, position };
-          } else {
-            const newPos = { x: node.position.x + dx, y: node.position.y + dy };
-            if (node.startPoint && node.endPoint) {
-              return {
-                ...node,
-                position: newPos,
-                startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
-                endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
-              };
-            }
-            return { ...node, position: newPos };
+      const movedIds = selectedNodeIds;
+      const updatedNodes = prev.map(node => {
+        if (movedIds.includes(node.id)) {
+          const newPos = { x: node.position.x + dx, y: node.position.y + dy };
+          if (node.startPoint && node.endPoint) {
+            return {
+              ...node,
+              position: newPos,
+              startPoint: { x: node.startPoint.x + dx, y: node.startPoint.y + dy },
+              endPoint: { x: node.endPoint.x + dx, y: node.endPoint.y + dy }
+            };
+          }
+          return { ...node, position: newPos };
+        }
+        return node;
+      });
+
+      // Update lines connected to moved nodes (if the line itself isn't being moved)
+      return updatedNodes.map(node => {
+        const isLine = node.type === 'line' || node.type === 'arrow';
+        if (isLine && !movedIds.includes(node.id)) {
+          let needsUpdate = false;
+          const newNode = { ...node };
+
+          if (node.startConnection && movedIds.includes(node.startConnection.nodeId)) {
+            const connectedNode = updatedNodes.find(n => n.id === node.startConnection!.nodeId)!;
+            newNode.startPoint = getAnchorPoint(connectedNode, node.startConnection.anchor);
+            needsUpdate = true;
+          }
+          if (node.endConnection && movedIds.includes(node.endConnection.nodeId)) {
+            const connectedNode = updatedNodes.find(n => n.id === node.endConnection!.nodeId)!;
+            newNode.endPoint = getAnchorPoint(connectedNode, node.endConnection.anchor);
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            const minX = Math.min(newNode.startPoint!.x, newNode.endPoint!.x);
+            const minY = Math.min(newNode.startPoint!.y, newNode.endPoint!.y);
+            newNode.position = { x: minX, y: minY };
+            newNode.dimensions = { 
+              width: Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x)), 
+              height: Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y)) 
+            };
+            return newNode;
           }
         }
         return node;
