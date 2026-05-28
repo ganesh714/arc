@@ -9,7 +9,7 @@ import { FolderInput, FileDown, Sun, Moon, LogIn } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme } = useDiagram();
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [exportData, setExportData] = useState('');
@@ -29,15 +29,15 @@ export function Header() {
             <span className={styles.title}>Loom</span>
           </div>
           <div className={styles.statusIndicator}>
-            <span className={styles.statusDot}></span>
-            <span>Cloud Connected</span>
+            <span className={styles.statusDot} style={{ backgroundColor: isGuest ? '#f59e0b' : '#10b981' }}></span>
+            <span>{isGuest ? 'Guest Mode (Not Saved)' : 'Cloud Connected'}</span>
           </div>
         </div>
 
         <div className={styles.centerSection}>
           <span>Drafts</span>
           <span style={{ color: 'var(--text-muted)' }}>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>Interactive Diagram</span>
+          <span style={{ color: 'var(--text-primary)' }}>{isGuest ? 'New Project' : 'Interactive Diagram'}</span>
         </div>
 
         <div className={styles.actions}>
@@ -75,6 +75,16 @@ export function Header() {
               />
               <button className={styles.btn} onClick={logout} style={{ padding: '4px 8px', fontSize: '11px' }}>
                 Logout
+              </button>
+            </div>
+          ) : isGuest ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+               <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={login} style={{ backgroundColor: '#4285F4' }}>
+                <LogIn size={14} />
+                <span>Save Progress</span>
+              </button>
+              <button className={styles.btn} onClick={logout} style={{ padding: '4px 8px', fontSize: '11px' }}>
+                Exit
               </button>
             </div>
           ) : (

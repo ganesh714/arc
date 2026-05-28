@@ -1,9 +1,9 @@
 import styles from './LandingPage.module.css';
 import { useAuth } from '@/context/AuthContext';
-import { ArrowRight, Code, Zap, Globe, Github, Sparkles } from 'lucide-react';
+import { ArrowRight, Code, Zap, Globe, Sparkles } from 'lucide-react';
 
 export function LandingPage() {
-  const { login } = useAuth();
+  const { login, enterGuestMode } = useAuth();
 
   return (
     <div className={styles.container}>
@@ -17,7 +17,7 @@ export function LandingPage() {
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
           <button className={styles.loginBtn} onClick={login}>Sign In</button>
-          <button className={styles.getStartedBtn} onClick={login}>Get Started Free</button>
+          <button className={styles.getStartedBtn} onClick={enterGuestMode}>Get Started Free</button>
         </div>
       </nav>
 
@@ -36,11 +36,11 @@ export function LandingPage() {
           responsive React, Angular, and Vanilla components instantly.
         </p>
         <div className={styles.heroActions}>
-          <button className={styles.primaryBtn} onClick={login}>
+          <button className={styles.primaryBtn} onClick={enterGuestMode}>
             Start Building Now <ArrowRight size={18} />
           </button>
           <button className={styles.secondaryBtn}>
-            <Github size={18} /> View on GitHub
+            <Code size={18} /> View on GitHub
           </button>
         </div>
 
