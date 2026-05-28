@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { useAuth } from '@/context/AuthContext';
 import styles from './LeftSidebar.module.css';
 import { 
   Layers, 
@@ -15,14 +14,12 @@ import {
   GripVertical,
   Hexagon,
   Database,
-  StickyNote,
-  User as UserIcon
+  StickyNote
 } from 'lucide-react';
 
 export function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<'layers' | 'assets'>('layers');
   const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState } = useDiagram();
-  const { isGuest, user } = useAuth();
   
   // Drag and drop states for layer reordering
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -196,44 +193,6 @@ export function LeftSidebar() {
             <span className={styles.emptyDesc}>Publish components to access reusable assets and drag them here.</span>
           </div>
         )}
-      </div>
-
-      <div style={{ 
-        marginTop: 'auto', 
-        padding: '12px', 
-        borderTop: '1px solid var(--border-default)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px'
-      }}>
-        <div style={{ 
-          width: '32px', 
-          height: '32px', 
-          borderRadius: '50%', 
-          backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
-          overflow: 'hidden'
-        }}>
-          {isGuest ? (
-            <UserIcon size={16} color="#f59e0b" />
-          ) : user?.picture ? (
-            <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <UserIcon size={16} />
-          )}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {isGuest ? 'Guest User' : user?.name || 'Workspace Profile'}
-          </span>
-          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-            {isGuest ? 'Previewing Canvas' : 'Personal Account'}
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
   const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
-  const { isGuest, login } = useAuth();
+  const { isGuest, user, login, logout } = useAuth();
   
   // Track adding project
   const [isCreating, setIsCreating] = useState(false);
@@ -60,7 +60,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
           </button>
         </div>
 
-        {/* Footer with Plus icon */}
+        {/* Footer with Plus icon and Profile */}
         <div className={styles.footerCollapsed}>
           <button
             className={styles.addBtnCollapsed}
@@ -76,6 +76,31 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
           >
             <Plus size={20} />
           </button>
+
+          <div 
+            onClick={toggleSidebar}
+            style={{ 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '50%', 
+              backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
+              overflow: 'hidden',
+              marginTop: '8px'
+            }}
+          >
+            {isGuest ? (
+              <LogIn size={14} color="#f59e0b" />
+            ) : user?.picture ? (
+              <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <LogIn size={14} />
+            )}
+          </div>
         </div>
       </div>
     );
@@ -86,8 +111,8 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
       {/* Top Logo - Clickable to collapse sidebar */}
       <div 
         className={styles.logoContainer} 
-        onClick={onBackToDashboard} 
-        title="Go to Dashboard"
+        onClick={toggleSidebar} 
+        title="Collapse sidebar"
         style={{ cursor: 'pointer' }}
       >
         <div className={styles.logoWrapper}>
@@ -116,50 +141,101 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
         })}
       </div>
 
-      {/* Footer / Add Project Button */}
+      {/* Footer / Add Project Button + Profile */}
       <div className={styles.footer}>
-        {isGuest ? (
-          <button
-            className={styles.addBtn}
-            onClick={login}
-            style={{ backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none' }}
-          >
-            <LogIn size={14} />
-            <span>Sign in to save</span>
-          </button>
-        ) : !isCreating ? (
-          <button
-            className={styles.addBtn}
-            onClick={() => setIsCreating(true)}
-            title="New File / Project"
-          >
-            <Plus size={14} />
-            <span>New File / Project</span>
-          </button>
-        ) : (
-          <div ref={popoverRef} className={styles.inputContainer}>
-            <input
-              type="text"
-              className={styles.input}
-              placeholder="Project name..."
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateProject();
-                else if (e.key === 'Escape') setIsCreating(false);
-              }}
-              autoFocus
-            />
-            <div className={styles.inputActions}>
-              <button className={styles.confirmBtn} onClick={handleCreateProject} title="Save">
-                <Check size={12} />
-              </button>
-              <button className={styles.cancelBtn} onClick={() => setIsCreating(false)} title="Cancel">
-                <X size={12} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+          {isGuest ? (
+            <button
+              className={styles.addBtn}
+              onClick={login}
+              style={{ backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none' }}
+            >
+              <LogIn size={14} />
+              <span>Sign in to save</span>
+            </button>
+          ) : !isCreating ? (
+            <button
+              className={styles.addBtn}
+              onClick={() => setIsCreating(true)}
+              title="New File / Project"
+            >
+              <Plus size={14} />
+              <span>New File / Project</span>
+            </button>
+          ) : (
+            <div ref={popoverRef} className={styles.inputContainer}>
+              <input
+                type="text"
+                className={styles.input}
+                placeholder="Project name..."
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateProject();
+                  else if (e.key === 'Escape') setIsCreating(false);
+                }}
+                autoFocus
+              />
+              <div className={styles.inputActions}>
+                <button className={styles.confirmBtn} onClick={handleCreateProject} title="Save">
+                  <Check size={12} />
+                </button>
+                <button className={styles.cancelBtn} onClick={() => setIsCreating(false)} title="Cancel">
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* User Profile Info */}
+          <div style={{ 
+            padding: '12px 8px', 
+            borderTop: '1px solid var(--border-default)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginTop: '4px'
+          }}>
+            <div style={{ 
+              width: '28px', 
+              height: '28px', 
+              borderRadius: '50%', 
+              backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
+              overflow: 'hidden'
+            }}>
+              {isGuest ? (
+                <LogIn size={12} color="#f59e0b" />
+              ) : user?.picture ? (
+                <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <LogIn size={12} />
+              )}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+                {isGuest ? 'Guest User' : user?.name || 'User'}
+              </span>
+              <button 
+                onClick={onBackToDashboard}
+                style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
+              >
+                Dashboard
               </button>
             </div>
+            <button 
+              onClick={logout} 
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer' }}
+              title="Logout"
+            >
+              <X size={12} />
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
