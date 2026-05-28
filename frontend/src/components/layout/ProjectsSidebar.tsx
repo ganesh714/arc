@@ -7,7 +7,7 @@ import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
   const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
-  const { isGuest, user, login, logout } = useAuth();
+  const { isGuest, user, login, logout, isAuthenticated } = useAuth();
   
   // Track adding project
   const [isCreating, setIsCreating] = useState(false);
