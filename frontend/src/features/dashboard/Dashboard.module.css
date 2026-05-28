@@ -2,43 +2,120 @@
   min-height: 100vh;
   background-color: #08090d;
   color: #e3e3e3;
-  padding: 40px 60px;
+  display: flex;
+}
+
+.sidebar {
+  width: 240px;
+  background-color: #0b0c10;
+  border-right: 1px solid #1a1d26;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  padding: 24px 12px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 60px;
+  overflow-y: auto;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px 32px;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  background-color: #0c8ce9;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.logoText {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+}
+
+.navSection {
+  margin-bottom: 32px;
+}
+
+.navLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 12px 12px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  background-color: #12141a;
+  color: #fff;
+}
+
+.activeNavLink {
+  background-color: #161922;
+  color: #0c8ce9;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 40px;
 }
 
 .titleSection h1 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+  background: linear-gradient(135deg, #fff 0%, #888 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .titleSection p {
-  color: #888;
-  font-size: 14px;
-  margin-top: 4px;
+  color: #666;
+  font-size: 15px;
+  margin-top: 6px;
 }
 
 .actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  align-items: center;
 }
 
 .newProjectBtn {
   background-color: #0c8ce9;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 8px;
   font-weight: 500;
   display: flex;
@@ -46,76 +123,120 @@
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(12, 140, 233, 0.2);
 }
 
 .newProjectBtn:hover {
   background-color: #0a74c2;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(12, 140, 233, 0.3);
+}
+
+.statsRow {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  background-color: #12141a;
+  border: 1px solid #1a1d26;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  background-color: #161922;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0c8ce9;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #666;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
 }
 
 .card {
   background-color: #12141a;
-  border: 1px solid #222;
-  border-radius: 12px;
+  border: 1px solid #1a1d26;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .card:hover {
   border-color: #0c8ce9;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   background-color: #161922;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
 }
 
 .preview {
-  height: 160px;
-  background-color: #0b0c10;
+  height: 180px;
+  background-color: #08090d;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-}
-
-.preview::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(8, 9, 13, 0.4) 100%);
+  border-bottom: 1px solid #1a1d26;
 }
 
 .cardIcon {
-  color: #333;
-  opacity: 0.5;
+  color: #1a1d26;
+  transition: all 0.3s;
+}
+
+.card:hover .cardIcon {
+  color: #0c8ce9;
+  opacity: 0.2;
+  transform: scale(1.1);
 }
 
 .info {
-  padding: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .projectHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .projectName {
   font-weight: 600;
-  font-size: 16px;
+  font-size: 17px;
   color: #fff;
 }
 
@@ -123,18 +244,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
-  color: #666;
+  font-size: 13px;
+  color: #555;
 }
 
 .nodeCount {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   background: #1a1d26;
-  padding: 2px 8px;
-  border-radius: 12px;
-  color: #aaa;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: #0c8ce9;
+  font-weight: 600;
 }
 
 .emptyState {
@@ -142,16 +264,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px;
-  background-color: #12141a;
-  border: 2px dashed #222;
-  border-radius: 16px;
-  gap: 16px;
-  color: #666;
+  padding: 100px;
+  background-color: #0b0c10;
+  border: 2px dashed #1a1d26;
+  border-radius: 24px;
+  gap: 20px;
+  color: #444;
   text-align: center;
 }
 
 .emptyState h2 {
   color: #fff;
   margin: 0;
+  font-size: 24px;
 }
+
