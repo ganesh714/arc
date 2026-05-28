@@ -7,12 +7,10 @@ import styles from './Node.module.css';
 
 interface NodeProps {
   node: DiagramNode;
-import { useAuth } from '@/context/AuthContext';
-import { MessageSquare } from 'lucide-react';
+}
 
 export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, updateLinePoints, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
-  const { isGuest } = useAuth();
+  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
@@ -78,23 +76,24 @@ export function Node({ node }: NodeProps) {
       let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
-      nodes.forEach(n => {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') return;
-        ['top', 'bottom', 'left', 'right'].forEach(a => {
+      for (const n of nodes) {
+        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
+        for (const a of anchors) {
           let ax = n.position.x;
           let ay = n.position.y;
-          if (a === 'top') { ax += n.dimensions.width/2; }
-          else if (a === 'bottom') { ax += n.dimensions.width/2; ay += n.dimensions.height; }
-          else if (a === 'left') { ay += n.dimensions.height/2; }
-          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height/2; }
+          if (a === 'top') { ax += n.dimensions.width / 2; }
+          else if (a === 'bottom') { ax += n.dimensions.width / 2; ay += n.dimensions.height; }
+          else if (a === 'left') { ay += n.dimensions.height / 2; }
+          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height / 2; }
 
           const dist = Math.sqrt(Math.pow(currentX - ax, 2) + Math.pow(currentY - ay, 2));
           if (dist < minDistance) {
             minDistance = dist;
-            bestAnchor = { nodeId: n.id, anchor: a as any, x: ax, y: ay };
+            bestAnchor = { nodeId: n.id, anchor: a, x: ax, y: ay };
           }
-        });
-      });
+        }
+      }
 
       if (bestAnchor) {
         updateNode({
@@ -152,23 +151,24 @@ export function Node({ node }: NodeProps) {
       let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
-      nodes.forEach(n => {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') return;
-        ['top', 'bottom', 'left', 'right'].forEach(a => {
+      for (const n of nodes) {
+        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
+        for (const a of anchors) {
           let ax = n.position.x;
           let ay = n.position.y;
-          if (a === 'top') { ax += n.dimensions.width/2; }
-          else if (a === 'bottom') { ax += n.dimensions.width/2; ay += n.dimensions.height; }
-          else if (a === 'left') { ay += n.dimensions.height/2; }
-          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height/2; }
+          if (a === 'top') { ax += n.dimensions.width / 2; }
+          else if (a === 'bottom') { ax += n.dimensions.width / 2; ay += n.dimensions.height; }
+          else if (a === 'left') { ay += n.dimensions.height / 2; }
+          else if (a === 'right') { ax += n.dimensions.width; ay += n.dimensions.height / 2; }
 
           const dist = Math.sqrt(Math.pow(currentX - ax, 2) + Math.pow(currentY - ay, 2));
           if (dist < minDistance) {
             minDistance = dist;
-            bestAnchor = { nodeId: n.id, anchor: a as any, x: ax, y: ay };
+            bestAnchor = { nodeId: n.id, anchor: a, x: ax, y: ay };
           }
-        });
-      });
+        }
+      }
 
       if (bestAnchor) {
         updateNode({

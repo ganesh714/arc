@@ -1,14 +1,3 @@
-import { useState } from 'react';
-import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { Header } from '@/components/layout/Header';
-import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
-import { LeftSidebar } from '@/components/layout/LeftSidebar';
-import { SidePanel } from '@/components/layout/SidePanel';
-import { Canvas } from '@/features/diagram/components/Canvas';
-import { LandingPage } from '@/features/landing/LandingPage';
-import { useAuth } from '@/context/AuthContext';
-
 import { useState, useEffect } from 'react';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
 import { AuthProvider } from '@/context/AuthContext';
