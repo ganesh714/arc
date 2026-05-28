@@ -144,16 +144,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
       {/* Footer / Add Project Button + Profile */}
       <div className={styles.footer}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-          {isGuest ? (
-            <button
-              className={styles.addBtn}
-              onClick={login}
-              style={{ backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none' }}
-            >
-              <LogIn size={14} />
-              <span>Sign in to save</span>
-            </button>
-          ) : !isCreating ? (
+          {!isCreating ? (
             <button
               className={styles.addBtn}
               onClick={() => setIsCreating(true)}
@@ -187,7 +178,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
             </div>
           )}
 
-          {/* User Profile Info */}
+          {/* User Profile Info - acts as Sign In CTA for guests */}
           <div style={{ 
             padding: '12px 8px', 
             borderTop: '1px solid var(--border-default)',
@@ -196,18 +187,22 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
             gap: '10px',
             marginTop: '4px'
           }}>
-            <div style={{ 
-              width: '28px', 
-              height: '28px', 
-              borderRadius: '50%', 
-              backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
-              overflow: 'hidden'
-            }}>
+            <div 
+              onClick={isGuest ? login : undefined}
+              style={{ 
+                width: '28px', 
+                height: '28px', 
+                borderRadius: '50%', 
+                backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
+                overflow: 'hidden',
+                cursor: isGuest ? 'pointer' : 'default'
+              }}
+            >
               {isGuest ? (
                 <LogIn size={12} color="#f59e0b" />
               ) : user?.picture ? (
@@ -220,20 +215,31 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
               <span style={{ fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
                 {isGuest ? 'Guest User' : user?.name || 'User'}
               </span>
-              <button 
-                onClick={onBackToDashboard}
-                style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
-              >
-                Dashboard
-              </button>
+              {isGuest ? (
+                <button 
+                  onClick={login}
+                  style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: '#f59e0b', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold' }}
+                >
+                  Sign in to save
+                </button>
+              ) : (
+                <button 
+                  onClick={onBackToDashboard}
+                  style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
+                >
+                  Dashboard
+                </button>
+              )}
             </div>
-            <button 
-              onClick={logout} 
-              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer' }}
-              title="Logout"
-            >
-              <X size={12} />
-            </button>
+            {isAuthenticated && (
+              <button 
+                onClick={logout} 
+                style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer' }}
+                title="Logout"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         </div>
       </div>
