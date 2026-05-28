@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { Folder, Plus, Check, X, FolderKanban } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Folder, Plus, Check, X, FolderKanban, LogIn } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
   const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
+  const { isGuest, login } = useAuth();
   
   // Track adding project
   const [isCreating, setIsCreating] = useState(false);
@@ -63,10 +65,14 @@ export function ProjectsSidebar() {
           <button
             className={styles.addBtnCollapsed}
             onClick={() => {
+              if (isGuest) {
+                login();
+                return;
+              }
               toggleSidebar();
               setIsCreating(true);
             }}
-            title="New File / Project"
+            title={isGuest ? "Sign in to create projects" : "New File / Project"}
           >
             <Plus size={20} />
           </button>
@@ -112,7 +118,16 @@ export function ProjectsSidebar() {
 
       {/* Footer / Add Project Button */}
       <div className={styles.footer}>
-        {!isCreating ? (
+        {isGuest ? (
+          <button
+            className={styles.addBtn}
+            onClick={login}
+            style={{ backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none' }}
+          >
+            <LogIn size={14} />
+            <span>Sign in to save</span>
+          </button>
+        ) : !isCreating ? (
           <button
             className={styles.addBtn}
             onClick={() => setIsCreating(true)}
