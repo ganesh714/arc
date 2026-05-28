@@ -13,7 +13,7 @@ function MainAppContent() {
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
   const { isSidebarOpen } = useDiagram();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isGuest, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,12 +23,12 @@ function MainAppContent() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isGuest) {
     return <LandingPage />;
   }
 
   const startLeftResize = (e: React.MouseEvent) => {
-...
+    e.preventDefault();
     const startX = e.clientX;
     const startWidth = leftWidth;
     
