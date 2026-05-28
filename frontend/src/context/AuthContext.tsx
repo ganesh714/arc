@@ -25,21 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, we would fetch the user from the backend session
-    // For now, we'll check if there's a session or a cookie
+    // Check if the user is authenticated via the backend
     const fetchUser = async () => {
       try {
-        // Mocking an API call to get current user
-        // const response = await fetch('/api/v1/auth/me');
-        // if (response.ok) {
-        //   const data = await response.json();
-        //   setUser(data);
-        // }
+        const response = await fetch('http://localhost:8080/api/v1/auth/me', {
+          credentials: 'include' // Important for session cookies
+        });
         
-        // Simulating no user initially
-        setUser(null);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+          setIsGuest(false);
+        } else {
+          setUser(null);
+        }
       } catch (error) {
         console.error("Failed to fetch user", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
