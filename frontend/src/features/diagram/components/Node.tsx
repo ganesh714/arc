@@ -5,6 +5,21 @@ import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
 
+const parseCssString = (css: string) => {
+  if (!css || typeof css !== 'string') return null;
+  return css.split(';').reduce((acc, rule) => {
+    const [key, ...valueParts] = rule.split(':');
+    const value = valueParts.join(':');
+    if (key && value) {
+      const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
+      if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
+        acc[camelKey] = value.trim();
+      }
+    }
+    return acc;
+  }, {} as any);
+};
+
 interface NodeProps {
   node: DiagramNode;
 }
@@ -649,7 +664,8 @@ export function Node({ node }: NodeProps) {
             alignItems: 'center',
             justifyContent: 'center',
             boxSizing: 'border-box',
-            padding: '8px'
+            padding: '8px',
+            ...parseCssString(node.style?.customCss || '')
           }}
         >
           <div style={textStyle}>
@@ -668,21 +684,6 @@ export function Node({ node }: NodeProps) {
           let angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
           const connectorStyle = node.customConnectorStyle || {};
-
-          const parseCssString = (css: string) => {
-            if (!css || typeof css !== 'string') return null;
-            return css.split(';').reduce((acc, rule) => {
-              const [key, ...valueParts] = rule.split(':');
-              const value = valueParts.join(':');
-              if (key && value) {
-                const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
-                if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
-                  acc[camelKey] = value.trim();
-                }
-              }
-              return acc;
-            }, {} as any);
-          };
 
           const lineCss = parseCssString(String(connectorStyle.lineCss || ''));
           const startMarkerCss = parseCssString(String(connectorStyle.startMarkerCss || ''));
