@@ -674,6 +674,22 @@ export function Node({ node }: NodeProps) {
           const arrowHeadWidth = connectorStyle.borderWidth || '12px';
           const arrowHeadColor = connectorStyle.borderBottomColor || borderColor;
 
+          const parseCssString = (css: string) => {
+            return css.split(';').reduce((acc, rule) => {
+              const [key, value] = rule.split(':');
+              if (key && value) {
+                const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
+                if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
+                  acc[camelKey] = value.trim();
+                }
+              }
+              return acc;
+            }, {} as any);
+          };
+
+          const startMarkerCss = connectorStyle.startMarkerCss ? parseCssString(String(connectorStyle.startMarkerCss)) : null;
+          const endMarkerCss = connectorStyle.endMarkerCss ? parseCssString(String(connectorStyle.endMarkerCss)) : null;
+
           return (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <div style={{
@@ -687,19 +703,42 @@ export function Node({ node }: NodeProps) {
                 pointerEvents: 'none',
                 filter: shadowFilter
               }} />
-              <div style={{
-                position: 'absolute',
-                left: `${endX}px`,
-                top: `${endY}px`,
-                width: 0,
-                height: 0,
-                borderLeft: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
-                borderRight: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
-                borderBottom: `${arrowHeadWidth} solid ${arrowHeadColor}`,
-                transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
-                pointerEvents: 'none',
-                filter: shadowFilter
-              }} />
+
+              {startMarkerCss && (
+                <div style={{
+                  position: 'absolute',
+                  left: `${startX}px`,
+                  top: `${startY}px`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter,
+                  ...startMarkerCss
+                }} />
+              )}
+
+              {endMarkerCss ? (
+                <div style={{
+                  position: 'absolute',
+                  left: `${endX}px`,
+                  top: `${endY}px`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter,
+                  ...endMarkerCss
+                }} />
+              ) : (
+                <div style={{
+                  position: 'absolute',
+                  left: `${endX}px`,
+                  top: `${endY}px`,
+                  width: 0,
+                  height: 0,
+                  borderLeft: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
+                  borderRight: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
+                  borderBottom: `${arrowHeadWidth} solid ${arrowHeadColor}`,
+                  transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter
+                }} />
+              )}
             </div>
           );
         })() : (
