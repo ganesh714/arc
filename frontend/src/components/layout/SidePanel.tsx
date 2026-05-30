@@ -1060,7 +1060,63 @@ export function SidePanel() {
         {node.type === 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Advanced Block CSS</span>
-            {renderCssTextarea('customCss', 'Custom Block CSS', 'style')}
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Clip Path</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.clipPath || ''}
+                onChange={(e) => handleChange('clipPath', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Background</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.background || ''}
+                onChange={(e) => handleChange('background', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Transform</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.transform || ''}
+                onChange={(e) => handleChange('transform', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Border Width</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.borderWidth || ''}
+                onChange={(e) => handleChange('borderWidth', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Border Style</span>
+              <select
+                className={styles.select}
+                style={{ width: '140px' }}
+                value={node.style?.borderStyle || 'solid'}
+                onChange={(e) => handleChange('borderStyle', e.target.value)}
+              >
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+            <div style={{ marginTop: '12px' }}>
+              {renderCssTextarea('customCss', 'Raw Custom CSS', 'style')}
+            </div>
           </div>
         )}
 
