@@ -18,6 +18,13 @@ export interface NodeStyle {
   fontWeight?: string;
   textAlign?: 'left' | 'center' | 'right';
   opacity?: string;
+  clipPath?: string;
+  background?: string;
+  transform?: string;
+  backdropFilter?: string;
+  filter?: string;
+  borderWidth?: string;
+  borderStyle?: string;
 }
 
 export interface Point {
@@ -32,7 +39,7 @@ export interface Connection {
 
 export interface DiagramNode {
   id: string;
-  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note';
+  type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'custom-block' | 'custom-connector';
   position: Position;
   dimensions: Dimensions;
   content: string;
@@ -46,4 +53,5 @@ export interface DiagramNode {
   lineCurve?: 'straight' | 'curved';
   arrowType?: 'none' | 'single' | 'double';
   points?: Point[];
+  customConnectorStyle?: Record<string, string | number>;
 }
