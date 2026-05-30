@@ -25,6 +25,7 @@ export interface NodeStyle {
   filter?: string;
   borderWidth?: string;
   borderStyle?: string;
+  customCss?: string;
 }
 
 export interface Point {
