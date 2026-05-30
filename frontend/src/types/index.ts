@@ -37,12 +37,6 @@ export interface Connection {
   anchor: 'top' | 'bottom' | 'left' | 'right';
 }
 
-export interface CustomConnectorStyle {
-  startMarker?: Record<string, string>;
-  endMarker?: Record<string, string>;
-  line?: Record<string, string>;
-}
-
 export interface DiagramNode {
   id: string;
   type: 'box' | 'diamond' | 'circle' | 'triangle' | 'line' | 'arrow' | 'star' | 'path' | 'comment' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'custom-block' | 'custom-connector';
@@ -59,5 +53,5 @@ export interface DiagramNode {
   lineCurve?: 'straight' | 'curved';
   arrowType?: 'none' | 'single' | 'double';
   points?: Point[];
-  customConnectorStyle?: CustomConnectorStyle;
+  customConnectorStyle?: Record<string, string | number>;
 }
