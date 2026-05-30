@@ -201,7 +201,7 @@ export function SidePanel() {
   const handleMultipleShadowChange = (part: 'x' | 'y' | 'blur' | 'color', val: any) => {
     selectedNodeIds.forEach(id => {
       const targetNode = nodes.find(n => n.id === id);
-      if (!targetNode || targetNode.type === 'line' || targetNode.type === 'arrow') return;
+      if (!targetNode || targetNode.type === 'line' || targetNode.type === 'arrow' || targetNode.type === 'custom-connector') return;
       const current = getShadowParts(targetNode.style?.boxShadow);
       if (part === 'x') current.x = parseInt(val, 10) || 0;
       else if (part === 'y') current.y = parseInt(val, 10) || 0;
@@ -288,8 +288,8 @@ export function SidePanel() {
   );
 
   if (selectedNodes.length > 1) {
-    const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow');
-    const allConnectors = selectedNodes.every(n => n.type === 'line' || n.type === 'arrow');
+    const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow' && n.type !== 'custom-connector');
+    const allConnectors = selectedNodes.every(n => n.type === 'line' || n.type === 'arrow' || n.type === 'custom-connector');
     const noCircles = selectedNodes.every(n => n.type !== 'circle');
 
     const firstNode = selectedNodes[0];
@@ -618,7 +618,7 @@ export function SidePanel() {
     );
   }
 
-  const isLine = node.type === 'line' || node.type === 'arrow';
+  const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const shadow = getShadowParts(node.style?.boxShadow);
 
   return (
@@ -996,6 +996,66 @@ export function SidePanel() {
             </>
           )}
         </div>
+
+        {node.type === 'custom-block' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Advanced CSS</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Clip Path</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.clipPath || ''}
+                onChange={(e) => handleChange('clipPath', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Background</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.background || ''}
+                onChange={(e) => handleChange('background', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Transform</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.transform || ''}
+                onChange={(e) => handleChange('transform', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Border Width</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.borderWidth || ''}
+                onChange={(e) => handleChange('borderWidth', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Border Style</span>
+              <select
+                className={styles.select}
+                style={{ width: '140px' }}
+                value={node.style?.borderStyle || 'solid'}
+                onChange={(e) => handleChange('borderStyle', e.target.value)}
+              >
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {!isLine && (
           <div className={styles.section}>
