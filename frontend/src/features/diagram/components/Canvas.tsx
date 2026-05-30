@@ -26,7 +26,8 @@ import {
   Database,
   StickyNote,
   Sparkles,
-  Link
+  Link,
+  Undo2
 } from 'lucide-react';
 
 export function Canvas() {
