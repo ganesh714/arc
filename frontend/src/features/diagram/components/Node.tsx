@@ -668,27 +668,25 @@ export function Node({ node }: NodeProps) {
           let angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
           const connectorStyle = node.customConnectorStyle || {};
-          const borderWidth = node.style?.borderWidth || '2px';
-          const borderStyle = node.style?.borderStyle || 'dashed';
-          const borderColor = node.style?.borderColor || '#e74c3c';
-          const arrowHeadWidth = connectorStyle.borderWidth || '12px';
-          const arrowHeadColor = connectorStyle.borderBottomColor || borderColor;
 
-          const parseCssString = (css: string) => {
-            return css.split(';').reduce((acc, rule) => {
-              const [key, value] = rule.split(':');
-              if (key && value) {
-                const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
-                if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
-                  acc[camelKey] = value.trim();
-                }
+          const normalizeStyle = (styleObj: any) => {
+            if (!styleObj || typeof styleObj !== 'object') return null;
+            return Object.entries(styleObj).reduce((acc, [key, value]) => {
+              const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
+              if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
+                acc[camelKey] = value;
               }
               return acc;
             }, {} as any);
           };
 
-          const startMarkerCss = connectorStyle.startMarkerCss ? parseCssString(String(connectorStyle.startMarkerCss)) : null;
-          const endMarkerCss = connectorStyle.endMarkerCss ? parseCssString(String(connectorStyle.endMarkerCss)) : null;
+          const lineCss = normalizeStyle(connectorStyle.line);
+          const startMarkerCss = normalizeStyle(connectorStyle.startMarker);
+          const endMarkerCss = normalizeStyle(connectorStyle.endMarker);
+
+          const defaultBorderWidth = node.style?.borderWidth || '2px';
+          const defaultBorderStyle = node.style?.borderStyle || 'dashed';
+          const defaultBorderColor = node.style?.borderColor || '#e74c3c';
 
           return (
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -697,11 +695,12 @@ export function Node({ node }: NodeProps) {
                 left: `${startX}px`,
                 top: `${startY}px`,
                 width: `${length}px`,
-                borderTop: `${borderWidth} ${borderStyle} ${borderColor}`,
+                borderTop: `${defaultBorderWidth} ${defaultBorderStyle} ${defaultBorderColor}`,
                 transform: `rotate(${angle}deg)`,
                 transformOrigin: '0 0',
                 pointerEvents: 'none',
-                filter: shadowFilter
+                filter: shadowFilter,
+                ...lineCss
               }} />
 
               {startMarkerCss && (
@@ -731,9 +730,9 @@ export function Node({ node }: NodeProps) {
                   top: `${endY}px`,
                   width: 0,
                   height: 0,
-                  borderLeft: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
-                  borderRight: `calc(${arrowHeadWidth} * 0.6) solid transparent`,
-                  borderBottom: `${arrowHeadWidth} solid ${arrowHeadColor}`,
+                  borderLeft: `calc(12px * 0.6) solid transparent`,
+                  borderRight: `calc(12px * 0.6) solid transparent`,
+                  borderBottom: `12px solid ${defaultBorderColor}`,
                   transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
                   pointerEvents: 'none',
                   filter: shadowFilter
