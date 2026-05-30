@@ -669,20 +669,24 @@ export function Node({ node }: NodeProps) {
 
           const connectorStyle = node.customConnectorStyle || {};
 
-          const normalizeStyle = (styleObj: any) => {
-            if (!styleObj || typeof styleObj !== 'object') return null;
-            return Object.entries(styleObj).reduce((acc, [key, value]) => {
-              const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
-              if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
-                acc[camelKey] = value;
+          const parseCssString = (css: string) => {
+            if (!css || typeof css !== 'string') return null;
+            return css.split(';').reduce((acc, rule) => {
+              const [key, ...valueParts] = rule.split(':');
+              const value = valueParts.join(':');
+              if (key && value) {
+                const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
+                if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
+                  acc[camelKey] = value.trim();
+                }
               }
               return acc;
             }, {} as any);
           };
 
-          const lineCss = normalizeStyle(connectorStyle.line);
-          const startMarkerCss = normalizeStyle(connectorStyle.startMarker);
-          const endMarkerCss = normalizeStyle(connectorStyle.endMarker);
+          const lineCss = parseCssString(String(connectorStyle.lineCss || ''));
+          const startMarkerCss = parseCssString(String(connectorStyle.startMarkerCss || ''));
+          const endMarkerCss = parseCssString(String(connectorStyle.endMarkerCss || ''));
 
           const defaultBorderWidth = node.style?.borderWidth || '2px';
           const defaultBorderStyle = node.style?.borderStyle || 'dashed';
