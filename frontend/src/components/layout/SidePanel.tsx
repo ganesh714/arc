@@ -1060,6 +1060,42 @@ export function SidePanel() {
                 <span className={styles.colorHex}>{String(node.customConnectorStyle?.borderBottomColor || node.style?.borderColor || '#e74c3c')}</span>
               </div>
             </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Start Marker CSS</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={String(node.customConnectorStyle?.startMarkerCss || '')}
+                onChange={(e) => {
+                  updateNode({
+                    ...node,
+                    customConnectorStyle: {
+                      ...(node.customConnectorStyle || {}),
+                      startMarkerCss: e.target.value,
+                    }
+                  });
+                }}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>End Marker CSS</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={String(node.customConnectorStyle?.endMarkerCss || '')}
+                onChange={(e) => {
+                  updateNode({
+                    ...node,
+                    customConnectorStyle: {
+                      ...(node.customConnectorStyle || {}),
+                      endMarkerCss: e.target.value,
+                    }
+                  });
+                }}
+              />
+            </div>
           </div>
         )}
 
