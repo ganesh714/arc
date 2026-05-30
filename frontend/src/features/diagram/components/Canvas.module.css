@@ -1,26 +1,345 @@
 .canvasWrapper {
-  flex: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   position: relative;
   overflow: hidden;
-  background-color: #ffffff;
-  border-radius: 0.5rem; /* 8px */
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  background-color: var(--bg-canvas);
 }
 
 .canvas {
   width: 100%;
   height: 100%;
   position: relative;
-  background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+  /* Figma style dot grid */
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(var(--border-default) 1px, transparent 1px);
+  background-size: 16px 16px;
+  overflow: hidden;
 }
 
 .marqueeBox {
   position: absolute;
-  border: 1.5px dashed #3b82f6;
-  background-color: rgba(59, 130, 246, 0.08);
+  border: 1px solid var(--accent-blue);
+  background-color: rgba(12, 140, 233, 0.12);
   pointer-events: none;
   z-index: 100;
+  border-radius: 1px;
+}
+
+/* Floating Toolbar styles - Relocated to bottom center (Figma UI3 style) */
+.toolbar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--shadow-lg);
+  z-index: 45;
+  pointer-events: auto;
+}
+
+/* History Toolbar - Top Center */
+.historyToolbar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--shadow-lg);
+  z-index: 45;
+  pointer-events: auto;
+}
+
+.toolButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.toolButtonActive {
+  background-color: var(--accent-blue);
+  color: #ffffff;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--border-default);
+  margin: 0 4px;
+}
+
+/* Zoom HUD styles */
+.zoomHUD {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 2px 4px;
+  box-shadow: var(--shadow-sm);
+  z-index: 45;
+  pointer-events: auto;
+}
+
+.zoomBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.zoomBtn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.zoomLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0 4px;
+  cursor: pointer;
+  user-select: none;
+  min-width: 32px;
+  text-align: center;
+}
+
+.zoomLabel:hover {
+  color: var(--text-primary);
+}
+
+/* Floating Contextual Menu (Directly above selected shapes) */
+.contextMenu {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: var(--shadow-lg);
+  z-index: 45;
+  pointer-events: auto;
+  height: 32px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.contextBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.contextBtn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.contextBtnActive {
+  background-color: var(--bg-active);
+  color: var(--accent-blue);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.contextColorWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.contextColorWrapper:hover {
+  background-color: var(--bg-hover);
+}
+
+.contextColorPicker {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.contextColorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.contextColorPicker::-webkit-color-swatch {
+  border: none;
   border-radius: 2px;
 }
+
+/* Shapes Dropdown Split-Button and Popover */
+.shapeSelectorContainer {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.shapeSelectorContainer .toolButton {
+  border-radius: 6px 0 0 6px;
+}
+
+.chevronButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 28px;
+  border-radius: 0 6px 6px 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin-left: -1px;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.chevronButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.chevronButtonActive {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.shapeDropdown {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: max-content;
+  box-shadow: var(--shadow-xl);
+  z-index: 100;
+  gap: 2px;
+}
+
+.dropdownColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.columnDivider {
+  width: 1px;
+  background-color: var(--border-default);
+  margin: 6px 4px;
+}
+
+.dropdownCategory {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 6px 8px 6px 8px;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.dropdownItemActive {
+  background-color: var(--bg-active);
+  color: var(--accent-blue);
+}
+
+.dropdownItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  color: inherit;
+}
+
+.dropdownItemLabel {
+  flex-grow: 1;
+}
+
+.dropdownItemShortcut {
+  font-size: 9px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  margin-left: 12px;
+  font-family: var(--font-mono, monospace);
+}
+

@@ -10,7 +10,7 @@ interface ImportModalProps {
 }
 
 export function ImportModal({ isOpen, onClose }: ImportModalProps) {
-  const { setNodes } = useDiagram();
+  const { nodes, setNodes, saveHistoryState } = useDiagram();
   const [activeTab, setActiveTab] = useState<'file' | 'code'>('file');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
@@ -112,12 +112,14 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
   const executeImport = () => {
     if (activeTab === 'file') {
       if (parsedNodes) {
+        saveHistoryState(nodes);
         setNodes(parsedNodes);
         handleClose();
       }
     } else {
       const nodesData = processImportData(codeText);
       if (nodesData) {
+        saveHistoryState(nodes);
         setNodes(nodesData);
         handleClose();
       }
