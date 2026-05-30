@@ -660,17 +660,19 @@ export function Node({ node }: NodeProps) {
             backdropFilter: node.style?.backdropFilter || 'none',
             filter: node.style?.filter || shadowFilter,
             boxShadow: node.style?.boxShadow || 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            display: node.content ? 'flex' : 'block',
+            alignItems: node.content ? 'center' : undefined,
+            justifyContent: node.content ? 'center' : undefined,
             boxSizing: 'border-box',
-            padding: '8px',
+            padding: node.content ? '8px' : '0px',
             ...parseCssString(node.style?.customCss || '')
           }}
         >
-          <div style={textStyle}>
-            {node.content}
-          </div>
+          {node.content ? (
+            <div style={textStyle}>
+              {node.content}
+            </div>
+          ) : null}
         </div>
       ) : isLine ? (
         node.type === 'custom-connector' ? (() => {
