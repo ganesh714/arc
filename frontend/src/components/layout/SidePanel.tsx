@@ -9,7 +9,8 @@ import {
   AlignRight, 
   Bold, 
   ArrowUp, 
-  ArrowDown
+  ArrowDown,
+  Plus
 } from 'lucide-react';
 
 export function SidePanel() {
@@ -621,6 +622,98 @@ export function SidePanel() {
   const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const shadow = getShadowParts(node.style?.boxShadow);
 
+  const renderDynamicMarkerBuilder = (markerType: 'startMarker' | 'endMarker' | 'line', title: string) => {
+    const markerStyle = node.customConnectorStyle?.[markerType] || {};
+    const standardKeys = ['width', 'height', 'background'];
+    const customKeys = Object.keys(markerStyle).filter(k => !standardKeys.includes(k));
+
+    return (
+      <div className={styles.section} style={{ marginTop: '10px' }} key={markerType}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span className={styles.sectionTitle}>{title}</span>
+          <button
+            onClick={() => {
+              const newKey = `customProp${customKeys.length}`;
+              updateNode({
+                ...node,
+                customConnectorStyle: {
+                  ...(node.customConnectorStyle || {}),
+                  [markerType]: { ...markerStyle, [newKey]: '' }
+                }
+              });
+            }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0 4px' }}
+            title="Add CSS Property"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+        {[...standardKeys, ...customKeys].map((key, index) => {
+          const isStandard = standardKeys.includes(key);
+          return (
+            <div className={styles.row} key={`${key}-${index}`} style={{ gap: '4px' }}>
+              {isStandard ? (
+                <span className={styles.rowLabel} style={{ width: '80px', textTransform: 'capitalize' }}>{key}</span>
+              ) : (
+                <input
+                  type="text"
+                  className={styles.numberInput}
+                  style={{ width: '80px', padding: '4px', textAlign: 'left' }}
+                  value={key}
+                  placeholder="Property"
+                  onChange={(e) => {
+                    const newKey = e.target.value;
+                    const val = markerStyle[key] || '';
+                    const newStyle = { ...markerStyle };
+                    delete newStyle[key];
+                    if (newKey) newStyle[newKey] = val;
+                    updateNode({
+                      ...node,
+                      customConnectorStyle: { ...(node.customConnectorStyle || {}), [markerType]: newStyle }
+                    });
+                  }}
+                />
+              )}
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flex: 1 }}>
+                <input
+                  type="text"
+                  className={styles.numberInput}
+                  style={{ width: '100%', padding: '4px', textAlign: 'left' }}
+                  value={markerStyle[key] || ''}
+                  placeholder="Value"
+                  onChange={(e) => {
+                    updateNode({
+                      ...node,
+                      customConnectorStyle: {
+                        ...(node.customConnectorStyle || {}),
+                        [markerType]: { ...markerStyle, [key]: e.target.value }
+                      }
+                    });
+                  }}
+                />
+                {!isStandard && (
+                  <button
+                    onClick={() => {
+                      const newStyle = { ...markerStyle };
+                      delete newStyle[key];
+                      updateNode({
+                        ...node,
+                        customConnectorStyle: { ...(node.customConnectorStyle || {}), [markerType]: newStyle }
+                      });
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#f04438', cursor: 'pointer', padding: '2px' }}
+                  >
+                    <CloseIcon size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.header}>
@@ -999,103 +1092,9 @@ export function SidePanel() {
 
         {node.type === 'custom-connector' && (
           <div className={styles.section}>
-            <span className={styles.sectionTitle}>Advanced Connector CSS</span>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>Line Width</span>
-              <input
-                type="text"
-                className={styles.numberInput}
-                style={{ width: '140px', padding: '4px' }}
-                value={node.style?.borderWidth || ''}
-                onChange={(e) => handleChange('borderWidth', e.target.value)}
-              />
-            </div>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>Line Style</span>
-              <select
-                className={styles.select}
-                style={{ width: '140px' }}
-                value={node.style?.borderStyle || 'dashed'}
-                onChange={(e) => handleChange('borderStyle', e.target.value)}
-              >
-                <option value="solid">Solid</option>
-                <option value="dashed">Dashed</option>
-                <option value="dotted">Dotted</option>
-              </select>
-            </div>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>Arrow Width</span>
-              <input
-                type="text"
-                className={styles.numberInput}
-                style={{ width: '140px', padding: '4px' }}
-                value={node.customConnectorStyle?.borderWidth || ''}
-                onChange={(e) => {
-                  updateNode({
-                    ...node,
-                    customConnectorStyle: {
-                      ...(node.customConnectorStyle || {}),
-                      borderWidth: e.target.value,
-                    }
-                  });
-                }}
-              />
-            </div>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>Arrow Color</span>
-              <div className={styles.colorPickerWrapper}>
-                <input
-                  type="color"
-                  value={String(node.customConnectorStyle?.borderBottomColor || node.style?.borderColor || '#e74c3c')}
-                  onChange={(e) => {
-                    updateNode({
-                      ...node,
-                      customConnectorStyle: {
-                        ...(node.customConnectorStyle || {}),
-                        borderBottomColor: e.target.value,
-                      }
-                    });
-                  }}
-                />
-                <span className={styles.colorHex}>{String(node.customConnectorStyle?.borderBottomColor || node.style?.borderColor || '#e74c3c')}</span>
-              </div>
-            </div>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>Start Marker CSS</span>
-              <input
-                type="text"
-                className={styles.numberInput}
-                style={{ width: '140px', padding: '4px' }}
-                value={String(node.customConnectorStyle?.startMarkerCss || '')}
-                onChange={(e) => {
-                  updateNode({
-                    ...node,
-                    customConnectorStyle: {
-                      ...(node.customConnectorStyle || {}),
-                      startMarkerCss: e.target.value,
-                    }
-                  });
-                }}
-              />
-            </div>
-            <div className={styles.row}>
-              <span className={styles.rowLabel}>End Marker CSS</span>
-              <input
-                type="text"
-                className={styles.numberInput}
-                style={{ width: '140px', padding: '4px' }}
-                value={String(node.customConnectorStyle?.endMarkerCss || '')}
-                onChange={(e) => {
-                  updateNode({
-                    ...node,
-                    customConnectorStyle: {
-                      ...(node.customConnectorStyle || {}),
-                      endMarkerCss: e.target.value,
-                    }
-                  });
-                }}
-              />
-            </div>
+            {renderDynamicMarkerBuilder('line', 'Connector Line CSS')}
+            {renderDynamicMarkerBuilder('startMarker', 'Start Marker CSS')}
+            {renderDynamicMarkerBuilder('endMarker', 'End Marker CSS')}
           </div>
         )}
 
