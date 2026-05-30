@@ -554,7 +554,7 @@ export function Canvas() {
                 type: 'custom-block',
                 position: { x: left, y: top },
                 dimensions: { width, height },
-                content: 'Custom Block',
+                content: '',
                 style: {
                   background: 'linear-gradient(135deg, #667eea, #764ba2)',
                   clipPath: 'polygon(0% 15%, 15% 15%, 15% 0%, 85% 0%, 85% 15%, 100% 15%, 100% 85%, 85% 85%, 85% 100%, 15% 100%, 15% 85%, 0% 85%)',
