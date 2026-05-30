@@ -25,6 +25,8 @@ interface DiagramContextType {
   addNote: (position?: { x: number; y: number }) => void;
   addLine: (position?: { x: number; y: number }) => void;
   addArrow: (position?: { x: number; y: number }) => void;
+  addCustomBlock: (position?: { x: number; y: number }) => void;
+  addCustomConnector: (position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
@@ -512,6 +514,55 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
+  const addCustomBlock = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 160;
+    const height = 120;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'custom-block',
+      position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
+      dimensions: { width, height },
+      content: 'Custom Block',
+      style: {
+        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+        clipPath: 'polygon(0% 15%, 15% 15%, 15% 0%, 85% 0%, 85% 15%, 100% 15%, 100% 85%, 85% 85%, 85% 100%, 15% 100%, 15% 85%, 0% 85%)',
+        color: '#ffffff',
+        borderWidth: '0px',
+        opacity: '0.9'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
+  const addCustomConnector = (position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const width = 200;
+    const height = 20;
+    const startX = position ? position.x - width / 2 : 150;
+    const startY = position ? position.y - height / 2 : 200;
+    const newNode: DiagramNode = {
+      id: crypto.randomUUID().split('-')[0],
+      type: 'custom-connector',
+      position: { x: startX, y: startY },
+      dimensions: { width, height },
+      content: '',
+      style: {
+        borderColor: '#e74c3c',
+        borderStyle: 'dashed',
+        borderWidth: '2px',
+        opacity: '0.8'
+      },
+      startPoint: { x: startX, y: startY + 10 },
+      endPoint: { x: startX + width, y: startY + 10 },
+      customConnectorStyle: {
+        borderBottomColor: '#e74c3c',
+        borderWidth: '12px'
+      }
+    };
+    setNodes((prev) => [...prev, newNode]);
+  };
+
   const updateLinePoints = (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
     setNodes((prev) => prev.map(node => {
       if (node.id === id) {
@@ -847,8 +898,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addDatabase,
       addNote,
       addLine,
- 
       addArrow, 
+      addCustomBlock,
+      addCustomConnector,
       updateLinePoints, 
       updateNode, 
       updateMultipleNodes,
