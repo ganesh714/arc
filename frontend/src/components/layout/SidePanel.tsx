@@ -674,12 +674,12 @@ export function SidePanel() {
   const renderCustomBlockCssTextarea = () => {
     const value = String(node.style?.customCss || '');
     return (
-      <div className={styles.row} style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: '8px' }}>
+      <div style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: '8px', width: '100%' }}>
         <textarea
           className={styles.textarea}
-          style={{ width: '100%', minHeight: '120px', fontFamily: 'monospace', padding: '8px', fontSize: '11px', resize: 'vertical' }}
+          style={{ width: '100%', minHeight: '120px', fontFamily: 'monospace', padding: '8px', fontSize: '11px', resize: 'vertical', boxSizing: 'border-box' }}
           value={value}
-          placeholder="e.g. width: 100px; height: 100px; background: red;"
+          placeholder="e.g. width: 100px; height: 100px; content: 'Hello';"
           onChange={(e) => {
             updateNode({
               ...node,
@@ -696,6 +696,7 @@ export function SidePanel() {
             let newX = node.position.x;
             let newY = node.position.y;
             let newRotation = node.rotation || 0;
+            let newContent = node.content;
             
             const rules = css.split(';');
             const customRules = [];
@@ -727,6 +728,11 @@ export function SidePanel() {
                  if (!match || val.replace(/rotate\(([-\d.]+)deg\)/, '').trim() !== '') {
                    customRules.push(rule.trim());
                  }
+              } else if (lowerKey === 'content') {
+                 const contentMatch = val.match(/^['"]?(.*?)['"]?$/);
+                 if (contentMatch) {
+                    newContent = contentMatch[1];
+                 }
               } else {
                  customRules.push(rule.trim());
               }
@@ -736,9 +742,10 @@ export function SidePanel() {
               ? customRules.join(';\n') + (customRules.length ? ';\n' : '')
               : '';
               
-            if (css !== formattedCss || newWidth !== node.dimensions.width || newHeight !== node.dimensions.height || newX !== node.position.x || newY !== node.position.y || newRotation !== (node.rotation || 0)) {
+            if (css !== formattedCss || newWidth !== node.dimensions.width || newHeight !== node.dimensions.height || newX !== node.position.x || newY !== node.position.y || newRotation !== (node.rotation || 0) || newContent !== node.content) {
               updateNode({
                 ...node,
+                content: newContent,
                 dimensions: { width: newWidth, height: newHeight },
                 position: { x: newX, y: newY },
                 rotation: newRotation,
