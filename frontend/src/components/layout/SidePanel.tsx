@@ -957,7 +957,7 @@ export function SidePanel() {
             </div>
           </div>
 
-          {isLine && (
+          {isLine && node.type !== 'custom-connector' && (
             <>
               <div className={styles.row}>
                 <span className={styles.rowLabel}>Route</span>
@@ -996,6 +996,72 @@ export function SidePanel() {
             </>
           )}
         </div>
+
+        {node.type === 'custom-connector' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Advanced Connector CSS</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Line Width</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.style?.borderWidth || ''}
+                onChange={(e) => handleChange('borderWidth', e.target.value)}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Line Style</span>
+              <select
+                className={styles.select}
+                style={{ width: '140px' }}
+                value={node.style?.borderStyle || 'dashed'}
+                onChange={(e) => handleChange('borderStyle', e.target.value)}
+              >
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+              </select>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Arrow Width</span>
+              <input
+                type="text"
+                className={styles.numberInput}
+                style={{ width: '140px', padding: '4px' }}
+                value={node.customConnectorStyle?.borderWidth || ''}
+                onChange={(e) => {
+                  updateNode({
+                    ...node,
+                    customConnectorStyle: {
+                      ...(node.customConnectorStyle || {}),
+                      borderWidth: e.target.value,
+                    }
+                  });
+                }}
+              />
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Arrow Color</span>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={String(node.customConnectorStyle?.borderBottomColor || node.style?.borderColor || '#e74c3c')}
+                  onChange={(e) => {
+                    updateNode({
+                      ...node,
+                      customConnectorStyle: {
+                        ...(node.customConnectorStyle || {}),
+                        borderBottomColor: e.target.value,
+                      }
+                    });
+                  }}
+                />
+                <span className={styles.colorHex}>{String(node.customConnectorStyle?.borderBottomColor || node.style?.borderColor || '#e74c3c')}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {node.type === 'custom-block' && (
           <div className={styles.section}>
