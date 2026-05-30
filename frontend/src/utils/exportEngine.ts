@@ -67,6 +67,69 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `      </div>\n`;
       html += `    </div>\n`;
       html += `  </div>\n`;
+    } else if (node.type === 'custom-block') {
+      const bg = node.style?.background || node.style?.backgroundColor || '#2c2c2c';
+      const borderWidth = node.style?.borderWidth || '1.5px';
+      const borderStyle = node.style?.borderStyle || 'solid';
+      const borderColor = node.style?.borderColor || '#555555';
+      const borderRadius = node.style?.borderRadius || '0px';
+      const clipPath = node.style?.clipPath || 'none';
+      const backdropFilter = node.style?.backdropFilter || 'none';
+      const boxShadow = node.style?.boxShadow || 'none';
+      const display = node.content ? 'flex' : 'block';
+      const alignItems = node.content ? 'align-items: center;' : '';
+      const justifyContent = node.content ? 'justify-content: center;' : '';
+      const padding = node.content ? '8px' : '0px';
+      const customCss = node.style?.customCss || '';
+      
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
+      html += `    <div style="width: 100%; height: 100%; transform: rotate(${node.rotation || 0}deg); background: ${bg}; border: ${borderWidth} ${borderStyle} ${borderColor}; border-radius: ${borderRadius}; clip-path: ${clipPath}; backdrop-filter: ${backdropFilter}; box-shadow: ${boxShadow}; display: ${display}; ${alignItems} ${justifyContent} box-sizing: border-box; padding: ${padding}; ${customCss}">\n`;
+      if (node.content) {
+        const color = node.style?.color || '#e3e3e3';
+        const fontSize = node.style?.fontSize || '11px';
+        const fontWeight = node.style?.fontWeight || 'normal';
+        const textAlign = node.style?.textAlign || 'center';
+        html += `      <div style="color: ${color}; font-size: ${fontSize}; font-weight: ${fontWeight}; text-align: ${textAlign}; word-wrap: break-word; width: 100%; pointer-events: none;">\n`;
+        html += `        ${node.content}\n`;
+        html += `      </div>\n`;
+      }
+      html += `    </div>\n`;
+      html += `  </div>\n`;
+    } else if (node.type === 'custom-connector') {
+      const startX = node.startPoint!.x - node.position.x;
+      const startY = node.startPoint!.y - node.position.y;
+      const endX = node.endPoint!.x - node.position.x;
+      const endY = node.endPoint!.y - node.position.y;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+      const connectorStyle = node.customConnectorStyle || {};
+      const lineCss = connectorStyle.lineCss || '';
+      const startMarkerCss = connectorStyle.startMarkerCss || '';
+      const endMarkerCss = connectorStyle.endMarkerCss || '';
+
+      const defaultBorderWidth = node.style?.borderWidth || '2px';
+      const defaultBorderStyle = node.style?.borderStyle || 'dashed';
+      const defaultBorderColor = node.style?.borderColor || '#e74c3c';
+      
+      html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
+      html += `    <div style="position: relative; width: 100%; height: 100%;">\n`;
+      html += `      <div style="position: absolute; left: ${startX}px; top: ${startY}px; width: ${length}px; border-top: ${defaultBorderWidth} ${defaultBorderStyle} ${defaultBorderColor}; transform: rotate(${angle}deg); transform-origin: 0 0; pointer-events: none; ${lineCss}"></div>\n`;
+      
+      if (startMarkerCss) {
+        html += `      <div style="position: absolute; left: ${startX}px; top: ${startY}px; pointer-events: none; ${startMarkerCss}"></div>\n`;
+      }
+      
+      if (endMarkerCss) {
+        html += `      <div style="position: absolute; left: ${endX}px; top: ${endY}px; pointer-events: none; ${endMarkerCss}"></div>\n`;
+      } else {
+        html += `      <div style="position: absolute; left: ${endX}px; top: ${endY}px; width: 0; height: 0; border-left: calc(12px * 0.6) solid transparent; border-right: calc(12px * 0.6) solid transparent; border-bottom: 12px solid ${defaultBorderColor}; transform: translate(-50%, -50%) rotate(${angle + 90}deg); pointer-events: none;"></div>\n`;
+      }
+      
+      html += `    </div>\n`;
+      html += `  </div>\n`;
     } else if (node.type === 'line' || node.type === 'arrow') {
       const color = node.style?.borderColor || (node.type === 'line' ? '#475569' : '#0284c7');
       const startX = node.startPoint!.x - node.position.x;
