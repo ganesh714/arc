@@ -9,7 +9,8 @@ import {
   AlignRight, 
   Bold, 
   ArrowUp, 
-  ArrowDown
+  ArrowDown,
+  Plus
 } from 'lucide-react';
 
 export function SidePanel() {
@@ -201,7 +202,7 @@ export function SidePanel() {
   const handleMultipleShadowChange = (part: 'x' | 'y' | 'blur' | 'color', val: any) => {
     selectedNodeIds.forEach(id => {
       const targetNode = nodes.find(n => n.id === id);
-      if (!targetNode || targetNode.type === 'line' || targetNode.type === 'arrow') return;
+      if (!targetNode || targetNode.type === 'line' || targetNode.type === 'arrow' || targetNode.type === 'custom-connector') return;
       const current = getShadowParts(targetNode.style?.boxShadow);
       if (part === 'x') current.x = parseInt(val, 10) || 0;
       else if (part === 'y') current.y = parseInt(val, 10) || 0;
@@ -288,8 +289,8 @@ export function SidePanel() {
   );
 
   if (selectedNodes.length > 1) {
-    const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow');
-    const allConnectors = selectedNodes.every(n => n.type === 'line' || n.type === 'arrow');
+    const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow' && n.type !== 'custom-connector');
+    const allConnectors = selectedNodes.every(n => n.type === 'line' || n.type === 'arrow' || n.type === 'custom-connector');
     const noCircles = selectedNodes.every(n => n.type !== 'circle');
 
     const firstNode = selectedNodes[0];
@@ -618,8 +619,153 @@ export function SidePanel() {
     );
   }
 
-  const isLine = node.type === 'line' || node.type === 'arrow';
+  const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const shadow = getShadowParts(node.style?.boxShadow);
+
+  const formatCss = (css: string) => {
+    if (!css) return '';
+    return css.split(';')
+      .map(s => s.trim())
+      .filter(s => s)
+      .join(';\n') + (css.trim().endsWith(';') || css.includes(';') ? ';' : '');
+  };
+
+  const renderCssTextarea = (key: string, title: string, target: 'style' | 'customConnectorStyle' = 'customConnectorStyle') => {
+    const value = String((node as any)[target]?.[key] || '');
+    return (
+      <div className={styles.row} key={key} style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: '8px' }}>
+        <span className={styles.rowLabel} style={{ marginBottom: '4px', width: 'auto' }}>{title}</span>
+        <textarea
+          className={styles.textarea}
+          style={{ width: '100%', minHeight: '60px', fontFamily: 'monospace', padding: '8px', fontSize: '11px', resize: 'vertical' }}
+          value={value}
+          placeholder="e.g. width: 10px; height: 10px;"
+          onChange={(e) => {
+            updateNode({
+              ...node,
+              [target]: {
+                ...((node as any)[target] || {}),
+                [key]: e.target.value
+              }
+            });
+          }}
+          onBlur={(e) => {
+            const formatted = formatCss(e.target.value);
+            if (formatted !== e.target.value) {
+              updateNode({
+                ...node,
+                [target]: {
+                  ...((node as any)[target] || {}),
+                  [key]: formatted
+                }
+              });
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+    );
+  };
+  const renderCustomBlockCssTextarea = () => {
+    const value = String(node.style?.customCss || '');
+    return (
+      <div style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: '8px', width: '100%' }}>
+        <textarea
+          className={styles.textarea}
+          style={{ width: '100%', minHeight: '120px', fontFamily: 'monospace', padding: '8px', fontSize: '11px', resize: 'vertical', boxSizing: 'border-box' }}
+          value={value}
+          placeholder="e.g. width: 100px; height: 100px; content: 'Hello';"
+          onChange={(e) => {
+            updateNode({
+              ...node,
+              style: {
+                ...(node.style || {}),
+                customCss: e.target.value
+              }
+            });
+          }}
+          onBlur={(e) => {
+            const css = e.target.value;
+            let newWidth = node.dimensions.width;
+            let newHeight = node.dimensions.height;
+            let newX = node.position.x;
+            let newY = node.position.y;
+            let newRotation = node.rotation || 0;
+            let newContent = node.content;
+            
+            const rules = css.split(';');
+            const customRules = [];
+            
+            for (const rule of rules) {
+              if (!rule.trim()) continue;
+              const parts = rule.split(':');
+              if (parts.length < 2) {
+                customRules.push(rule.trim());
+                continue;
+              }
+              const key = parts[0];
+              const val = parts.slice(1).join(':').trim();
+              const lowerKey = key.trim().toLowerCase();
+              
+              if (lowerKey === 'width' && val.endsWith('px')) {
+                 newWidth = parseInt(val, 10) || newWidth;
+              } else if (lowerKey === 'height' && val.endsWith('px')) {
+                 newHeight = parseInt(val, 10) || newHeight;
+              } else if (lowerKey === 'left' && val.endsWith('px')) {
+                 newX = parseInt(val, 10) || newX;
+              } else if (lowerKey === 'top' && val.endsWith('px')) {
+                 newY = parseInt(val, 10) || newY;
+              } else if (lowerKey === 'transform' && val.includes('rotate')) {
+                 const match = val.match(/rotate\(([-\d.]+)deg\)/);
+                 if (match) {
+                   newRotation = parseInt(match[1], 10) || newRotation;
+                 }
+                 if (!match || val.replace(/rotate\(([-\d.]+)deg\)/, '').trim() !== '') {
+                   customRules.push(rule.trim());
+                 }
+              } else if (lowerKey === 'content') {
+                 const contentMatch = val.match(/^['"]?(.*?)['"]?$/);
+                 if (contentMatch) {
+                    newContent = contentMatch[1];
+                 }
+              } else {
+                 customRules.push(rule.trim());
+              }
+            }
+            
+            const formattedCss = customRules.length > 0 
+              ? customRules.join(';\n') + (customRules.length ? ';\n' : '')
+              : '';
+              
+            if (css !== formattedCss || newWidth !== node.dimensions.width || newHeight !== node.dimensions.height || newX !== node.position.x || newY !== node.position.y || newRotation !== (node.rotation || 0) || newContent !== node.content) {
+              updateNode({
+                ...node,
+                content: newContent,
+                dimensions: { width: newWidth, height: newHeight },
+                position: { x: newX, y: newY },
+                rotation: newRotation,
+                style: {
+                  ...(node.style || {}),
+                  customCss: formattedCss
+                }
+              });
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className={styles.overlay}>
@@ -797,7 +943,7 @@ export function SidePanel() {
             </div>
           )}
 
-          {!isLine && node.type !== 'circle' && (
+          {!isLine && node.type !== 'circle' && node.type !== 'custom-block' && (
             <div className={styles.row}>
               <span className={styles.rowLabel}>Corner</span>
               <div className={styles.sliderContainer}>
@@ -856,7 +1002,7 @@ export function SidePanel() {
 
         <DepthArrangement ids={selectedNodeIds} />
 
-        {!isLine && (
+        {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Content</span>
             <textarea
@@ -869,7 +1015,7 @@ export function SidePanel() {
           </div>
         )}
 
-        {!isLine && (
+        {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Typography</span>
             <div className={styles.row}>
@@ -924,7 +1070,7 @@ export function SidePanel() {
           </div>
         )}
 
-        {!isLine && (
+        {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Fill</span>
             <div className={styles.row}>
@@ -941,63 +1087,81 @@ export function SidePanel() {
           </div>
         )}
 
-        <div className={styles.section}>
-          <span className={styles.sectionTitle}>Stroke</span>
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Color</span>
-            <div className={styles.colorPickerWrapper}>
-              <input
-                type="color"
-                value={node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
-                onChange={(e) => handleChange('borderColor', e.target.value)}
-              />
-              <span className={styles.colorHex}>
-                {node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
-              </span>
+        {node.type !== 'custom-block' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Stroke</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Color</span>
+              <div className={styles.colorPickerWrapper}>
+                <input
+                  type="color"
+                  value={node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
+                  onChange={(e) => handleChange('borderColor', e.target.value)}
+                />
+                <span className={styles.colorHex}>
+                  {node.style?.borderColor || (node.type === 'line' ? '#888888' : node.type === 'arrow' ? '#0c8ce9' : '#555555')}
+                </span>
+              </div>
             </div>
+
+            {isLine && node.type !== 'custom-connector' && (
+              <>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Route</span>
+                  <select
+                    className={styles.select}
+                    value={node.lineCurve || 'straight'}
+                    onChange={(e) => updateNode({ ...node, lineCurve: e.target.value as 'straight' | 'curved' })}
+                  >
+                    <option value="straight">Straight</option>
+                    <option value="curved">Curved</option>
+                  </select>
+                </div>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Pattern</span>
+                  <select
+                    className={styles.select}
+                    value={node.lineStyle || 'solid'}
+                    onChange={(e) => updateNode({ ...node, lineStyle: e.target.value as 'solid' | 'dashed' })}
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                  </select>
+                </div>
+                <div className={styles.row}>
+                  <span className={styles.rowLabel}>Arrows</span>
+                  <select
+                    className={styles.select}
+                    value={node.arrowType || (node.type === 'arrow' ? 'single' : 'none')}
+                    onChange={(e) => updateNode({ ...node, arrowType: e.target.value as 'none' | 'single' | 'double' })}
+                  >
+                    <option value="none">None</option>
+                    <option value="single">Single End</option>
+                    <option value="double">Double Ended</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
+        )}
 
-          {isLine && (
-            <>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Route</span>
-                <select
-                  className={styles.select}
-                  value={node.lineCurve || 'straight'}
-                  onChange={(e) => updateNode({ ...node, lineCurve: e.target.value as 'straight' | 'curved' })}
-                >
-                  <option value="straight">Straight</option>
-                  <option value="curved">Curved</option>
-                </select>
-              </div>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Pattern</span>
-                <select
-                  className={styles.select}
-                  value={node.lineStyle || 'solid'}
-                  onChange={(e) => updateNode({ ...node, lineStyle: e.target.value as 'solid' | 'dashed' })}
-                >
-                  <option value="solid">Solid</option>
-                  <option value="dashed">Dashed</option>
-                </select>
-              </div>
-              <div className={styles.row}>
-                <span className={styles.rowLabel}>Arrows</span>
-                <select
-                  className={styles.select}
-                  value={node.arrowType || (node.type === 'arrow' ? 'single' : 'none')}
-                  onChange={(e) => updateNode({ ...node, arrowType: e.target.value as 'none' | 'single' | 'double' })}
-                >
-                  <option value="none">None</option>
-                  <option value="single">Single End</option>
-                  <option value="double">Double Ended</option>
-                </select>
-              </div>
-            </>
-          )}
-        </div>
+        {node.type === 'custom-connector' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Advanced Connector CSS</span>
+            {renderCssTextarea('lineCss', 'Connector Line CSS')}
+            {renderCssTextarea('startMarkerCss', 'Start Marker CSS')}
+            {renderCssTextarea('endMarkerCss', 'End Marker CSS')}
+          </div>
+        )}
 
-        {!isLine && (
+        {node.type === 'custom-block' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Custom Block CSS</span>
+            {renderCustomBlockCssTextarea()}
+          </div>
+        )}
+
+        {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Text</span>
             <div className={styles.row}>
@@ -1014,7 +1178,7 @@ export function SidePanel() {
           </div>
         )}
 
-        {!isLine && (
+        {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>
             <span className={styles.sectionTitle}>Effects</span>
             <div className={styles.row}>

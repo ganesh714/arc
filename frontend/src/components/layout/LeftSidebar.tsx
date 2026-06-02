@@ -14,7 +14,9 @@ import {
   GripVertical,
   Hexagon,
   Database,
-  StickyNote
+  StickyNote,
+  Sparkles,
+  Link
 } from 'lucide-react';
 
 export function LeftSidebar() {
@@ -52,6 +54,10 @@ export function LeftSidebar() {
         return <Minus size={size} className={styles.layerIcon} />;
       case 'arrow':
         return <ArrowRight size={size} className={styles.layerIcon} />;
+      case 'custom-block':
+        return <Sparkles size={size} className={styles.layerIcon} style={{ color: '#8b5cf6' }} />;
+      case 'custom-connector':
+        return <Link size={size} className={styles.layerIcon} style={{ color: '#8b5cf6' }} />;
       default:
         return <Square size={size} className={styles.layerIcon} />;
     }

@@ -5,6 +5,21 @@ import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
 
+const parseCssString = (css: string) => {
+  if (!css || typeof css !== 'string') return null;
+  return css.split(';').reduce((acc, rule) => {
+    const [key, ...valueParts] = rule.split(':');
+    const value = valueParts.join(':');
+    if (key && value) {
+      const camelKey = key.trim().replace(/-([a-z])/g, g => g[1].toUpperCase());
+      if (camelKey !== 'position' && camelKey !== 'top' && camelKey !== 'left') {
+        acc[camelKey] = value.trim();
+      }
+    }
+    return acc;
+  }, {} as any);
+};
+
 interface NodeProps {
   node: DiagramNode;
 }
@@ -213,7 +228,7 @@ export function Node({ node }: NodeProps) {
     right: <FigmaHandle position="right" />,
   } : undefined;
 
-  const isLine = node.type === 'line' || node.type === 'arrow';
+  const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const isComment = node.type === 'comment';
 
   // Build text style object
@@ -630,7 +645,109 @@ export function Node({ node }: NodeProps) {
             {node.content}
           </div>
         </div>
+      ) : node.type === 'custom-block' ? (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `rotate(${node.rotation || 0}deg)`,
+            background: node.style?.background || node.style?.backgroundColor || '#2c2c2c',
+            borderWidth: node.style?.borderWidth || '1.5px',
+            borderStyle: node.style?.borderStyle || 'solid',
+            borderColor: node.style?.borderColor || '#555555',
+            borderRadius: node.style?.borderRadius || '0px',
+            clipPath: node.style?.clipPath || 'none',
+            backdropFilter: node.style?.backdropFilter || 'none',
+            filter: node.style?.filter || shadowFilter,
+            boxShadow: node.style?.boxShadow || 'none',
+            display: node.content ? 'flex' : 'block',
+            alignItems: node.content ? 'center' : undefined,
+            justifyContent: node.content ? 'center' : undefined,
+            boxSizing: 'border-box',
+            padding: node.content ? '8px' : '0px',
+            ...parseCssString(node.style?.customCss || '')
+          }}
+        >
+          {node.content ? (
+            <div style={textStyle}>
+              {node.content}
+            </div>
+          ) : null}
+        </div>
       ) : isLine ? (
+        node.type === 'custom-connector' ? (() => {
+          const startX = node.startPoint!.x - node.position.x;
+          const startY = node.startPoint!.y - node.position.y;
+          const endX = node.endPoint!.x - node.position.x;
+          const endY = node.endPoint!.y - node.position.y;
+          const dx = endX - startX;
+          const dy = endY - startY;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+          const connectorStyle = node.customConnectorStyle || {};
+
+          const lineCss = parseCssString(String(connectorStyle.lineCss || ''));
+          const startMarkerCss = parseCssString(String(connectorStyle.startMarkerCss || ''));
+          const endMarkerCss = parseCssString(String(connectorStyle.endMarkerCss || ''));
+
+          const defaultBorderWidth = node.style?.borderWidth || '2px';
+          const defaultBorderStyle = node.style?.borderStyle || 'dashed';
+          const defaultBorderColor = node.style?.borderColor || '#e74c3c';
+
+          return (
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                left: `${startX}px`,
+                top: `${startY}px`,
+                width: `${length}px`,
+                borderTop: `${defaultBorderWidth} ${defaultBorderStyle} ${defaultBorderColor}`,
+                transform: `rotate(${angle}deg)`,
+                transformOrigin: '0 0',
+                pointerEvents: 'none',
+                filter: shadowFilter,
+                ...lineCss
+              }} />
+
+              {startMarkerCss && (
+                <div style={{
+                  position: 'absolute',
+                  left: `${startX}px`,
+                  top: `${startY}px`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter,
+                  ...startMarkerCss
+                }} />
+              )}
+
+              {endMarkerCss ? (
+                <div style={{
+                  position: 'absolute',
+                  left: `${endX}px`,
+                  top: `${endY}px`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter,
+                  ...endMarkerCss
+                }} />
+              ) : (
+                <div style={{
+                  position: 'absolute',
+                  left: `${endX}px`,
+                  top: `${endY}px`,
+                  width: 0,
+                  height: 0,
+                  borderLeft: `calc(12px * 0.6) solid transparent`,
+                  borderRight: `calc(12px * 0.6) solid transparent`,
+                  borderBottom: `12px solid ${defaultBorderColor}`,
+                  transform: `translate(-50%, -50%) rotate(${angle + 90}deg)`,
+                  pointerEvents: 'none',
+                  filter: shadowFilter
+                }} />
+              )}
+            </div>
+          );
+        })() : (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>
             <defs>
@@ -727,6 +844,7 @@ export function Node({ node }: NodeProps) {
             })()}
           </svg>
         </div>
+        )
       ) : node.type === 'path' ? (
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <svg width="100%" height="100%" style={{ overflow: 'visible', display: 'block' }}>

@@ -21,11 +21,13 @@ import {
   MessageSquare,
   Scaling as ScalingIcon,
   Hand,
-  Undo2,
   Redo2,
   Hexagon,
   Database,
-  StickyNote
+  StickyNote,
+  Sparkles,
+  Link,
+  Undo2
 } from 'lucide-react';
 
 export function Canvas() {
@@ -46,8 +48,9 @@ export function Canvas() {
     addParallelogram,
     addDatabase,
     addNote,
-    addLine,
     addArrow,
+    addCustomBlock,
+    addCustomConnector,
     zoom,
     setZoom,
     activeTool,
@@ -87,7 +90,7 @@ export function Canvas() {
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment' | 'custom-block' | 'custom-connector'>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -335,10 +338,11 @@ export function Canvas() {
     else if (type === 'pill') addPill({ x, y });
     else if (type === 'hexagon') addHexagon({ x, y });
     else if (type === 'parallelogram') addParallelogram({ x, y });
-    else if (type === 'database') addDatabase({ x, y });
     else if (type === 'note') addNote({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
+    else if (type === 'custom-block') addCustomBlock({ x, y });
+    else if (type === 'custom-connector') addCustomConnector({ x, y });
 
   };
 
@@ -506,21 +510,58 @@ export function Canvas() {
 
           if (width > 5 || height > 5) {
             const id = crypto.randomUUID().split('-')[0];
-            const isLineType = activeTool === 'line' || activeTool === 'arrow';
+            const isLineType = activeTool === 'line' || activeTool === 'arrow' || activeTool === 'custom-connector';
             let newNode: any;
 
             if (isLineType) {
+              if (activeTool === 'custom-connector') {
+                newNode = {
+                  id,
+                  type: 'custom-connector',
+                  position: { x: left, y: top },
+                  dimensions: { width, height },
+                  content: '',
+                  style: {
+                    borderColor: '#e74c3c',
+                    borderStyle: 'dashed',
+                    borderWidth: '2px',
+                    opacity: '0.8'
+                  },
+                  startPoint: { x: sX, y: sY },
+                  endPoint: { x: cX, y: cY },
+                  customConnectorStyle: {
+                    borderBottomColor: '#e74c3c',
+                    borderWidth: '12px'
+                  }
+                };
+              } else {
+                newNode = {
+                  id,
+                  type: activeTool,
+                  position: { x: left, y: top },
+                  dimensions: { width, height },
+                  content: '',
+                  style: {
+                    borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
+                  },
+                  startPoint: { x: sX, y: sY },
+                  endPoint: { x: cX, y: cY }
+                };
+              }
+            } else if (activeTool === 'custom-block') {
               newNode = {
                 id,
-                type: activeTool,
+                type: 'custom-block',
                 position: { x: left, y: top },
                 dimensions: { width, height },
                 content: '',
                 style: {
-                  borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
-                },
-                startPoint: { x: sX, y: sY },
-                endPoint: { x: cX, y: cY }
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  clipPath: 'polygon(0% 15%, 15% 15%, 15% 0%, 85% 0%, 85% 15%, 100% 15%, 100% 85%, 85% 85%, 85% 100%, 15% 100%, 15% 85%, 0% 85%)',
+                  color: '#ffffff',
+                  borderWidth: '0px',
+                  opacity: '0.9'
+                }
               };
             } else {
               let defaultBg = 'var(--bg-hover)';
@@ -722,7 +763,9 @@ export function Canvas() {
     note: <StickyNote size={15} />,
     comment: <MessageSquare size={15} style={{ color: 'var(--accent-purple)' }} />,
     line: <Minus size={15} />,
-    arrow: <ArrowRight size={15} />
+    arrow: <ArrowRight size={15} />,
+    'custom-block': <Sparkles size={15} style={{ color: '#8b5cf6' }} />,
+    'custom-connector': <Link size={15} style={{ color: '#8b5cf6' }} />
   };
 
   const shapeLabels = {
@@ -738,7 +781,9 @@ export function Canvas() {
     note: 'Sticky Note',
     comment: 'Comment (C)',
     line: 'Line (L)',
-    arrow: 'Arrow (Shift+L)'
+    arrow: 'Arrow (Shift+L)',
+    'custom-block': 'Custom Block',
+    'custom-connector': 'Custom Connector'
   };
 
   const getCursor = () => {
@@ -898,7 +943,7 @@ export function Canvas() {
                 );
               }
 
-              if (type === 'line' || type === 'arrow') {
+              if (type === 'line' || type === 'arrow' || type === 'custom-connector') {
                 const minX = Math.min(startX, currentX);
                 const minY = Math.min(startY, currentY);
                 const w = Math.max(1, Math.abs(currentX - startX));
@@ -1144,7 +1189,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1231,6 +1276,29 @@ export function Canvas() {
                       <span className={styles.dropdownItemShortcut}>
                         {type === 'line' ? 'L' : type === 'arrow' ? '⇧L' : ''}
                       </span>
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <div className={styles.columnDivider} />
+
+              <div className={styles.dropdownColumn}>
+                <div className={styles.dropdownCategory}>Custom (AI)</div>
+                {['custom-block', 'custom-connector'].map((type) => {
+                  const isSelected = currentShapeType === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      onClick={() => {
+                        setCurrentShapeType(type as any);
+                        setActiveTool(type);
+                        setShapeDropdownOpen(false);
+                      }}
+                    >
+                      <span className={styles.dropdownItemIcon}>{shapeIcons[type as keyof typeof shapeIcons]}</span>
+                      <span className={styles.dropdownItemLabel}>{shapeLabels[type as keyof typeof shapeLabels].split(' (')[0]}</span>
                     </button>
                   );
                 })}
