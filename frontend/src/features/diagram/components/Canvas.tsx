@@ -33,6 +33,9 @@ import {
 export function Canvas() {
   const { 
     nodes, 
+    projects,
+    activeProjectId,
+    activeFileId,
     selectedNodeIds,
     selectNode,
     setSelectedNodeIds,
@@ -48,6 +51,7 @@ export function Canvas() {
     addParallelogram,
     addDatabase,
     addNote,
+    addLine,
     addArrow,
     addCustomBlock,
     addCustomConnector,
@@ -67,6 +71,10 @@ export function Canvas() {
     cutSelected,
     deleteSelected
   } = useDiagram();
+
+  const activeProject = projects.find(p => p.id === activeProjectId);
+  const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+  const canvasBgColor = activeFile?.canvasConfig?.backgroundColor || 'var(--bg-canvas)';
 
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
@@ -338,6 +346,7 @@ export function Canvas() {
     else if (type === 'pill') addPill({ x, y });
     else if (type === 'hexagon') addHexagon({ x, y });
     else if (type === 'parallelogram') addParallelogram({ x, y });
+    else if (type === 'database') addDatabase({ x, y });
     else if (type === 'note') addNote({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
@@ -564,39 +573,39 @@ export function Canvas() {
                 }
               };
             } else {
-              let defaultBg = 'var(--bg-hover)';
-              let defaultBorder = 'var(--border-active)';
+              let defaultBg = '#2c2c2c';
+              let defaultBorder = '#0c8ce9';
               let defaultText = 'Rectangle';
               let customStyle: any = {};
 
               if (activeTool === 'diamond') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#c69c3a';
                 defaultText = 'Diamond';
                 customStyle = { borderRadius: '2px' };
               } else if (activeTool === 'circle') {
                 defaultText = 'Ellipse';
               } else if (activeTool === 'triangle') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#2b8a4e';
                 defaultText = 'Triangle';
               } else if (activeTool === 'star') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#9e7c1d';
                 defaultText = 'Star';
               } else if (activeTool === 'pill') {
                 defaultText = 'Pill';
                 customStyle = { borderRadius: '999px' };
               } else if (activeTool === 'hexagon') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#824ea0';
                 defaultText = 'Hexagon';
               } else if (activeTool === 'parallelogram') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#4e82a0';
                 defaultText = 'Parallelogram';
               } else if (activeTool === 'database') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#a04e4e';
                 defaultText = 'Database';
               } else if (activeTool === 'note') {
@@ -615,7 +624,7 @@ export function Canvas() {
                 style: {
                   backgroundColor: defaultBg,
                   borderColor: defaultBorder,
-                  color: 'var(--text-primary)',
+                  color: customStyle.color || '#e3e3e3',
                   ...customStyle
                 }
               };
@@ -805,7 +814,7 @@ export function Canvas() {
         onDrop={handleDrop}
         style={{
           cursor: getCursor(),
-          backgroundColor: 'var(--bg-canvas)',
+          backgroundColor: canvasBgColor,
           backgroundImage: 'radial-gradient(var(--border-default) 1px, transparent 1px)',
           backgroundSize: `${16 * zoom}px ${16 * zoom}px`,
           backgroundPosition: `${panOffset.x * zoom}px ${panOffset.y * zoom}px`,
