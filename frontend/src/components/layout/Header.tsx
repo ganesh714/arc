@@ -4,14 +4,16 @@ import { useAuth } from '@/context/AuthContext';
 import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
+import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Settings } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
 
   const handleExport = () => {
@@ -41,6 +43,20 @@ export function Header() {
         </div>
 
         <div className={styles.actions}>
+          <button 
+            className={styles.btn} 
+            onClick={() => setIsSettingsOpen(true)} 
+            title="Canvas Settings"
+            style={{
+              padding: '6px 8px',
+              minWidth: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Settings size={14} />
+          </button>
           <button 
             className={styles.btn} 
             onClick={toggleTheme} 
@@ -103,6 +119,10 @@ export function Header() {
       <ImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
+      />
+      <CanvasSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </>
   );

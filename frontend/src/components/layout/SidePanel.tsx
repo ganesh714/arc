@@ -9,8 +9,7 @@ import {
   AlignRight, 
   Bold, 
   ArrowUp, 
-  ArrowDown,
-  Plus
+  ArrowDown
 } from 'lucide-react';
 
 export function SidePanel() {

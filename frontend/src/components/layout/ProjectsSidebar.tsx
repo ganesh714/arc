@@ -1,38 +1,25 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
-import { Folder, Plus, Check, X, FolderKanban, LogIn } from 'lucide-react';
+import { Folder, Plus, X, FolderKanban, LogIn } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
+import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
-  const { projects, activeProjectId, switchProject, addProject, isSidebarOpen, toggleSidebar } = useDiagram();
+  const { projects, activeProjectId, activeFileId, switchFile, addFile, isSidebarOpen, toggleSidebar } = useDiagram();
   const { isGuest, user, login, logout, isAuthenticated } = useAuth();
   
-  // Track adding project
   const [isCreating, setIsCreating] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
-  const popoverRef = useRef<HTMLDivElement>(null);
 
-  const handleCreateProject = () => {
-    if (newProjectName.trim()) {
-      addProject(newProjectName.trim(), 'Loom Diagrams');
-      setNewProjectName('');
+  const handleConfirmCreate = (name: string, bgColor: string) => {
+    if (name.trim()) {
+      addFile(activeProjectId, name.trim(), bgColor);
       setIsCreating(false);
     }
   };
 
-  // Close popover when clicking outside
-  useEffect(() => {
-    if (!isCreating) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsCreating(false);
-      }
-    };
-    window.addEventListener('mousedown', handleOutsideClick);
-    return () => window.removeEventListener('mousedown', handleOutsideClick);
-  }, [isCreating]);
+  // (Removed inline popover outside-click listener since we use a modal)
 
   // Collapsed Sidebar view (simple icons)
   if (!isSidebarOpen) {
@@ -65,14 +52,10 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
           <button
             className={styles.addBtnCollapsed}
             onClick={() => {
-              if (isGuest) {
-                login();
-                return;
-              }
               toggleSidebar();
               setIsCreating(true);
             }}
-            title={isGuest ? "Sign in to create projects" : "New File / Project"}
+            title="New File"
           >
             <Plus size={20} />
           </button>
@@ -124,19 +107,19 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
 
       <div className={styles.divider} />
 
-      {/* Projects List */}
+      {/* Files List */}
       <div className={styles.projectList}>
-        {projects.map((project) => {
-          const isActive = project.id === activeProjectId;
+        {projects.find(p => p.id === activeProjectId)?.files.map((file) => {
+          const isActive = file.id === activeFileId;
           return (
             <button
-              key={project.id}
+              key={file.id}
               className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
-              onClick={() => switchProject(project.id)}
+              onClick={() => switchFile(file.id)}
             >
               <Folder size={14} className={styles.itemIcon} />
-              <span className={styles.projectName}>{project.name}</span>
-              <span className={styles.itemCount}>{project.nodes.length}</span>
+              <span className={styles.projectName}>{file.name}</span>
+              <span className={styles.itemCount}>{file.nodes.length}</span>
             </button>
           );
         })}
@@ -149,34 +132,19 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
             <button
               className={styles.addBtn}
               onClick={() => setIsCreating(true)}
-              title="New File / Project"
+              title="New File"
             >
               <Plus size={14} />
-              <span>New File / Project</span>
+              <span>New File</span>
             </button>
           ) : (
-            <div ref={popoverRef} className={styles.inputContainer}>
-              <input
-                type="text"
-                className={styles.input}
-                placeholder="Project name..."
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateProject();
-                  else if (e.key === 'Escape') setIsCreating(false);
-                }}
-                autoFocus
-              />
-              <div className={styles.inputActions}>
-                <button className={styles.confirmBtn} onClick={handleCreateProject} title="Save">
-                  <Check size={12} />
-                </button>
-                <button className={styles.cancelBtn} onClick={() => setIsCreating(false)} title="Cancel">
-                  <X size={12} />
-                </button>
-              </div>
-            </div>
+            <CreateEntityModal 
+              isOpen={isCreating}
+              onClose={() => setIsCreating(false)}
+              onConfirm={handleConfirmCreate}
+              title="Create New File"
+              defaultName="Untitled"
+            />
           )}
 
           {/* User Profile Info - acts as Sign In CTA for guests */}

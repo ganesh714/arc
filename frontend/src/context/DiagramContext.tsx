@@ -2,11 +2,23 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 
-export interface Project {
+export interface CanvasConfig {
+  backgroundColor: string;
+}
+
+export interface DiagramFile {
+  id: string;
+  name: string;
+  nodes: DiagramNode[];
+  canvasConfig: CanvasConfig;
+  updatedAt: number;
+}
+
+export interface WorkspaceProject {
   id: string;
   name: string;
   category: string;
-  nodes: DiagramNode[];
+  files: DiagramFile[];
   updatedAt: number;
 }
 
@@ -45,10 +57,14 @@ interface DiagramContextType {
   setActiveTool: (tool: string) => void;
   selectToolMode: 'move' | 'scale';
   setSelectToolMode: (mode: 'move' | 'scale') => void;
-  projects: Project[];
+  projects: WorkspaceProject[];
   activeProjectId: string;
+  activeFileId: string;
   switchProject: (id: string) => void;
-  addProject: (name: string, category?: string) => void;
+  addProject: (name: string, category?: string, backgroundColor?: string) => void;
+  switchFile: (id: string) => void;
+  addFile: (projectId: string, name: string, backgroundColor?: string) => void;
+  updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
   
   // Sidebar state
   isSidebarOpen: boolean;
@@ -74,48 +90,56 @@ interface DiagramContextType {
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 
-const initialProjects: Project[] = [
+const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-1',
     name: 'Loom Diagram',
     category: 'Loom Diagrams',
     updatedAt: Date.now(),
-    nodes: [
+    files: [
       {
-        id: 'node-1',
-        type: 'box',
-        position: { x: 80, y: 80 },
-        dimensions: { width: 160, height: 100 },
-        content: 'Figma Canvas',
-        style: {
-          backgroundColor: '#2c2c2c',
-          borderColor: '#555555',
-          color: '#e3e3e3'
-        }
-      },
-      {
-        id: 'node-2',
-        type: 'circle',
-        position: { x: 340, y: 80 },
-        dimensions: { width: 100, height: 100 },
-        content: 'Brainstorm',
-        style: {
-          backgroundColor: '#2c2c2c',
-          borderColor: '#555555',
-          color: '#e3e3e3'
-        }
-      },
-      {
-        id: 'node-3',
-        type: 'arrow',
-        position: { x: 240, y: 120 },
-        dimensions: { width: 100, height: 20 },
-        content: '',
-        style: {
-          borderColor: '#0c8ce9'
-        },
-        startPoint: { x: 240, y: 130 },
-        endPoint: { x: 340, y: 130 }
+        id: 'file-1',
+        name: 'Main Canvas',
+        updatedAt: Date.now(),
+        canvasConfig: { backgroundColor: '#0f0f0f' },
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'box',
+            position: { x: 80, y: 80 },
+            dimensions: { width: 160, height: 100 },
+            content: 'Figma Canvas',
+            style: {
+              backgroundColor: '#2c2c2c',
+              borderColor: '#555555',
+              color: '#e3e3e3'
+            }
+          },
+          {
+            id: 'node-2',
+            type: 'circle',
+            position: { x: 340, y: 80 },
+            dimensions: { width: 100, height: 100 },
+            content: 'Brainstorm',
+            style: {
+              backgroundColor: '#2c2c2c',
+              borderColor: '#555555',
+              color: '#e3e3e3'
+            }
+          },
+          {
+            id: 'node-3',
+            type: 'arrow',
+            position: { x: 240, y: 120 },
+            dimensions: { width: 100, height: 20 },
+            content: '',
+            style: {
+              borderColor: '#0c8ce9'
+            },
+            startPoint: { x: 240, y: 130 },
+            endPoint: { x: 340, y: 130 }
+          }
+        ]
       }
     ]
   },
@@ -124,21 +148,30 @@ const initialProjects: Project[] = [
     name: 'Personal Flowchart',
     category: 'Loom Diagrams',
     updatedAt: Date.now() - 3600000,
-    nodes: []
+    files: [
+      {
+        id: 'file-2',
+        name: 'Untitled',
+        updatedAt: Date.now() - 3600000,
+        canvasConfig: { backgroundColor: '#0f0f0f' },
+        nodes: []
+      }
+    ]
   },
   {
     id: 'project-3',
     name: 'Personal Wireframe',
     category: 'Website Wireframes',
     updatedAt: Date.now() - 86400000,
-    nodes: []
+    files: []
   }
 ];
 
 export function DiagramProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<WorkspaceProject[]>(initialProjects);
   const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
-  const [nodes, setNodesState] = useState<DiagramNode[]>(initialProjects[0].nodes);
+  const [activeFileId, setActiveFileId] = useState<string>('file-1');
+  const [nodes, setNodesState] = useState<DiagramNode[]>(initialProjects[0].files[0].nodes);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState<number>(1.0);
   const [activeTool, setActiveTool] = useState<string>('select');
@@ -185,13 +218,17 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   // Sync nodes state to projects array whenever nodes change
   useEffect(() => {
     setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes, updatedAt: Date.now() } 
-          : p
-      )
+      prevProjects.map(p => {
+        if (p.id === activeProjectId) {
+          const updatedFiles = p.files.map(f => 
+            f.id === activeFileId ? { ...f, nodes, updatedAt: Date.now() } : f
+          );
+          return { ...p, files: updatedFiles, updatedAt: Date.now() };
+        }
+        return p;
+      })
     );
-  }, [nodes, activeProjectId]);
+  }, [nodes, activeProjectId, activeFileId]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
@@ -858,29 +895,96 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   const switchProject = (targetId: string) => {
     const target = projects.find(p => p.id === targetId);
-    setNodesState(target ? target.nodes : []);
+    if (!target) return;
+    
+    const targetFile = target.files.length > 0 ? target.files[0] : null;
+    
+    setNodesState(targetFile ? targetFile.nodes : []);
     setSelectedNodeIds([]);
     setActiveProjectId(targetId);
+    setActiveFileId(targetFile ? targetFile.id : '');
     setPast([]);
     setFuture([]);
   };
 
-  const addProject = (name: string, category: string = 'Loom Diagrams') => {
+  const addProject = (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
     const newId = crypto.randomUUID().split('-')[0];
-    const newProj: Project = {
+    const newFileId = crypto.randomUUID().split('-')[0];
+    
+    const newProj: WorkspaceProject = {
       id: newId,
       name,
       category,
       updatedAt: Date.now(),
-      nodes: []
+      files: [
+        {
+          id: newFileId,
+          name: 'Untitled',
+          updatedAt: Date.now(),
+          canvasConfig: { backgroundColor },
+          nodes: []
+        }
+      ]
     };
     
     setProjects(prev => [...prev, newProj]);
     setNodesState([]);
     setSelectedNodeIds([]);
     setActiveProjectId(newId);
+    setActiveFileId(newFileId);
     setPast([]);
     setFuture([]);
+  };
+
+  const switchFile = (fileId: string) => {
+    const targetProj = projects.find(p => p.id === activeProjectId);
+    if (!targetProj) return;
+    const targetFile = targetProj.files.find(f => f.id === fileId);
+    if (!targetFile) return;
+
+    setNodesState(targetFile.nodes);
+    setSelectedNodeIds([]);
+    setActiveFileId(fileId);
+    setPast([]);
+    setFuture([]);
+  };
+
+  const addFile = (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
+    const newFileId = crypto.randomUUID().split('-')[0];
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          files: [
+            ...p.files,
+            {
+              id: newFileId,
+              name,
+              updatedAt: Date.now(),
+              canvasConfig: { backgroundColor },
+              nodes: []
+            }
+          ]
+        };
+      }
+      return p;
+    }));
+    
+    if (projectId === activeProjectId) {
+      switchFile(newFileId);
+    }
+  };
+
+  const updateCanvasConfig = (fileId: string, config: Partial<CanvasConfig>) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === activeProjectId) {
+        return {
+          ...p,
+          files: p.files.map(f => f.id === fileId ? { ...f, canvasConfig: { ...f.canvasConfig, ...config } } : f)
+        };
+      }
+      return p;
+    }));
   };
 
   return (
@@ -921,8 +1025,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       setSelectToolMode,
       projects,
       activeProjectId,
+      activeFileId,
       switchProject,
       addProject,
+      switchFile,
+      addFile,
+      updateCanvasConfig,
       
       // Sidebar
       isSidebarOpen,
