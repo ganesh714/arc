@@ -8,7 +8,7 @@ The `loom` backend operates on the same Supabase PostgreSQL instance as `arqulat
 | `id` | `UUID` | Primary Key | |
 | `name` | `VARCHAR` | Not Null | Project name |
 | `category` | `VARCHAR(100)` | | e.g. "Loom Diagrams" |
-| `user_email` | `VARCHAR` | Not Null | Foreign Key mapping to the JWT subject |
+| `user_id` | `UUID` | Not Null | Foreign Key mapping to the JWT `uid` claim |
 | `created_at` | `TIMESTAMP` | | |
 | `updated_at` | `TIMESTAMP` | | |
 
@@ -24,4 +24,4 @@ The `loom` backend operates on the same Supabase PostgreSQL instance as `arqulat
 | `updated_at` | `TIMESTAMP` | | |
 
 ## Cross-Schema Query
-Loom maps a read-only entity `BlacklistedToken` to the `public.blacklisted_tokens` table. This is used by the security filter to verify if a JWT has been explicitly logged out.
+Loom uses a native `JdbcTemplate` query to check the `public.blacklisted_tokens` table. This is used by the security filter to verify if a JWT has been explicitly logged out.
