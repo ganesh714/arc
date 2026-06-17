@@ -10,11 +10,14 @@
 
 | Document | Description |
 |---|---|
-| [Architecture Overview](./architecture/overview.md) | High-level system design and component responsibilities |
-| [API Reference](./api/endpoints.md) | Every endpoint with request/response schemas |
-| [Database Schema](./database/schema.md) | JSONB column structure and table relations |
-| [Security Architecture](./security/architecture.md) | Flawless Cross-Service JWT validation strategies |
-| [Known Issues & TODOs](./known-issues.md) | Tracked issues organized by severity |
+| [Architecture Overview](./architecture/overview.md) | High-level stateless system design, low-level JSONB analysis, and data flow execution paths |
+| [Project Structure](./architecture/project-structure.md) | Annotated file tree outlining controllers, services, repositories, and exception boundaries |
+| [API Reference](./api/endpoints.md) | Every endpoint with request/response schemas, updated with embedded DTOs and 409 Conflicts |
+| [Error Handling](./api/error-handling.md) | How the `GlobalExceptionHandler` intercepts exceptions and maps them to HTTP status codes |
+| [Database Schema](./database/schema.md) | JSONB column structure, `user_id` foreign keys, indexes, and Flyway migration strategy |
+| [Configuration Reference](./config/reference.md) | Environment variables, `.env` templates, database URLs, and payload size safety limits |
+| [Security Architecture](./security/architecture.md) | Filter chain analysis, JWT cryptographic signature verification, and native JDBC blacklists |
+| [Known Issues & TODOs](./known-issues.md) | Tracked issues organized by severity and historical resolution log |
 
 ---
 
