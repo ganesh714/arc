@@ -31,7 +31,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 |---|---|---|---|
 | 8 | ~~**`@Data` on JPA entities causes lazy-load & recursion**~~ | ~~Lombok `@Data` generates `toString()`, `equals()`, `hashCode()` that include `List<DiagramFile>`. This triggers lazy-loading on every log/debug, N+1 queries, and potential `StackOverflowError` from bidirectional relationships.~~ | ✅ Resolved — Replaced with `@Getter`, `@Setter`, `@ToString(exclude)`, and `@EqualsAndHashCode(of = "id")` |
 | 9 | ~~**Manual `setUpdatedAt()` fights `@UpdateTimestamp`**~~ | ~~`FileService.createFile()` and `updateFile()` manually set `project.setUpdatedAt(LocalDateTime.now())`, but Hibernate's `@UpdateTimestamp` does this automatically. Creates a race condition and timezone inconsistency.~~ | ✅ Resolved — Removed manual calls |
-| 10 | **No database index on `user_id`** | `ProjectRepository.findByUserIdOrderByUpdatedAtDesc()` does a full table scan without an index on `user_id`. Will slow down as user/project count grows. | ⏳ TODO — Add `@Index` on `projects.user_id` |
+| 10 | ~~**No database index on `user_id`**~~ | ~~`ProjectRepository.findByUserIdOrderByUpdatedAtDesc()` does a full table scan without an index on `user_id`. Will slow down as user/project count grows.~~ | ✅ Resolved — Added `@Index` on `projects.user_id` |
 | 11 | **`show-sql=true`** | Floods logs with SQL in production, potentially exposing data in query parameters. | ⏳ Dev only — disable for production |
 | 12 | **Delete last file in project → frontend crash** | `DELETE /api/files/{fileId}` allows deleting the only file. Frontend's `switchProject` assumes `files[0]` exists and will crash on `undefined`. | ⏳ TODO — Add backend guard or frontend null check |
 | 12b | **Frontend-Backend DTO Mismatch** | The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading. | ⏳ TODO — Update `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
@@ -61,4 +61,5 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 7 | Added Flyway dependencies, initial V1 schema migration, and set `ddl-auto=validate` |
 | 2026-06-17 | 8 | Replaced `@Data` with `@Getter`/`@Setter` and excluded associations from `toString`/`equals` to prevent infinite recursion and lazy-loading bugs |
 | 2026-06-17 | 9 | Removed manual `setUpdatedAt()` calls in `FileService` to rely on Hibernate `@UpdateTimestamp` |
+| 2026-06-17 | 10 | Added database index on `projects.user_id` to optimize project lookups |
 | | | |

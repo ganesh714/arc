@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS projects (
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX idx_project_user_id ON projects(user_id);
+
 CREATE TABLE IF NOT EXISTS diagram_files (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
