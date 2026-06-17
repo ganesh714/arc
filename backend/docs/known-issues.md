@@ -21,7 +21,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 |---|---|---|---|
 | 5 | ~~**Old JWTs without `uid` claim silently fail**~~ | ~~We just added the `uid` custom claim to `arqulat_auth`. Users with pre-existing JWT cookies will have tokens missing this claim. `extractUserId()` returns `null`, causing a silent `401` with no explanation.~~ | ✅ Accepted Risk — Only dev team has accounts; they will manually re-login |
 | 6 | **CSRF disabled with cookie-based auth** | Same risk as `arqulat_auth` (issue #5 there). Browsers automatically attach the `arqulat_session` cookie. `SameSite=Lax` mitigates on modern browsers, but isn't bulletproof for older browsers or subdomain attacks. | ⏳ Accepted risk — Same stance as `arqulat_auth` |
-| 7 | **`ddl-auto=update` in production** | Hibernate auto-modifying the schema risks data corruption. Should switch to Flyway migrations and `ddl-auto=validate` before deploying, same as `arqulat_auth` already did. | ⏳ TODO — Add Flyway migrations |
+| 7 | ~~**`ddl-auto=update` in production**~~ | ~~Hibernate auto-modifying the schema risks data corruption. Should switch to Flyway migrations and `ddl-auto=validate` before deploying, same as `arqulat_auth` already did.~~ | ✅ Resolved — Switched to Flyway migrations and `ddl-auto=validate` |
 
 ---
 
@@ -58,4 +58,5 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 4 | Added `GlobalExceptionHandler` and custom exceptions (`ResourceNotFoundException`, `UnauthorizedAccessException`) |
 | 2026-06-17 | 2 | Added Jakarta Validation annotations to DTOs and updated controllers and global handler |
 | 2026-06-17 | 3 | Added 5MB max size limit check to `FileService.updateFile` and mapped `PayloadTooLargeException` in `GlobalExceptionHandler` |
+| 2026-06-17 | 7 | Added Flyway dependencies, initial V1 schema migration, and set `ddl-auto=validate` |
 | | | |
