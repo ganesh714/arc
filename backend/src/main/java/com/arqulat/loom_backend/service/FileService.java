@@ -85,9 +85,9 @@ public class FileService {
 
     private DiagramFile getFileIfOwned(UUID fileId, UUID userId) {
         DiagramFile file = fileRepository.findById(fileId)
-                .orElseThrow(() -> new RuntimeException("File not found"));
+                .orElseThrow(() -> new com.arqulat.loom_backend.exception.ResourceNotFoundException("File not found"));
         if (!file.getProject().getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to access this file");
+            throw new com.arqulat.loom_backend.exception.UnauthorizedAccessException("Unauthorized to access this file");
         }
         return file;
     }

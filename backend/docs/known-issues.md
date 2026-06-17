@@ -11,7 +11,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 1 | ~~**Hibernate may alter `arqulat_auth`'s `blacklisted_tokens` table**~~ | ~~`BlacklistedToken` entity points to `@Table(schema = "public")` and `ddl-auto=update` is active. Hibernate could add columns or modify the table owned by `arqulat_auth`, corrupting the auth service.~~ | ✅ Resolved — Replaced JPA entity with native JDBC query |
 | 2 | **Zero input validation on all endpoints** | DTOs (`CreateProjectRequest`, `CreateFileRequest`, etc.) have no `@NotBlank`, `@Size`, or `@Pattern` annotations. Controllers don't use `@Valid`. Allows null names, 100K-char strings, and invalid hex colors. | ⏳ TODO — Add Jakarta Validation annotations + `@Valid` |
 | 3 | **Unlimited JSONB payload size** | `PUT /api/files/{fileId}` accepts `JsonNode nodes` with no size limit. A single malicious request could send 500MB of JSON, exhausting server memory and filling the database. | ⏳ TODO — Add Tomcat max request size + service-level check |
-| 4 | **No global exception handler** | No `@ControllerAdvice`. All `RuntimeException`s return raw `500 Internal Server Error` with full Java stack traces leaked to the client. Auth failures also return 500 instead of 403. | ⏳ TODO — Create `GlobalExceptionHandler` with proper HTTP status mapping |
+| 4 | ~~**No global exception handler**~~ | ~~No `@ControllerAdvice`. All `RuntimeException`s return raw `500 Internal Server Error` with full Java stack traces leaked to the client. Auth failures also return 500 instead of 403.~~ | ✅ Resolved — Created `GlobalExceptionHandler` with custom exceptions |
 
 ---
 
@@ -55,4 +55,5 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | — | Switched from `user_email` to `user_id` (UUID) as foreign key |
 | 2026-06-17 | — | Added `uid` claim to `arqulat_auth` JWT for cross-service ID mapping |
 | 2026-06-17 | 1 | Replaced `BlacklistedToken` JPA entity with native `JdbcTemplate` query to prevent `ddl-auto` from altering auth service tables |
+| 2026-06-17 | 4 | Added `GlobalExceptionHandler` and custom exceptions (`ResourceNotFoundException`, `UnauthorizedAccessException`) |
 | | | |

@@ -74,9 +74,9 @@ public class ProjectService {
 
     public Project getProjectIfOwned(UUID projectId, UUID userId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new com.arqulat.loom_backend.exception.ResourceNotFoundException("Project not found"));
         if (!project.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to access this project");
+            throw new com.arqulat.loom_backend.exception.UnauthorizedAccessException("Unauthorized to access this project");
         }
         return project;
     }
