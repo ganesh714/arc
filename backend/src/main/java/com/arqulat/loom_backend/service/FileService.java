@@ -54,8 +54,6 @@ public class FileService {
                 .build();
         
         DiagramFile saved = fileRepository.save(file);
-        // Also update project's updated_at timestamp
-        project.setUpdatedAt(java.time.LocalDateTime.now());
         return mapToSummary(saved);
     }
 
@@ -75,8 +73,6 @@ public class FileService {
             file.setNodes(request.getNodes());
         }
         DiagramFile updated = fileRepository.save(file);
-        // Also update project's updated_at timestamp
-        updated.getProject().setUpdatedAt(java.time.LocalDateTime.now());
         return mapToDetail(updated);
     }
 
