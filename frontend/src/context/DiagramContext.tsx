@@ -250,7 +250,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         
         // Uncomment/Update this when the backend API is fully integrated in frontend
         /*
-        const response = await fetch(`http://localhost:8081/api/files/${activeFileId}`, {
+        const loomApiUrl = import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081';
+        const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nodes: debouncedNodes })

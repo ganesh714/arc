@@ -16,7 +16,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 
 | # | Issue | Details | Status |
 |---|---|---|---|
-| 2 | **Hardcoded `localhost` URLs** | `AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. This will break in production where the API is hosted at `https://accounts.arqulat.com`. | ⏳ TODO — Use Vite environment variables (`import.meta.env.VITE_AUTH_URL`) |
+| 2 | ~~**Hardcoded `localhost` URLs**~~ | ~~`AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. This will break in production where the API is hosted at `https://accounts.arqulat.com`.~~ | ✅ Resolved — Extracted API URLs to `.env` using `import.meta.env` |
 
 ---
 

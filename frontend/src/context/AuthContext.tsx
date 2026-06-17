@@ -28,8 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if the user is authenticated via the backend
     const fetchUser = async () => {
       try {
-        // Pointing to the arqulat_auth service which runs on 8080
-        const response = await fetch('http://localhost:8080/api/v1/user/me', {
+        // Pointing to the arqulat_auth service
+        const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+        const response = await fetch(`${authApiUrl}/api/v1/user/me`, {
           credentials: 'include' // Important for session cookies
         });
         
@@ -58,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = () => {
     // Redirect to the arqulat_auth OAuth2 endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+    window.location.href = `${authApiUrl}/oauth2/authorization/google`;
   };
 
   const logout = async () => {
@@ -70,7 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Call arqulat_auth logout endpoint to blacklist token and clear cookie
-      await fetch('http://localhost:8080/api/v1/user/logout', {
+      const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+      await fetch(`${authApiUrl}/api/v1/user/logout`, {
         method: 'POST',
         credentials: 'include'
       });
