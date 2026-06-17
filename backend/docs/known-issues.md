@@ -34,8 +34,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 10 | **No database index on `user_id`** | `ProjectRepository.findByUserIdOrderByUpdatedAtDesc()` does a full table scan without an index on `user_id`. Will slow down as user/project count grows. | ⏳ TODO — Add `@Index` on `projects.user_id` |
 | 11 | **`show-sql=true`** | Floods logs with SQL in production, potentially exposing data in query parameters. | ⏳ Dev only — disable for production |
 | 12 | **Delete last file in project → frontend crash** | `DELETE /api/files/{fileId}` allows deleting the only file. Frontend's `switchProject` assumes `files[0]` exists and will crash on `undefined`. | ⏳ TODO — Add backend guard or frontend null check |
-| 12b | **Frontend-Backend DTO Mismatch (Integration Blocker)** | The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading. | ⏳ TODO — Update `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
-| 12c | **No Canvas Auto-Save Debouncing (Integration Blocker)** | The canvas `nodes` update continuously while dragging. Firing a `PUT` request on every pixel change will DDOS the backend. A proper debounce mechanism (e.g., 1000ms delay after interaction stops) is missing in `DiagramContext.tsx`. | ⏳ TODO — Implement debounced API calls for canvas state |
+| 12b | **Frontend-Backend DTO Mismatch** | The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading. | ⏳ TODO — Update `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
 
 ---
 
@@ -43,11 +42,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 
 | # | Issue | Details | Status |
 |---|---|---|---|
-| 13 | **Hardcoded `localhost` URLs in frontend** | `AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. Breaks in production. | ⏳ TODO — Use `import.meta.env.VITE_AUTH_URL` |
-| 14 | **Guest mode has no API guard** | When `isGuest = true`, `DiagramContext` will still attempt `GET /api/projects`, returning `401`. Needs explicit skip logic. | ⏳ TODO — Check `isGuest` before API calls |
-| 15 | **Logout doesn't clear local state** | After logout + page reload, cached project data from previous user could leak. Need to clear localStorage/state on logout. | ⏳ TODO — Clear cached state before redirect |
-| 16 | **Use constructor injection** | Replace `@Autowired` field injection with constructor injection across all classes. Easier to test, prevents circular dependencies. Consistent with `arqulat_auth` TODO. | ⏳ TODO |
-| 17 | **No duplicate name protection** | Users can create multiple projects or files with identical (or empty) names. No uniqueness constraint on `(user_id, name)`. | ⏳ Low priority — enforce non-blank via validation (see #2) |
+| 13 | **Use constructor injection** | Replace `@Autowired` field injection with constructor injection across all classes. Easier to test, prevents circular dependencies. Consistent with `arqulat_auth` TODO. | ⏳ TODO |
+| 14 | **No duplicate name protection** | Users can create multiple projects or files with identical (or empty) names. No uniqueness constraint on `(user_id, name)`. | ⏳ Low priority — enforce non-blank via validation (see #2) |
 
 ---
 
