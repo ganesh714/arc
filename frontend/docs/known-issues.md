@@ -33,7 +33,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 
 | # | Issue | Details | Status |
 |---|---|---|---|
-| 5 | **Missing loading skeletons** | While projects and diagrams are loading from the backend, the UI shows an abrupt empty state. | ⏳ TODO — Add loading spinners or skeleton UI components |
+| 5 | ~~**Missing loading skeletons**~~ | ~~While projects and diagrams are loading from the backend, the UI shows an abrupt empty state.~~ | ✅ Resolved — Added `Skeleton.tsx` and integrated it into the Dashboard |
 
 ---
 
@@ -45,3 +45,4 @@ Tracked issues organized by severity specifically for the React frontend applica
 | 2026-06-17 | 2 | Replaced hardcoded `localhost:8080` and `localhost:8081` URLs with Vite `.env` variables using `import.meta.env`. |
 | 2026-06-17 | 3 | Used `useAuth` hook in `DiagramContext` to inject `isGuest` API guard before saving. |
 | 2026-06-17 | 4 | Cleared `localStorage` and React context states in `AuthContext.logout()` before redirecting. |
+| 2026-06-17 | 5 | Created `Skeleton.tsx` and implemented `isLoadingProjects` in `DiagramContext` to show loading states on the Dashboard. |

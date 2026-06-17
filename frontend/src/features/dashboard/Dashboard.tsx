@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './Dashboard.module.css';
 
 interface DashboardProps {
@@ -25,7 +26,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onEnterWorkspace }: DashboardProps) {
-  const { projects, addProject, switchProject } = useDiagram();
+  const { projects, addProject, switchProject, isLoadingProjects } = useDiagram();
   const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
@@ -161,7 +162,19 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
 
 
         {/* Main Grid */}
-        {filteredProjects.length > 0 ? (
+        {isLoadingProjects ? (
+          <div className={styles.grid}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className={styles.card} style={{ pointerEvents: 'none', border: 'none' }}>
+                <Skeleton height="140px" borderRadius="12px 12px 0 0" />
+                <div style={{ padding: '16px' }}>
+                  <Skeleton height="20px" width="70%" className="mb-2" />
+                  <Skeleton height="14px" width="40%" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProjects.length > 0 ? (
           <div className={styles.grid}>
             {filteredProjects.sort((a, b) => b.updatedAt - a.updatedAt).map((project) => (
               <div 

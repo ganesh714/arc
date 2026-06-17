@@ -67,6 +67,7 @@ interface DiagramContextType {
   switchFile: (id: string) => void;
   addFile: (projectId: string, name: string, backgroundColor?: string) => void;
   updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
+  isLoadingProjects: boolean;
   
   // Sidebar state
   isSidebarOpen: boolean;
@@ -179,6 +180,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [zoom, setZoom] = useState<number>(1.0);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
+
+  // Simulate network fetch for projects
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingProjects(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
   
   // History stack states
   const [past, setPast] = useState<DiagramNode[][]>([]);
@@ -1078,6 +1088,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       switchFile,
       addFile,
       updateCanvasConfig,
+      isLoadingProjects,
       
       // Sidebar
       isSidebarOpen,
