@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.arqulat.loom_backend.dto.ProjectRequests.CreateProjectRequest;
 import com.arqulat.loom_backend.dto.ProjectRequests.UpdateProjectRequest;
+import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
 import com.arqulat.loom_backend.dto.Responses.ProjectSummaryDTO;
 import com.arqulat.loom_backend.model.DiagramFile;
 import com.arqulat.loom_backend.model.Project;
@@ -82,11 +83,26 @@ public class ProjectService {
     }
 
     private ProjectSummaryDTO mapToSummary(Project project) {
+        List<FileSummaryDTO> fileSummaries = project.getFiles().stream().map(file -> {
+            int nodeCount = 0;
+            if (file.getNodes() != null && file.getNodes().isArray()) {
+                nodeCount = file.getNodes().size();
+            }
+            return FileSummaryDTO.builder()
+                    .id(file.getId())
+                    .name(file.getName())
+                    .canvasBgColor(file.getCanvasBgColor())
+                    .nodeCount(nodeCount)
+                    .updatedAt(file.getUpdatedAt() != null ? file.getUpdatedAt().toInstant(ZoneOffset.UTC).toEpochMilli() : System.currentTimeMillis())
+                    .build();
+        }).collect(Collectors.toList());
+
         return ProjectSummaryDTO.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .category(project.getCategory())
                 .fileCount(project.getFiles().size())
+                .files(fileSummaries)
                 .updatedAt(project.getUpdatedAt() != null ? project.getUpdatedAt().toInstant(ZoneOffset.UTC).toEpochMilli() : System.currentTimeMillis())
                 .build();
     }

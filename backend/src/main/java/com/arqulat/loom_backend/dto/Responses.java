@@ -18,6 +18,7 @@ public class Responses {
         private String name;
         private String category;
         private int fileCount;
+        private java.util.List<FileSummaryDTO> files;
         private long updatedAt;
     }
 

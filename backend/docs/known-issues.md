@@ -34,7 +34,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 10 | ~~**No database index on `user_id`**~~ | ~~`ProjectRepository.findByUserIdOrderByUpdatedAtDesc()` does a full table scan without an index on `user_id`. Will slow down as user/project count grows.~~ | ✅ Resolved — Added `@Index` on `projects.user_id` |
 | 11 | **`show-sql=true`** | Floods logs with SQL in production, potentially exposing data in query parameters. | ⏳ Dev only — disable for production |
 | 12 | ~~**Delete last file in project → frontend crash**~~ | ~~`DELETE /api/files/{fileId}` allows deleting the only file. Frontend's `switchProject` assumes `files[0]` exists and will crash on `undefined`.~~ | ✅ Resolved — Added backend guard to prevent deleting last file |
-| 12b | **Frontend-Backend DTO Mismatch** | The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading. | ⏳ TODO — Update `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
+| 12b | ~~**Frontend-Backend DTO Mismatch**~~ | ~~The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading.~~ | ✅ Resolved — Updated `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
 
 ---
 
@@ -63,4 +63,5 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 9 | Removed manual `setUpdatedAt()` calls in `FileService` to rely on Hibernate `@UpdateTimestamp` |
 | 2026-06-17 | 10 | Added database index on `projects.user_id` to optimize project lookups |
 | 2026-06-17 | 12 | Prevented deleting the last file in a project via `IllegalArgumentException` mapped to 400 Bad Request |
+| 2026-06-17 | 12b | Embedded `List<FileSummaryDTO> files` into `ProjectSummaryDTO` to eliminate frontend lazy-loading requirement |
 | | | |
