@@ -22,6 +22,8 @@ import com.arqulat.loom_backend.dto.Responses.FileDetailDTO;
 import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
 import com.arqulat.loom_backend.service.FileService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api")
 public class FileController {
@@ -37,7 +39,10 @@ public class FileController {
 
     @PostMapping("/projects/{projectId}/files")
     @ResponseStatus(HttpStatus.CREATED)
-    public FileSummaryDTO createFile(@PathVariable UUID projectId, @RequestBody CreateFileRequest request, Authentication authentication) {
+    public FileSummaryDTO createFile(
+            @PathVariable UUID projectId,
+            @Valid @RequestBody CreateFileRequest request,
+            Authentication authentication) {
         return fileService.createFile(projectId, (UUID) authentication.getPrincipal(), request);
     }
 
@@ -48,7 +53,10 @@ public class FileController {
     }
 
     @PutMapping("/files/{fileId}")
-    public FileDetailDTO updateFile(@PathVariable UUID fileId, @RequestBody UpdateFileRequest request, Authentication authentication) {
+    public FileDetailDTO updateFile(
+            @PathVariable UUID fileId,
+            @Valid @RequestBody UpdateFileRequest request,
+            Authentication authentication) {
         return fileService.updateFile(fileId, (UUID) authentication.getPrincipal(), request);
     }
 

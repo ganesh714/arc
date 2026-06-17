@@ -21,6 +21,8 @@ import com.arqulat.loom_backend.dto.ProjectRequests.UpdateProjectRequest;
 import com.arqulat.loom_backend.dto.Responses.ProjectSummaryDTO;
 import com.arqulat.loom_backend.service.ProjectService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
@@ -35,12 +37,17 @@ public class ProjectController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProjectSummaryDTO createProject(@RequestBody CreateProjectRequest request, Authentication authentication) {
+    public ProjectSummaryDTO createProject(
+            @Valid @RequestBody CreateProjectRequest request,
+            Authentication authentication) {
         return projectService.createProject((UUID) authentication.getPrincipal(), request);
     }
 
     @PutMapping("/{id}")
-    public ProjectSummaryDTO updateProject(@PathVariable UUID id, @RequestBody UpdateProjectRequest request, Authentication authentication) {
+    public ProjectSummaryDTO updateProject(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProjectRequest request,
+            Authentication authentication) {
         return projectService.updateProject(id, (UUID) authentication.getPrincipal(), request);
     }
 
