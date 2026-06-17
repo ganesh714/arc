@@ -41,4 +41,5 @@ Tracked issues organized by severity specifically for the React frontend applica
 
 | Date | Issue # | Action Taken |
 |---|---|---|
-| | | |
+| 2026-06-17 | 1 | Added `useDebounce` hook to `DiagramContext` to prevent DDOSing the backend on canvas drag. |
+| 2026-06-17 | 2 | Replaced hardcoded `localhost:8080` and `localhost:8081` URLs with Vite `.env` variables using `import.meta.env`. |
