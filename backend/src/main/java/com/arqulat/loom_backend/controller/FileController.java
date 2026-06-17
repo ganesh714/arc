@@ -32,29 +32,29 @@ public class FileController {
     // Project files nested route
     @GetMapping("/projects/{projectId}/files")
     public List<FileSummaryDTO> getProjectFiles(@PathVariable UUID projectId, Authentication authentication) {
-        return fileService.getProjectFiles(projectId, authentication.getName());
+        return fileService.getProjectFiles(projectId, (UUID) authentication.getPrincipal());
     }
 
     @PostMapping("/projects/{projectId}/files")
     @ResponseStatus(HttpStatus.CREATED)
     public FileSummaryDTO createFile(@PathVariable UUID projectId, @RequestBody CreateFileRequest request, Authentication authentication) {
-        return fileService.createFile(projectId, authentication.getName(), request);
+        return fileService.createFile(projectId, (UUID) authentication.getPrincipal(), request);
     }
 
     // Direct file routes
     @GetMapping("/files/{fileId}")
     public FileDetailDTO getFileDetail(@PathVariable UUID fileId, Authentication authentication) {
-        return fileService.getFileDetail(fileId, authentication.getName());
+        return fileService.getFileDetail(fileId, (UUID) authentication.getPrincipal());
     }
 
     @PutMapping("/files/{fileId}")
     public FileDetailDTO updateFile(@PathVariable UUID fileId, @RequestBody UpdateFileRequest request, Authentication authentication) {
-        return fileService.updateFile(fileId, authentication.getName(), request);
+        return fileService.updateFile(fileId, (UUID) authentication.getPrincipal(), request);
     }
 
     @DeleteMapping("/files/{fileId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable UUID fileId, Authentication authentication) {
-        fileService.deleteFile(fileId, authentication.getName());
+        fileService.deleteFile(fileId, (UUID) authentication.getPrincipal());
     }
 }

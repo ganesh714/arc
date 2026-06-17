@@ -31,21 +31,21 @@ public class FileService {
     private ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public List<FileSummaryDTO> getProjectFiles(UUID projectId, String userEmail) {
-        projectService.getProjectIfOwned(projectId, userEmail); // Ensure ownership
+    public List<FileSummaryDTO> getProjectFiles(UUID projectId, UUID userId) {
+        projectService.getProjectIfOwned(projectId, userId); // Ensure ownership
         List<DiagramFile> files = fileRepository.findByProjectIdOrderByUpdatedAtDesc(projectId);
         return files.stream().map(this::mapToSummary).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public FileDetailDTO getFileDetail(UUID fileId, String userEmail) {
-        DiagramFile file = getFileIfOwned(fileId, userEmail);
+    public FileDetailDTO getFileDetail(UUID fileId, UUID userId) {
+        DiagramFile file = getFileIfOwned(fileId, userId);
         return mapToDetail(file);
     }
 
     @Transactional
-    public FileSummaryDTO createFile(UUID projectId, String userEmail, CreateFileRequest request) {
-        Project project = projectService.getProjectIfOwned(projectId, userEmail);
+    public FileSummaryDTO createFile(UUID projectId, UUID userId, CreateFileRequest request) {
+        Project project = projectService.getProjectIfOwned(projectId, userId);
         DiagramFile file = DiagramFile.builder()
                 .name(request.getName())
                 .canvasBgColor(request.getBackgroundColor() != null ? request.getBackgroundColor() : "#0f0f0f")
@@ -60,8 +60,8 @@ public class FileService {
     }
 
     @Transactional
-    public FileDetailDTO updateFile(UUID fileId, String userEmail, UpdateFileRequest request) {
-        DiagramFile file = getFileIfOwned(fileId, userEmail);
+    public FileDetailDTO updateFile(UUID fileId, UUID userId, UpdateFileRequest request) {
+        DiagramFile file = getFileIfOwned(fileId, userId);
         if (request.getName() != null) {
             file.setName(request.getName());
         }
@@ -78,15 +78,15 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteFile(UUID fileId, String userEmail) {
-        DiagramFile file = getFileIfOwned(fileId, userEmail);
+    public void deleteFile(UUID fileId, UUID userId) {
+        DiagramFile file = getFileIfOwned(fileId, userId);
         fileRepository.delete(file);
     }
 
-    private DiagramFile getFileIfOwned(UUID fileId, String userEmail) {
+    private DiagramFile getFileIfOwned(UUID fileId, UUID userId) {
         DiagramFile file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
-        if (!file.getProject().getUserEmail().equals(userEmail)) {
+        if (!file.getProject().getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized to access this file");
         }
         return file;

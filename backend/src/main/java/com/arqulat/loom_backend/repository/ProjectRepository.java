@@ -10,5 +10,5 @@ import com.arqulat.loom_backend.model.Project;
 
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
-    List<Project> findByUserEmailOrderByUpdatedAtDesc(String userEmail);
+    List<Project> findByUserIdOrderByUpdatedAtDesc(UUID userId);
 }

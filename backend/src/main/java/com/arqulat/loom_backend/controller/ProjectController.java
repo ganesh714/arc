@@ -30,23 +30,23 @@ public class ProjectController {
 
     @GetMapping
     public List<ProjectSummaryDTO> getProjects(Authentication authentication) {
-        return projectService.getUserProjects(authentication.getName());
+        return projectService.getUserProjects((UUID) authentication.getPrincipal());
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProjectSummaryDTO createProject(@RequestBody CreateProjectRequest request, Authentication authentication) {
-        return projectService.createProject(authentication.getName(), request);
+        return projectService.createProject((UUID) authentication.getPrincipal(), request);
     }
 
     @PutMapping("/{id}")
     public ProjectSummaryDTO updateProject(@PathVariable UUID id, @RequestBody UpdateProjectRequest request, Authentication authentication) {
-        return projectService.updateProject(id, authentication.getName(), request);
+        return projectService.updateProject(id, (UUID) authentication.getPrincipal(), request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProject(@PathVariable UUID id, Authentication authentication) {
-        projectService.deleteProject(id, authentication.getName());
+        projectService.deleteProject(id, (UUID) authentication.getPrincipal());
     }
 }

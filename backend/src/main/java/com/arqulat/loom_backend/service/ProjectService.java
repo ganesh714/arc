@@ -27,17 +27,17 @@ public class ProjectService {
     private ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public List<ProjectSummaryDTO> getUserProjects(String userEmail) {
-        List<Project> projects = projectRepository.findByUserEmailOrderByUpdatedAtDesc(userEmail);
+    public List<ProjectSummaryDTO> getUserProjects(UUID userId) {
+        List<Project> projects = projectRepository.findByUserIdOrderByUpdatedAtDesc(userId);
         return projects.stream().map(this::mapToSummary).collect(Collectors.toList());
     }
 
     @Transactional
-    public ProjectSummaryDTO createProject(String userEmail, CreateProjectRequest request) {
+    public ProjectSummaryDTO createProject(UUID userId, CreateProjectRequest request) {
         Project project = Project.builder()
                 .name(request.getName())
                 .category(request.getCategory() != null ? request.getCategory() : "Loom Diagrams")
-                .userEmail(userEmail)
+                .userId(userId)
                 .build();
 
         DiagramFile initialFile = DiagramFile.builder()
@@ -54,8 +54,8 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectSummaryDTO updateProject(UUID projectId, String userEmail, UpdateProjectRequest request) {
-        Project project = getProjectIfOwned(projectId, userEmail);
+    public ProjectSummaryDTO updateProject(UUID projectId, UUID userId, UpdateProjectRequest request) {
+        Project project = getProjectIfOwned(projectId, userId);
         if (request.getName() != null) {
             project.setName(request.getName());
         }
@@ -67,15 +67,15 @@ public class ProjectService {
     }
 
     @Transactional
-    public void deleteProject(UUID projectId, String userEmail) {
-        Project project = getProjectIfOwned(projectId, userEmail);
+    public void deleteProject(UUID projectId, UUID userId) {
+        Project project = getProjectIfOwned(projectId, userId);
         projectRepository.delete(project);
     }
 
-    public Project getProjectIfOwned(UUID projectId, String userEmail) {
+    public Project getProjectIfOwned(UUID projectId, UUID userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-        if (!project.getUserEmail().equals(userEmail)) {
+        if (!project.getUserId().equals(userId)) {
             throw new RuntimeException("Unauthorized to access this project");
         }
         return project;

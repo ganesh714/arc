@@ -30,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String jwtToken = null;
-        String userEmail = null;
+        java.util.UUID userId = null;
 
         if (request.getCookies() != null) {
             Optional<Cookie> authCookie = Arrays.stream(request.getCookies())
@@ -41,8 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 jwtToken = authCookie.get().getValue();
                 try {
                     if (jwtService.isTokenValid(jwtToken)) {
-                        userEmail = jwtService.extractUserName(jwtToken);
-                        log.debug("Valid JWT found for user: {}", userEmail);
+                        userId = jwtService.extractUserId(jwtToken);
+                        log.debug("Valid JWT found for user ID: {}", userId);
                     } else {
                         log.warn("JWT is invalid or blacklisted");
                     }
@@ -52,10 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // We just set the principal as the userEmail string. No authorities needed.
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // We set the principal as the userId UUID object.
             UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
-                    userEmail, null, java.util.Collections.emptyList());
+                    userId, null, java.util.Collections.emptyList());
             token.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(token);
         }

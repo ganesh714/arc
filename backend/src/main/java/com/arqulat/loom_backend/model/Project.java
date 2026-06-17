@@ -39,8 +39,8 @@ public class Project {
     @Column(length = 100)
     private String category;
 
-    @Column(name = "user_email", nullable = false)
-    private String userEmail;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

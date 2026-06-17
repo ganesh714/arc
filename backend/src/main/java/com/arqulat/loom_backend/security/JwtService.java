@@ -44,6 +44,11 @@ public class JwtService {
         return extractClaims(jwtToken, Claims::getSubject);
     }
 
+    public java.util.UUID extractUserId(String jwtToken) {
+        String uidStr = extractClaims(jwtToken, claims -> claims.get("uid", String.class));
+        return uidStr != null ? java.util.UUID.fromString(uidStr) : null;
+    }
+
     public String extractJti(String jwtToken) {
         return extractClaims(jwtToken, Claims::getId);
     }
