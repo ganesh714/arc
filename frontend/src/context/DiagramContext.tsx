@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from './AuthContext';
 
 export interface CanvasConfig {
   backgroundColor: string;
@@ -169,6 +170,7 @@ const initialProjects: WorkspaceProject[] = [
 ];
 
 export function DiagramProvider({ children }: { children: ReactNode }) {
+  const { isGuest } = useAuth();
   const [projects, setProjects] = useState<WorkspaceProject[]>(initialProjects);
   const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
   const [activeFileId, setActiveFileId] = useState<string>('file-1');
@@ -244,6 +246,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     // This prevents saving on project switch unless it's an actual node change
     if (!activeFileId || debouncedNodes.length === 0) return;
 
+    // Guest Mode API Guard (Resolves Issue #3)
+    if (isGuest) {
+      console.log(`[Guest Mode] Skipping backend sync for file: ${activeFileId}`);
+      return;
+    }
+
     const autoSave = async () => {
       try {
         console.log(`[Auto-Save] Saving ${debouncedNodes.length} nodes to backend for file: ${activeFileId}...`);
@@ -267,7 +275,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     };
 
     autoSave();
-  }, [debouncedNodes, activeFileId]);
+  }, [debouncedNodes, activeFileId, isGuest]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
