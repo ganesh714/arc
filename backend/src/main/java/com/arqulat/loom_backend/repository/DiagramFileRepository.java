@@ -11,4 +11,6 @@ import com.arqulat.loom_backend.model.DiagramFile;
 @Repository
 public interface DiagramFileRepository extends JpaRepository<DiagramFile, UUID> {
     List<DiagramFile> findByProjectIdOrderByUpdatedAtDesc(UUID projectId);
+    
+    boolean existsByProjectIdAndName(UUID projectId, String name);
 }

@@ -43,7 +43,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | # | Issue | Details | Status |
 |---|---|---|---|
 | 13 | **Use constructor injection** | Replace `@Autowired` field injection with constructor injection across all classes. Easier to test, prevents circular dependencies. Consistent with `arqulat_auth` TODO. | ⏳ TODO |
-| 14 | **No duplicate name protection** | Users can create multiple projects or files with identical (or empty) names. No uniqueness constraint on `(user_id, name)`. | ⏳ Low priority — enforce non-blank via validation (see #2) |
+| 14 | ~~**No duplicate name protection**~~ | ~~Users can create multiple projects or files with identical (or empty) names. No uniqueness constraint on `(user_id, name)`.~~ | ✅ Resolved — Added `DuplicateResourceException` and `existsBy*` repository checks |
 
 ---
 
@@ -64,4 +64,5 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 10 | Added database index on `projects.user_id` to optimize project lookups |
 | 2026-06-17 | 12 | Prevented deleting the last file in a project via `IllegalArgumentException` mapped to 400 Bad Request |
 | 2026-06-17 | 12b | Embedded `List<FileSummaryDTO> files` into `ProjectSummaryDTO` to eliminate frontend lazy-loading requirement |
+| 2026-06-17 | 14 | Added `DuplicateResourceException` and repository `existsBy*` checks to prevent duplicate project and file names |
 | | | |

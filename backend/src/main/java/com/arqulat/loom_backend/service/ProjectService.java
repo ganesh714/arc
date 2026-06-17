@@ -35,6 +35,10 @@ public class ProjectService {
 
     @Transactional
     public ProjectSummaryDTO createProject(UUID userId, CreateProjectRequest request) {
+        if (projectRepository.existsByUserIdAndName(userId, request.getName())) {
+            throw new com.arqulat.loom_backend.exception.DuplicateResourceException("A project with this name already exists");
+        }
+        
         Project project = Project.builder()
                 .name(request.getName())
                 .category(request.getCategory() != null ? request.getCategory() : "Loom Diagrams")
@@ -57,7 +61,10 @@ public class ProjectService {
     @Transactional
     public ProjectSummaryDTO updateProject(UUID projectId, UUID userId, UpdateProjectRequest request) {
         Project project = getProjectIfOwned(projectId, userId);
-        if (request.getName() != null) {
+        if (request.getName() != null && !request.getName().equals(project.getName())) {
+            if (projectRepository.existsByUserIdAndName(userId, request.getName())) {
+                throw new com.arqulat.loom_backend.exception.DuplicateResourceException("A project with this name already exists");
+            }
             project.setName(request.getName());
         }
         if (request.getCategory() != null) {

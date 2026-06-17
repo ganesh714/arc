@@ -46,6 +46,11 @@ public class FileService {
     @Transactional
     public FileSummaryDTO createFile(UUID projectId, UUID userId, CreateFileRequest request) {
         Project project = projectService.getProjectIfOwned(projectId, userId);
+        
+        if (fileRepository.existsByProjectIdAndName(projectId, request.getName())) {
+            throw new com.arqulat.loom_backend.exception.DuplicateResourceException("A file with this name already exists in the project");
+        }
+        
         DiagramFile file = DiagramFile.builder()
                 .name(request.getName())
                 .canvasBgColor(request.getBackgroundColor() != null ? request.getBackgroundColor() : "#0f0f0f")
@@ -60,7 +65,10 @@ public class FileService {
     @Transactional
     public FileDetailDTO updateFile(UUID fileId, UUID userId, UpdateFileRequest request) {
         DiagramFile file = getFileIfOwned(fileId, userId);
-        if (request.getName() != null) {
+        if (request.getName() != null && !request.getName().equals(file.getName())) {
+            if (fileRepository.existsByProjectIdAndName(file.getProject().getId(), request.getName())) {
+                throw new com.arqulat.loom_backend.exception.DuplicateResourceException("A file with this name already exists in the project");
+            }
             file.setName(request.getName());
         }
         if (request.getCanvasBgColor() != null) {
