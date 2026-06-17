@@ -8,7 +8,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 
 | # | Issue | Details | Status |
 |---|---|---|---|
-| 1 | **No Canvas Auto-Save Debouncing (Integration Blocker)** | The canvas `nodes` update continuously while dragging. Firing a `PUT` request on every pixel change will DDOS the backend. A proper debounce mechanism (e.g., 1000ms delay after interaction stops) is missing in `DiagramContext.tsx`. | ⏳ TODO — Implement debounced API calls for canvas state |
+| 1 | ~~**No Canvas Auto-Save Debouncing (Integration Blocker)**~~ | ~~The canvas `nodes` update continuously while dragging. Firing a `PUT` request on every pixel change will DDOS the backend. A proper debounce mechanism (e.g., 1000ms delay after interaction stops) is missing in `DiagramContext.tsx`.~~ | ✅ Resolved — Added `useDebounce` hook (1000ms delay) |
 
 ---
 

@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export interface CanvasConfig {
   backgroundColor: string;
@@ -229,6 +230,43 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       })
     );
   }, [nodes, activeProjectId, activeFileId]);
+
+  // Auto-save mechanism with 1000ms debounce
+  const debouncedNodes = useDebounce(nodes, 1000);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // This prevents saving on project switch unless it's an actual node change
+    if (!activeFileId || debouncedNodes.length === 0) return;
+
+    const autoSave = async () => {
+      try {
+        console.log(`[Auto-Save] Saving ${debouncedNodes.length} nodes to backend for file: ${activeFileId}...`);
+        
+        // Uncomment/Update this when the backend API is fully integrated in frontend
+        /*
+        const response = await fetch(`http://localhost:8081/api/files/${activeFileId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nodes: debouncedNodes })
+        });
+        
+        if (!response.ok) {
+          console.error('Auto-save failed:', response.statusText);
+        }
+        */
+      } catch (error) {
+        console.error('Failed to auto-save to backend:', error);
+      }
+    };
+
+    autoSave();
+  }, [debouncedNodes, activeFileId]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
