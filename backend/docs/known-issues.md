@@ -20,6 +20,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | # | Issue | Details | Status |
 |---|---|---|---|
 | 5 | ~~**Old JWTs without `uid` claim silently fail**~~ | ~~We just added the `uid` custom claim to `arqulat_auth`. Users with pre-existing JWT cookies will have tokens missing this claim. `extractUserId()` returns `null`, causing a silent `401` with no explanation.~~ | ✅ Accepted Risk — Only dev team has accounts; they will manually re-login |
+| 5.1 | ~~**Database Query on Every API Request**~~ | ~~`isTokenBlacklisted` queried PostgreSQL on every authenticated request, exhausting connections under load.~~ | ✅ Resolved — Integrated Redis for caching blacklisted tokens |
 | 6 | **CSRF disabled with cookie-based auth** | Same risk as `arqulat_auth` (issue #5 there). Browsers automatically attach the `arqulat_session` cookie. `SameSite=Lax` mitigates on modern browsers, but isn't bulletproof for older browsers or subdomain attacks. | ⏳ Accepted risk — Same stance as `arqulat_auth` |
 | 7 | ~~**`ddl-auto=update` in production**~~ | ~~Hibernate auto-modifying the schema risks data corruption. Should switch to Flyway migrations and `ddl-auto=validate` before deploying, same as `arqulat_auth` already did.~~ | ✅ Resolved — Switched to Flyway migrations and `ddl-auto=validate` |
 
@@ -65,4 +66,4 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 12 | Prevented deleting the last file in a project via `IllegalArgumentException` mapped to 400 Bad Request |
 | 2026-06-17 | 12b | Embedded `List<FileSummaryDTO> files` into `ProjectSummaryDTO` to eliminate frontend lazy-loading requirement |
 | 2026-06-17 | 14 | Added `DuplicateResourceException` and repository `existsBy*` checks to prevent duplicate project and file names |
-| | | |
+| 2026-06-17 | 5.1 | Integrated Redis caching for the JWT blacklist to eliminate the synchronous database query bottleneck on every API request. |
