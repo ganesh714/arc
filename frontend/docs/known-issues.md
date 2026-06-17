@@ -25,7 +25,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 | # | Issue | Details | Status |
 |---|---|---|---|
 | 3 | ~~**Guest mode has no API guard**~~ | ~~When `isGuest = true`, `DiagramContext` will still attempt `GET /api/projects` after integration, returning `401`. The context needs explicit logic to skip network requests when in guest mode.~~ | ✅ Resolved — Added `isGuest` guard to `DiagramContext` |
-| 4 | **Logout doesn't clear local state** | After logout + page reload, cached project data or context state from the previous user could leak. Need to clear localStorage and reset state on logout. | ⏳ TODO — Clear cached state before redirecting in `AuthContext.logout()` |
+| 4 | ~~**Logout doesn't clear local state**~~ | ~~After logout + page reload, cached project data or context state from the previous user could leak. Need to clear localStorage and reset state on logout.~~ | ✅ Resolved — `AuthContext.logout()` clears local state and `localStorage` before redirecting |
 
 ---
 
@@ -44,3 +44,4 @@ Tracked issues organized by severity specifically for the React frontend applica
 | 2026-06-17 | 1 | Added `useDebounce` hook to `DiagramContext` to prevent DDOSing the backend on canvas drag. |
 | 2026-06-17 | 2 | Replaced hardcoded `localhost:8080` and `localhost:8081` URLs with Vite `.env` variables using `import.meta.env`. |
 | 2026-06-17 | 3 | Used `useAuth` hook in `DiagramContext` to inject `isGuest` API guard before saving. |
+| 2026-06-17 | 4 | Cleared `localStorage` and React context states in `AuthContext.logout()` before redirecting. |

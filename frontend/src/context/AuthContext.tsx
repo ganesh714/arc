@@ -81,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout failed", e);
     }
     
+    // Issue #4: Clear cached state before redirecting
+    setUser(null);
+    setIsGuest(false);
+    localStorage.clear();
+    
     // Redirect to home or force reload
     window.location.href = '/';
   };
