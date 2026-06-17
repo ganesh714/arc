@@ -9,6 +9,7 @@ import { Canvas } from '@/features/diagram/components/Canvas';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/Dashboard';
 import { useAuth } from '@/context/AuthContext';
+import { Loader } from '@/components/ui/Loader';
 
 type AppView = 'landing' | 'dashboard' | 'workspace';
 
@@ -30,7 +31,7 @@ function MainAppContent() {
   if (isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-[#08090d]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0c8ce9]"></div>
+        <Loader size="lg" text="Authenticating..." />
       </div>
     );
   }
