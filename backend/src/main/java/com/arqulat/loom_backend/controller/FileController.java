@@ -1,0 +1,60 @@
+package com.arqulat.loom_backend.controller;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.arqulat.loom_backend.dto.FileRequests.CreateFileRequest;
+import com.arqulat.loom_backend.dto.FileRequests.UpdateFileRequest;
+import com.arqulat.loom_backend.dto.Responses.FileDetailDTO;
+import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
+import com.arqulat.loom_backend.service.FileService;
+
+@RestController
+@RequestMapping("/api")
+public class FileController {
+
+    @Autowired
+    private FileService fileService;
+
+    // Project files nested route
+    @GetMapping("/projects/{projectId}/files")
+    public List<FileSummaryDTO> getProjectFiles(@PathVariable UUID projectId, Authentication authentication) {
+        return fileService.getProjectFiles(projectId, authentication.getName());
+    }
+
+    @PostMapping("/projects/{projectId}/files")
+    @ResponseStatus(HttpStatus.CREATED)
+    public FileSummaryDTO createFile(@PathVariable UUID projectId, @RequestBody CreateFileRequest request, Authentication authentication) {
+        return fileService.createFile(projectId, authentication.getName(), request);
+    }
+
+    // Direct file routes
+    @GetMapping("/files/{fileId}")
+    public FileDetailDTO getFileDetail(@PathVariable UUID fileId, Authentication authentication) {
+        return fileService.getFileDetail(fileId, authentication.getName());
+    }
+
+    @PutMapping("/files/{fileId}")
+    public FileDetailDTO updateFile(@PathVariable UUID fileId, @RequestBody UpdateFileRequest request, Authentication authentication) {
+        return fileService.updateFile(fileId, authentication.getName(), request);
+    }
+
+    @DeleteMapping("/files/{fileId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFile(@PathVariable UUID fileId, Authentication authentication) {
+        fileService.deleteFile(fileId, authentication.getName());
+    }
+}
