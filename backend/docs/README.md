@@ -14,6 +14,7 @@
 | [API Reference](./api/endpoints.md) | Every endpoint with request/response schemas |
 | [Database Schema](./database/schema.md) | JSONB column structure and table relations |
 | [Security Architecture](./security/architecture.md) | Flawless Cross-Service JWT validation strategies |
+| [Known Issues & TODOs](./known-issues.md) | Tracked issues organized by severity |
 
 ---
 
