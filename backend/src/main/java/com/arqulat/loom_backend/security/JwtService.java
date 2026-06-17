@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.arqulat.loom_backend.repository.BlacklistedTokenRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -23,7 +23,7 @@ public class JwtService {
     private String secretKey;
 
     @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
+    private JdbcTemplate jdbcTemplate;
 
     private SecretKey getSignKey() {
         byte[] keyBytes = Base64.getDecoder().decode(secretKey);
@@ -65,7 +65,13 @@ public class JwtService {
     public boolean isTokenBlacklisted(String jwtToken) {
         String jti = extractJti(jwtToken);
         if (jti == null) return false;
-        return blacklistedTokenRepository.existsByJti(jti);
+        
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM public.blacklisted_tokens WHERE jti = ?", 
+                Integer.class, 
+                jti
+        );
+        return count != null && count > 0;
     }
 
     public boolean isTokenValid(String token) {
