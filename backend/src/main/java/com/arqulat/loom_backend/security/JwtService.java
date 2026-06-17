@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import java.util.concurrent.TimeUnit;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -24,6 +26,9 @@ public class JwtService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     private SecretKey getSignKey() {
         byte[] keyBytes = Base64.getDecoder().decode(secretKey);
@@ -66,12 +71,32 @@ public class JwtService {
         String jti = extractJti(jwtToken);
         if (jti == null) return false;
         
+        // 1. Check Redis (fast path)
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey("blacklist:jti:" + jti))) {
+            return true;
+        }
+        
+        // 2. Fallback to DB (slow path)
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(1) FROM public.blacklisted_tokens WHERE jti = ?", 
                 Integer.class, 
                 jti
         );
-        return count != null && count > 0;
+        boolean isBlacklistedInDb = count != null && count > 0;
+        
+        if (isBlacklistedInDb) {
+            // Backfill Redis
+            Date expiration = extractExpiration(jwtToken);
+            if (expiration != null) {
+                long ttl = expiration.getTime() - System.currentTimeMillis();
+                if (ttl > 0) {
+                    stringRedisTemplate.opsForValue().set("blacklist:jti:" + jti, "true", ttl, TimeUnit.MILLISECONDS);
+                }
+            }
+            return true;
+        }
+        
+        return false;
     }
 
     public boolean isTokenValid(String token) {
