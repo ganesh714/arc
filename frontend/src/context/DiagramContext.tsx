@@ -289,14 +289,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
     // Guest Mode API Guard (Resolves Issue #3)
     if (isGuest) {
-      console.log(`[Guest Mode] Skipping backend sync for file: ${activeFileId}`);
+      // Guest mode - skip saving to backend
       return;
     }
 
     const autoSave = async () => {
       try {
-        console.log(`[Auto-Save] Saving ${debouncedNodes.length} nodes to backend for file: ${activeFileId}...`);
-        
         // Uncomment/Update this when the backend API is fully integrated in frontend
         /*
         const loomApiUrl = import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081';

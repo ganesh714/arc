@@ -72,8 +72,6 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     client.onConnect = () => {
       setIsConnected(true);
-      // keep logs non-verbose to avoid leaking internal IDs in production
-      console.debug(`[Collaboration] Connected to WebSocket`);
 
       client.subscribe(`/topic/files/${activeFileId}`, (message) => {
         if (!message.body) return;

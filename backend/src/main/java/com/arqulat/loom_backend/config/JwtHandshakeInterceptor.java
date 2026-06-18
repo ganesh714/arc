@@ -31,7 +31,9 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                 }
             }
         }
-        return true;
+        
+        // Reject the HTTP upgrade if no valid session cookie is present
+        return false;
     }
 
     @Override
