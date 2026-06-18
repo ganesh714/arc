@@ -295,7 +295,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
     const autoSave = async () => {
       try {
-        const loomApiUrl = import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081';
+        const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
         const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

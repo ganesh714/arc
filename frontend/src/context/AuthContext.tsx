@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fetchUser = async () => {
       try {
         // Pointing to the arqulat_auth service
-        const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+        const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
         const response = await fetch(`${authApiUrl}/api/v1/user/me`, {
           credentials: 'include' // Important for session cookies
         });
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = () => {
     // Redirect to the arqulat_auth OAuth2 endpoint
-    const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+    const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
     window.location.href = `${authApiUrl}/oauth2/authorization/google`;
   };
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       // Call arqulat_auth logout endpoint to blacklist token and clear cookie
-      const authApiUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080';
+      const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
       await fetch(`${authApiUrl}/api/v1/user/logout`, {
         method: 'POST',
         credentials: 'include'
