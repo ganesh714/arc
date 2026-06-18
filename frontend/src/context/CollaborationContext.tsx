@@ -72,27 +72,65 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     client.onConnect = () => {
       setIsConnected(true);
-      console.log(`[Collaboration] Connected to WebSocket, subscribing to file ${activeFileId}`);
-      
+      // keep logs non-verbose to avoid leaking internal IDs in production
+      console.debug(`[Collaboration] Connected to WebSocket`);
+
       client.subscribe(`/topic/files/${activeFileId}`, (message) => {
-        if (message.body) {
-          const syncMsg: SyncMessage = JSON.parse(message.body);
-          
-          if (syncMsg.senderId === user.id) return; // Ignore own messages
-          
-          if (syncMsg.type === 'CURSOR_MOVED') {
-            setRemoteCursors(prev => ({
-              ...prev,
-              [syncMsg.senderId]: {
-                x: syncMsg.payload.x,
-                y: syncMsg.payload.y,
-                name: syncMsg.senderName,
-                lastUpdated: Date.now()
-              }
-            }));
-          } else {
-            setIncomingActions(prev => [...prev, syncMsg]);
+        if (!message.body) return;
+
+        let syncMsg: SyncMessage | null = null;
+
+        try {
+          // quick defensive size check (avoid parsing huge payloads)
+          if (typeof message.body === 'string' && message.body.length > 200_000) {
+            console.warn('[Collaboration] Dropping oversized message');
+            return;
           }
+
+          const parsed = JSON.parse(message.body);
+
+          if (!parsed || typeof parsed !== 'object') {
+            console.warn('[Collaboration] Ignoring non-object message');
+            return;
+          }
+
+          const { type, fileId: msgFileId, senderId, senderName, payload } = parsed as any;
+
+          if (typeof type !== 'string' || typeof msgFileId !== 'string' || typeof senderId !== 'string') {
+            console.warn('[Collaboration] Ignoring malformed message', parsed);
+            return;
+          }
+
+          // ignore messages intended for other files
+          if (msgFileId !== activeFileId) return;
+
+          syncMsg = {
+            type,
+            fileId: msgFileId,
+            senderId,
+            senderName: senderName || 'Unknown',
+            payload
+          };
+        } catch (e) {
+          console.warn('[Collaboration] Failed to parse incoming message', e);
+          return;
+        }
+
+        if (!syncMsg) return;
+        if (syncMsg.senderId === user.id) return; // Ignore own messages
+
+        if (syncMsg.type === 'CURSOR_MOVED') {
+          setRemoteCursors(prev => ({
+            ...prev,
+            [syncMsg!.senderId]: {
+              x: syncMsg!.payload.x,
+              y: syncMsg!.payload.y,
+              name: syncMsg!.senderName,
+              lastUpdated: Date.now()
+            }
+          }));
+        } else {
+          setIncomingActions(prev => [...prev, syncMsg]);
         }
       });
     };
