@@ -23,6 +23,9 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 5.1 | ~~**Database Query on Every API Request**~~ | ~~`isTokenBlacklisted` queried PostgreSQL on every authenticated request, exhausting connections under load.~~ | ✅ Resolved — Integrated Redis for caching blacklisted tokens |
 | 6 | **CSRF disabled with cookie-based auth** | Same risk as `arqulat_auth` (issue #5 there). Browsers automatically attach the `arqulat_session` cookie. `SameSite=Lax` mitigates on modern browsers, but isn't bulletproof for older browsers or subdomain attacks. | ⏳ Accepted risk — Same stance as `arqulat_auth` |
 | 7 | ~~**`ddl-auto=update` in production**~~ | ~~Hibernate auto-modifying the schema risks data corruption. Should switch to Flyway migrations and `ddl-auto=validate` before deploying, same as `arqulat_auth` already did.~~ | ✅ Resolved — Switched to Flyway migrations and `ddl-auto=validate` |
+| 15 | **Unverified STOMP Sync Broadcast** | `CollaborationController.syncAction()` broadcasts any incoming STOMP message to `/topic/files/{fileId}` without verifying if the sender owns or is authorized to access that file. | ⏳ TODO |
+| 16 | **Fragile WebSocket Auth Extraction** | `StompChannelInterceptor` relies on manual cookie string splitting or `Authorization` header parsing, which the frontend does not explicitly send over SockJS. | ⏳ TODO |
+| 17 | **No Resilience in JWT Blacklist Check** | `JwtService.isTokenBlacklisted()` calls Redis `hasKey()` with no try/catch fallback. Redis downtime will break auth validation entirely. | ⏳ TODO |
 
 ---
 
@@ -36,6 +39,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 11 | **`show-sql=true`** | Floods logs with SQL in production, potentially exposing data in query parameters. | ⏳ Dev only — disable for production |
 | 12 | ~~**Delete last file in project → frontend crash**~~ | ~~`DELETE /api/files/{fileId}` allows deleting the only file. Frontend's `switchProject` assumes `files[0]` exists and will crash on `undefined`.~~ | ✅ Resolved — Added backend guard to prevent deleting last file |
 | 12b | ~~**Frontend-Backend DTO Mismatch**~~ | ~~The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading.~~ | ✅ Resolved — Updated `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
+| 18 | **No DB Unique Constraint for Names** | Duplicate project/file name protection was added at the application layer, but there is no DB unique constraint/index, allowing race-condition duplicates. | ⏳ TODO |
+| 19 | **Hardcoded Single WebSocket Origin** | `WebSocketConfig` only allows a single `frontendUrl` origin. If the frontend is served from another valid host/port, the realtime connection will fail. | ⏳ TODO |
 
 ---
 
