@@ -285,7 +285,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
 
     // This prevents saving on project switch unless it's an actual node change
-    if (!activeFileId || debouncedNodes.length === 0) return;
+    if (!activeFileId) return;
 
     // Guest Mode API Guard (Resolves Issue #3)
     if (isGuest) {

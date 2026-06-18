@@ -18,8 +18,8 @@ Tracked issues organized by severity specifically for the React frontend applica
 |---|---|---|---|
 | High 1 | ~~**Hardcoded `localhost` URLs**~~ | ~~`AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. This will break in production where the API is hosted at `https://accounts.arqulat.com`.~~ | ✅ Resolved — Extracted API URLs to `.env` using `import.meta.env` |
 | High 2 | ~~**Lack of Real-time Collaboration**~~ | ~~Saving is currently done via a debounced `PUT` request after the user stops interacting. This prevents multiplayer features and causes "Last Writer Wins" data loss if multiple users or tabs edit the same diagram simultaneously.~~ | ✅ Resolved — Migrated to WebSocket architecture (STOMP) with Action-Based Syncing and live cursors |
-| High 3 | **Brittle WebSocket Authentication** | `CollaborationContext` uses `SockJS` without explicitly sending credentials (`withCredentials`) or STOMP auth headers, which can fail cross-origin WebSocket handshakes. | ⏳ TODO |
-| High 4 | **`DiagramContext` auto-save skips empty state** | Auto-save skips when `debouncedNodes.length === 0`. If a user clears the canvas completely, that empty state is never persisted. | ⏳ TODO |
+| High 3 | ~~**Brittle WebSocket Authentication**~~ | ~~`CollaborationContext` uses `SockJS` without explicitly sending credentials (`withCredentials`) or STOMP auth headers, which can fail cross-origin WebSocket handshakes.~~ | ✅ Resolved — Added `withCredentials: true` to SockJS options |
+| High 4 | ~~**`DiagramContext` auto-save skips empty state**~~ | ~~Auto-save skips when `debouncedNodes.length === 0`. If a user clears the canvas completely, that empty state is never persisted.~~ | ✅ Resolved — Removed empty state check to allow persisting cleared canvas |
 
 ---
 
@@ -53,3 +53,5 @@ Tracked issues organized by severity specifically for the React frontend applica
 | 2026-06-17 | Med 2 | Cleared `localStorage` and React context states in `AuthContext.logout()` before redirecting. |
 | 2026-06-17 | Low 1 | Created `Skeleton.tsx` and implemented `isLoadingProjects` in `DiagramContext` to show loading states on the Dashboard. |
 | 2026-06-18 | High 2 | Implemented real-time collaboration using `@stomp/stompjs`. Created `CollaborationContext` to broadcast granular node edits and throttled live cursor movements (`RemoteCursors.tsx`). |
+| 2026-06-18 | High 3 | Added `withCredentials: true` to `SockJS` options in `CollaborationContext` to fix cross-origin WebSocket authentication. |
+| 2026-06-18 | High 4 | Removed `debouncedNodes.length === 0` check in `DiagramContext` auto-save to ensure an empty canvas state is persisted. |
