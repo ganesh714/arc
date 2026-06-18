@@ -19,6 +19,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private StompChannelInterceptor stompChannelInterceptor;
 
+    @Autowired
+    private JwtHandshakeInterceptor jwtHandshakeInterceptor;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
@@ -29,6 +32,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOrigins(frontendUrl)
+                .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
     }
 

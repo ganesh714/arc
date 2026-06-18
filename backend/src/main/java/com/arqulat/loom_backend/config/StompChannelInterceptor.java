@@ -46,18 +46,10 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     }
 
     private String extractJwtFromAccessor(StompHeaderAccessor accessor) {
-        // Option 1: Native WebSocket headers (often passed via cookie header)
-        java.util.List<String> cookieHeaders = accessor.getNativeHeader("cookie");
-        if (cookieHeaders != null) {
-            for (String cookieHeader : cookieHeaders) {
-                String[] cookies = cookieHeader.split(";");
-                for (String cookie : cookies) {
-                    cookie = cookie.trim();
-                    if (cookie.startsWith("arqulat_session=")) {
-                        return cookie.substring("arqulat_session=".length());
-                    }
-                }
-            }
+        // Option 1: Extract JWT from WebSocket session attributes (populated by HandshakeInterceptor)
+        java.util.Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes != null && sessionAttributes.containsKey("jwt")) {
+            return (String) sessionAttributes.get("jwt");
         }
 
         // Option 2: Custom passed header (e.g., frontend passes it explicitly in STOMP headers)
