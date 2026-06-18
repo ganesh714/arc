@@ -17,7 +17,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 | # | Issue | Details | Status |
 |---|---|---|---|
 | 2 | ~~**Hardcoded `localhost` URLs**~~ | ~~`AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. This will break in production where the API is hosted at `https://accounts.arqulat.com`.~~ | ✅ Resolved — Extracted API URLs to `.env` using `import.meta.env` |
-| 6 | **Lack of Real-time Collaboration** | Saving is currently done via a debounced `PUT` request after the user stops interacting. This prevents multiplayer features and causes "Last Writer Wins" data loss if multiple users or tabs edit the same diagram simultaneously. | ⏳ TODO — Migrate to WebSocket architecture with CRDTs (e.g., Yjs) or Operational Transformation |
+| 6 | ~~**Lack of Real-time Collaboration**~~ | ~~Saving is currently done via a debounced `PUT` request after the user stops interacting. This prevents multiplayer features and causes "Last Writer Wins" data loss if multiple users or tabs edit the same diagram simultaneously.~~ | ✅ Resolved — Migrated to WebSocket architecture (STOMP) with Action-Based Syncing and live cursors |
 
 ---
 
@@ -47,3 +47,4 @@ Tracked issues organized by severity specifically for the React frontend applica
 | 2026-06-17 | 3 | Used `useAuth` hook in `DiagramContext` to inject `isGuest` API guard before saving. |
 | 2026-06-17 | 4 | Cleared `localStorage` and React context states in `AuthContext.logout()` before redirecting. |
 | 2026-06-17 | 5 | Created `Skeleton.tsx` and implemented `isLoadingProjects` in `DiagramContext` to show loading states on the Dashboard. |
+| 2026-06-18 | 6 | Implemented real-time collaboration using `@stomp/stompjs`. Created `CollaborationContext` to broadcast granular node edits and throttled live cursor movements (`RemoteCursors.tsx`). |
