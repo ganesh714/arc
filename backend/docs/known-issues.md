@@ -67,3 +67,4 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | 12b | Embedded `List<FileSummaryDTO> files` into `ProjectSummaryDTO` to eliminate frontend lazy-loading requirement |
 | 2026-06-17 | 14 | Added `DuplicateResourceException` and repository `existsBy*` checks to prevent duplicate project and file names |
 | 2026-06-17 | 5.1 | Integrated Redis caching for the JWT blacklist to eliminate the synchronous database query bottleneck on every API request. |
+| 2026-06-18 | — | Implemented real-time collaboration backend using Spring WebSockets (STOMP). Added `StompChannelInterceptor` to extract and validate `arqulat_session` cookie for WebSocket security. |
