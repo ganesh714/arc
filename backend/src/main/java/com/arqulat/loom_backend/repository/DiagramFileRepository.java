@@ -13,4 +13,6 @@ public interface DiagramFileRepository extends JpaRepository<DiagramFile, UUID> 
     List<DiagramFile> findByProjectIdOrderByUpdatedAtDesc(UUID projectId);
     
     boolean existsByProjectIdAndName(UUID projectId, String name);
+    
+    boolean existsByIdAndProjectUserId(UUID id, UUID userId);
 }

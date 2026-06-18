@@ -23,7 +23,7 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | High 2 | ~~**Database Query on Every API Request**~~ | ~~`isTokenBlacklisted` queried PostgreSQL on every authenticated request, exhausting connections under load.~~ | ✅ Resolved — Integrated Redis for caching blacklisted tokens |
 | High 3 | **CSRF disabled with cookie-based auth** | Same risk as `arqulat_auth` (issue #5 there). Browsers automatically attach the `arqulat_session` cookie. `SameSite=Lax` mitigates on modern browsers, but isn't bulletproof for older browsers or subdomain attacks. | ⏳ Accepted risk — Same stance as `arqulat_auth` |
 | High 4 | ~~**`ddl-auto=update` in production**~~ | ~~Hibernate auto-modifying the schema risks data corruption. Should switch to Flyway migrations and `ddl-auto=validate` before deploying, same as `arqulat_auth` already did.~~ | ✅ Resolved — Switched to Flyway migrations and `ddl-auto=validate` |
-| High 5 | **Unverified STOMP Sync Broadcast** | `CollaborationController.syncAction()` broadcasts any incoming STOMP message to `/topic/files/{fileId}` without verifying if the sender owns or is authorized to access that file. | ⏳ TODO |
+| High 5 | ~~**Unverified STOMP Sync Broadcast**~~ | ~~`CollaborationController.syncAction()` broadcasts any incoming STOMP message to `/topic/files/{fileId}` without verifying if the sender owns or is authorized to access that file.~~ | ✅ Resolved — Added file ownership checks in `CollaborationController` |
 | High 6 | **Fragile WebSocket Auth Extraction** | `StompChannelInterceptor` relies on manual cookie string splitting or `Authorization` header parsing, which the frontend does not explicitly send over SockJS. | ⏳ TODO |
 | High 7 | **No Resilience in JWT Blacklist Check** | `JwtService.isTokenBlacklisted()` calls Redis `hasKey()` with no try/catch fallback. Redis downtime will break auth validation entirely. | ⏳ TODO |
 
@@ -64,7 +64,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | Cri 4 | Added `GlobalExceptionHandler` and custom exceptions (`ResourceNotFoundException`, `UnauthorizedAccessException`) |
 | 2026-06-17 | Cri 2 | Added Jakarta Validation annotations to DTOs and updated controllers and global handler |
 | 2026-06-17 | Cri 3 | Added 5MB max size limit check to `FileService.updateFile` and mapped `PayloadTooLargeException` in `GlobalExceptionHandler` |
-| 2026-06-17 | High 4 | Added Flyway dependencies, initial V1 schema migration, and set `ddl-auto=validate` |
+| 2026-06-17 | High 4 | Added `flyway-core` to `pom.xml`, created `V1__init.sql`, and disabled Hibernate auto-DDL to protect the database schema in production. |
+| 2026-06-18 | High 5 | Added file ownership checks in `CollaborationController.syncAction` using `Principal` and `DiagramFileRepository`. |
 | 2026-06-17 | Med 1 | Replaced `@Data` with `@Getter`/`@Setter` and excluded associations from `toString`/`equals` to prevent infinite recursion and lazy-loading bugs |
 | 2026-06-17 | Med 2 | Removed manual `setUpdatedAt()` calls in `FileService` to rely on Hibernate `@UpdateTimestamp` |
 | 2026-06-17 | Med 3 | Added database index on `projects.user_id` to optimize project lookups |
