@@ -30,7 +30,7 @@ Tracked issues organized by severity specifically for the React frontend applica
 | Med 1 | ~~**Guest mode has no API guard**~~ | ~~When `isGuest = true`, `DiagramContext` will still attempt `GET /api/projects` after integration, returning `401`. The context needs explicit logic to skip network requests when in guest mode.~~ | ✅ Resolved — Added `isGuest` guard to `DiagramContext` |
 | Med 2 | ~~**Logout doesn't clear local state**~~ | ~~After logout + page reload, cached project data or context state from the previous user could leak. Need to clear localStorage and reset state on logout.~~ | ✅ Resolved — `AuthContext.logout()` clears local state and `localStorage` before redirecting |
 | Med 3 | ~~**Over-aggressive `AuthContext.logout()`**~~ | ~~Calls `localStorage.clear()`, which wipes all browser storage for the origin, rather than just Loom-specific state.~~ | ✅ Resolved — Removed `localStorage.clear()` to prevent wiping unrelated origin data |
-| Med 4 | **Unvalidated `ImportModal` input** | Accepts arbitrary JSON arrays with only minimal validation. Malformed node payloads can enter the application state and cause runtime errors. | ⏳ TODO |
+| Med 4 | ~~**Unvalidated `ImportModal` input**~~ | ~~Accepts arbitrary JSON arrays with only minimal validation. Malformed node payloads can enter the application state and cause runtime errors.~~ | ✅ Resolved — Added schema validation checks in `processImportData` |
 | Med 5 | **`switchProject` empty state bug** | `switchProject` can set `activeFileId` to `''` for projects with no files, creating a weak active-file state edge case in the UI. | ⏳ TODO |
 
 ---
@@ -56,3 +56,4 @@ Tracked issues organized by severity specifically for the React frontend applica
 | 2026-06-18 | High 3 | Added `withCredentials: true` to `SockJS` options in `CollaborationContext` to fix cross-origin WebSocket authentication. |
 | 2026-06-18 | High 4 | Removed `debouncedNodes.length === 0` check in `DiagramContext` auto-save to ensure an empty canvas state is persisted. |
 | 2026-06-18 | Med 3 | Removed `localStorage.clear()` from `AuthContext.logout()` to avoid wiping all origin browser storage. |
+| 2026-06-18 | Med 4 | Added schema validation checks to `ImportModal` to prevent malformed node structures from breaking application state. |
