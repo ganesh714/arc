@@ -295,19 +295,17 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
     const autoSave = async () => {
       try {
-        // Uncomment/Update this when the backend API is fully integrated in frontend
-        /*
         const loomApiUrl = import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081';
         const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ nodes: debouncedNodes })
         });
         
         if (!response.ok) {
           console.error('Auto-save failed:', response.statusText);
         }
-        */
       } catch (error) {
         console.error('Failed to auto-save to backend:', error);
       }
