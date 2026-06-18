@@ -7,6 +7,9 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      global: 'window',
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
