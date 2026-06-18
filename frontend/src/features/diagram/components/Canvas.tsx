@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Node } from './Node';
+import { RemoteCursors } from './RemoteCursors';
+import { useCollaboration } from '@/context/CollaborationContext';
 import styles from './Canvas.module.css';
 import { 
   MousePointer2, 
@@ -71,6 +73,7 @@ export function Canvas() {
     cutSelected,
     deleteSelected
   } = useDiagram();
+  const { broadcast } = useCollaboration();
 
   const activeProject = projects.find(p => p.id === activeProjectId);
   const activeFile = activeProject?.files.find(f => f.id === activeFileId);
@@ -80,6 +83,7 @@ export function Canvas() {
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const lastCursorBroadcastRef = useRef<number>(0);
 
   const [drawingPreview, setDrawingPreview] = useState<{
     type: string;
@@ -803,13 +807,26 @@ export function Canvas() {
     return 'default';
   };
 
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    if (now - lastCursorBroadcastRef.current > 50) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const currentX = (e.clientX - rect.left) / zoom - panOffset.x;
+      const currentY = (e.clientY - rect.top) / zoom - panOffset.y;
+      
+      broadcast('CURSOR_MOVED', { x: currentX, y: currentY });
+      lastCursorBroadcastRef.current = now;
+    }
+  };
+
   return (
-    <div className={styles.canvasWrapper}>
+    <div className={styles.canvasContainer} style={{ backgroundColor: canvasBgColor }}>
       {/* Main Canvas Area */}
       <div 
         ref={canvasRef}
         className={styles.canvas} 
         onMouseDown={handleMouseDown}
+        onPointerMove={handlePointerMove}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         style={{
@@ -835,6 +852,7 @@ export function Canvas() {
             {nodes.map((node) => (
               <Node key={node.id} node={node} />
             ))}
+            <RemoteCursors />
 
             {/* Floating Contextual Menu directly above the selected shape */}
             {selectedNode && (() => {

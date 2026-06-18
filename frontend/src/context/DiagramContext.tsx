@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from './AuthContext';
+import { useCollaboration } from './CollaborationContext';
 
 export interface CanvasConfig {
   backgroundColor: string;
@@ -181,6 +182,36 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
+  
+  const { connectToFile, broadcast, incomingActions, clearIncomingActions } = useCollaboration();
+
+  // Connect to WebSocket room for this file
+  useEffect(() => {
+    connectToFile(activeFileId);
+  }, [activeFileId, connectToFile]);
+
+  // Process incoming WebSocket actions
+  useEffect(() => {
+    if (incomingActions.length > 0) {
+      setNodesState(prev => {
+        let next = [...prev];
+        incomingActions.forEach(action => {
+          if (action.type === 'NODE_MOVED') {
+            next = next.map(node => node.id === action.payload.id ? { ...node, position: action.payload.position, startPoint: action.payload.startPoint, endPoint: action.payload.endPoint } : node);
+          } else if (action.type === 'NODE_ADDED') {
+            next.push(action.payload);
+          } else if (action.type === 'NODE_UPDATED') {
+            next = next.map(node => node.id === action.payload.id ? { ...node, ...action.payload } : node);
+          } else if (action.type === 'NODES_DELETED') {
+            const idsToDelete = action.payload.ids as string[];
+            next = next.filter(node => !idsToDelete.includes(node.id));
+          }
+        });
+        return next;
+      });
+      clearIncomingActions();
+    }
+  }, [incomingActions, clearIncomingActions]);
 
   // Simulate network fetch for projects
   useEffect(() => {
@@ -334,6 +365,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     if (selectedNodeIds.length === 0) return;
     saveHistoryState(nodes);
     setNodes(prev => prev.filter(node => !selectedNodeIds.includes(node.id)));
+    broadcast('NODES_DELETED', { ids: selectedNodeIds });
     setSelectedNodeIds([]);
   };
 
@@ -390,6 +422,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addDiamond = (position?: { x: number; y: number }) => {
@@ -410,6 +443,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addCircle = (position?: { x: number; y: number }) => {
@@ -429,6 +463,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addTriangle = (position?: { x: number; y: number }) => {
@@ -680,6 +715,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const updateNode = (updatedNode: DiagramNode) => {
     saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
+    broadcast('NODE_UPDATED', updatedNode);
   };
 
   const updateMultipleNodes = (ids: string[], updates: Partial<DiagramNode>) => {
@@ -740,11 +776,24 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           
           newNode.position = { x: minX, y: minY };
           newNode.dimensions = { width, height };
+          broadcast('NODE_UPDATED', newNode);
           return newNode;
         }
         return node;
       });
     });
+    
+    // Broadcast the main node move
+    const finalNodes = nodes;
+    const nodeToBroadcast = finalNodes.find(n => n.id === id);
+    if (nodeToBroadcast) {
+        broadcast('NODE_MOVED', { 
+            id, 
+            position, 
+            startPoint: nodeToBroadcast.startPoint, 
+            endPoint: nodeToBroadcast.endPoint 
+        });
+    }
   };
 
   const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right') => {
