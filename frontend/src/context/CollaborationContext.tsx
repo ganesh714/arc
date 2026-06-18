@@ -58,7 +58,7 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
     const client = new Client({
       webSocketFactory: () => new SockJS(`${loomApiUrl}/ws`, null, {
         withCredentials: true
-      }),
+      } as any),
       connectHeaders: {
         // Handled by our backend interceptor via cookies, but we could add auth headers here
       },
