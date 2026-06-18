@@ -18,6 +18,8 @@ Tracked issues organized by severity specifically for the React frontend applica
 |---|---|---|---|
 | 2 | ~~**Hardcoded `localhost` URLs**~~ | ~~`AuthContext.tsx` hardcodes `http://localhost:8080` for auth API calls. This will break in production where the API is hosted at `https://accounts.arqulat.com`.~~ | ✅ Resolved — Extracted API URLs to `.env` using `import.meta.env` |
 | 6 | ~~**Lack of Real-time Collaboration**~~ | ~~Saving is currently done via a debounced `PUT` request after the user stops interacting. This prevents multiplayer features and causes "Last Writer Wins" data loss if multiple users or tabs edit the same diagram simultaneously.~~ | ✅ Resolved — Migrated to WebSocket architecture (STOMP) with Action-Based Syncing and live cursors |
+| 7 | **Brittle WebSocket Authentication** | `CollaborationContext` uses `SockJS` without explicitly sending credentials (`withCredentials`) or STOMP auth headers, which can fail cross-origin WebSocket handshakes. | ⏳ TODO |
+| 8 | **`DiagramContext` auto-save skips empty state** | Auto-save skips when `debouncedNodes.length === 0`. If a user clears the canvas completely, that empty state is never persisted. | ⏳ TODO |
 
 ---
 
@@ -27,6 +29,9 @@ Tracked issues organized by severity specifically for the React frontend applica
 |---|---|---|---|
 | 3 | ~~**Guest mode has no API guard**~~ | ~~When `isGuest = true`, `DiagramContext` will still attempt `GET /api/projects` after integration, returning `401`. The context needs explicit logic to skip network requests when in guest mode.~~ | ✅ Resolved — Added `isGuest` guard to `DiagramContext` |
 | 4 | ~~**Logout doesn't clear local state**~~ | ~~After logout + page reload, cached project data or context state from the previous user could leak. Need to clear localStorage and reset state on logout.~~ | ✅ Resolved — `AuthContext.logout()` clears local state and `localStorage` before redirecting |
+| 9 | **Over-aggressive `AuthContext.logout()`** | Calls `localStorage.clear()`, which wipes all browser storage for the origin, rather than just Loom-specific state. | ⏳ TODO |
+| 10 | **Unvalidated `ImportModal` input** | Accepts arbitrary JSON arrays with only minimal validation. Malformed node payloads can enter the application state and cause runtime errors. | ⏳ TODO |
+| 11 | **`switchProject` empty state bug** | `switchProject` can set `activeFileId` to `''` for projects with no files, creating a weak active-file state edge case in the UI. | ⏳ TODO |
 
 ---
 
