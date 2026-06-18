@@ -39,8 +39,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | Med 4 | **`show-sql=true`** | Floods logs with SQL in production, potentially exposing data in query parameters. | ⏳ Dev only — disable for production |
 | Med 5 | ~~**Delete last file in project → frontend crash**~~ | ~~`DELETE /api/files/{fileId}` allows deleting the only file. Frontend's `switchProject` assumes `files[0]` exists and will crash on `undefined`.~~ | ✅ Resolved — Added backend guard to prevent deleting last file |
 | Med 6 | ~~**Frontend-Backend DTO Mismatch**~~ | ~~The frontend expects `WorkspaceProject` to contain an array of `files` instantly to render the sidebar. The backend `ProjectSummaryDTO` currently only returns a `fileCount`. Without this, the UI requires complex lazy-loading.~~ | ✅ Resolved — Updated `ProjectSummaryDTO` to include `List<FileSummaryDTO> files` |
-| Med 7 | **No DB Unique Constraint for Names** | Duplicate project/file name protection was added at the application layer, but there is no DB unique constraint/index, allowing race-condition duplicates. | ⏳ TODO |
-| Med 8 | **Hardcoded Single WebSocket Origin** | `WebSocketConfig` only allows a single `frontendUrl` origin. If the frontend is served from another valid host/port, the realtime connection will fail. | ⏳ TODO |
+| Med 7 | ~~**No DB Unique Constraint for Names**~~ | ~~Duplicate project/file name protection was added at the application layer, but there is no DB unique constraint/index, allowing race-condition duplicates.~~ | ✅ Resolved — Added `@UniqueConstraint` and Flyway V2 migration |
+| Med 8 | ~~**Hardcoded Single WebSocket Origin**~~ | ~~`WebSocketConfig` only allows a single `frontendUrl` origin. If the frontend is served from another valid host/port, the realtime connection will fail.~~ | ✅ Resolved — Modified `WebSocketConfig` to split `frontendUrl` and allow multiple origins |
 
 ---
 
@@ -73,6 +73,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | 2026-06-17 | Med 3 | Added database index on `projects.user_id` to optimize project lookups |
 | 2026-06-17 | Med 5 | Prevented deleting the last file in a project via `IllegalArgumentException` mapped to 400 Bad Request |
 | 2026-06-17 | Med 6 | Embedded `List<FileSummaryDTO> files` into `ProjectSummaryDTO` to eliminate frontend lazy-loading requirement |
+| 2026-06-18 | Med 7 | Added `@UniqueConstraint` to `Project` and `DiagramFile` entities and created a Flyway `V2__add_unique_constraints.sql` migration to enforce name uniqueness at the database level. |
+| 2026-06-18 | Med 8 | Updated `WebSocketConfig.registerStompEndpoints` to parse comma-separated `frontendUrl` values, allowing multiple WebSocket origins. |
 | 2026-06-17 | Low 2 | Added `DuplicateResourceException` and repository `existsBy*` checks to prevent duplicate project and file names |
 | 2026-06-17 | High 2 | Integrated Redis caching for the JWT blacklist to eliminate the synchronous database query bottleneck on every API request. |
 | 2026-06-18 | — | Implemented real-time collaboration backend using Spring WebSockets (STOMP). Added `StompChannelInterceptor` to extract and validate `arqulat_session` cookie for WebSocket security. |

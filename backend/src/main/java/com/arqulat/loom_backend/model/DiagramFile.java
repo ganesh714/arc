@@ -27,6 +27,8 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.NoArgsConstructor;
 
+import jakarta.persistence.UniqueConstraint;
+
 @Getter
 @Setter
 @ToString(exclude = "project")
@@ -35,7 +37,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "diagram_files")
+@Table(name = "diagram_files", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_diagram_files_project_id_name", columnNames = {"project_id", "name"})
+})
 public class DiagramFile {
 
     @Id

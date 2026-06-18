@@ -30,8 +30,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        String[] allowedOrigins = frontendUrl.split(",");
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(frontendUrl)
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(jwtHandshakeInterceptor)
                 .withSockJS();
     }
