@@ -1003,12 +1003,29 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const target = projects.find(p => p.id === targetId);
     if (!target) return;
     
-    const targetFile = target.files.length > 0 ? target.files[0] : null;
+    let targetFile = target.files.length > 0 ? target.files[0] : null;
     
-    setNodesState(targetFile ? targetFile.nodes : []);
+    // Auto-create a file if the project is somehow empty (edge case recovery)
+    if (!targetFile) {
+      const newFileId = crypto.randomUUID().split('-')[0];
+      targetFile = {
+        id: newFileId,
+        name: 'Untitled',
+        updatedAt: Date.now(),
+        canvasConfig: { backgroundColor: '#0f0f0f' },
+        nodes: []
+      };
+      
+      // Update projects array to include this new file
+      setProjects(prev => prev.map(p => 
+        p.id === targetId ? { ...p, files: [targetFile!] } : p
+      ));
+    }
+    
+    setNodesState(targetFile.nodes);
     setSelectedNodeIds([]);
     setActiveProjectId(targetId);
-    setActiveFileId(targetFile ? targetFile.id : '');
+    setActiveFileId(targetFile.id);
     setPast([]);
     setFuture([]);
   };
