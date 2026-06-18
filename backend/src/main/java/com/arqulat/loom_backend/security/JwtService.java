@@ -17,8 +17,10 @@ import java.util.concurrent.TimeUnit;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class JwtService {
 
     @Value("${application.security.jwt.secret-key}")
@@ -72,8 +74,12 @@ public class JwtService {
         if (jti == null) return false;
         
         // 1. Check Redis (fast path)
-        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey("blacklist:jti:" + jti))) {
-            return true;
+        try {
+            if (Boolean.TRUE.equals(stringRedisTemplate.hasKey("blacklist:jti:" + jti))) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.warn("Redis check failed for JWT blacklist, falling back to database: {}", e.getMessage());
         }
         
         // 2. Fallback to DB (slow path)
@@ -90,7 +96,11 @@ public class JwtService {
             if (expiration != null) {
                 long ttl = expiration.getTime() - System.currentTimeMillis();
                 if (ttl > 0) {
-                    stringRedisTemplate.opsForValue().set("blacklist:jti:" + jti, "true", ttl, TimeUnit.MILLISECONDS);
+                    try {
+                        stringRedisTemplate.opsForValue().set("blacklist:jti:" + jti, "true", ttl, TimeUnit.MILLISECONDS);
+                    } catch (Exception e) {
+                        log.warn("Failed to backfill Redis for JWT blacklist: {}", e.getMessage());
+                    }
                 }
             }
             return true;
