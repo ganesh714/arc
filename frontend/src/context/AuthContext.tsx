@@ -58,9 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = () => {
-    // Redirect to the arqulat_auth OAuth2 endpoint
-    const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
-    window.location.href = `${authApiUrl}/oauth2/authorization/google`;
+    // Redirect to the auth frontend for login
+    const authFrontendUrl = (import.meta.env.VITE_AUTH_FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    window.location.href = authFrontendUrl;
   };
 
   const logout = async () => {
