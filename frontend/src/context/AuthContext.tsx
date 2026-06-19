@@ -58,9 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = () => {
-    // Redirect to the auth frontend for login
+    // Redirect to the auth frontend for login, passing our current URL so it knows where to return
     const authFrontendUrl = (import.meta.env.VITE_AUTH_FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
-    window.location.href = authFrontendUrl;
+    const redirectUri = encodeURIComponent(window.location.origin);
+    window.location.href = `${authFrontendUrl}?redirect_uri=${redirectUri}`;
   };
 
   const logout = async () => {
