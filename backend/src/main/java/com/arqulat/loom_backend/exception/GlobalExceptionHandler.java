@@ -58,11 +58,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(org.springframework.http.converter.HttpMessageNotReadableException ex) {
-        log.warn("Message not readable: {}", ex.getMessage());
+        Throwable rootCause = org.springframework.core.NestedExceptionUtils.getRootCause(ex);
+        String errorMessage = rootCause != null ? rootCause.getMessage() : ex.getMessage();
+        log.warn("Message not readable: {}", errorMessage);
+        
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
-                .message("Invalid request payload: " + ex.getMessage())
+                .message("Invalid request payload: " + errorMessage)
                 .timestamp(System.currentTimeMillis())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -106,11 +109,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-        log.error("Unhandled exception occurred", ex);
+        Throwable rootCause = org.springframework.core.NestedExceptionUtils.getRootCause(ex);
+        String errorMessage = rootCause != null ? rootCause.getMessage() : ex.getMessage();
+        log.error("Unhandled exception: {} - {}", ex.getClass().getSimpleName(), errorMessage);
+        
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message("An unexpected error occurred: " + ex.getMessage())
+                .message("An unexpected error occurred: " + errorMessage)
                 .timestamp(System.currentTimeMillis())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
