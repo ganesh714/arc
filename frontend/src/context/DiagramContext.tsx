@@ -334,23 +334,23 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // This prevents saving on project switch unless it's an actual node change
-    if (!activeFileId) return;
-
-    // Guest Mode API Guard (Resolves Issue #3)
-    if (isGuest) {
-      // Guest mode - skip saving to backend
-      return;
-    }
+    if (!activeFileId || isGuest || isFileLoading) return;
 
     const autoSave = async () => {
       try {
+        const targetFile = projects.find(p => p.id === activeProjectId)?.files.find(f => f.id === activeFileId);
+        if (!targetFile) return;
+
         const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
         const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ nodes: debouncedNodes })
+          body: JSON.stringify({ 
+            name: targetFile.name,
+            canvasBgColor: targetFile.canvasConfig.backgroundColor,
+            nodes: debouncedNodes 
+          })
         });
         
         if (!response.ok) {
@@ -362,7 +362,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     };
 
     autoSave();
-  }, [debouncedNodes, activeFileId, isGuest]);
+  }, [debouncedNodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
@@ -1045,102 +1045,174 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const switchProject = (targetId: string) => {
+  const switchProject = async (targetId: string) => {
     const target = projects.find(p => p.id === targetId);
     if (!target) return;
     
     let targetFile = target.files.length > 0 ? target.files[0] : null;
     
-    // Auto-create a file if the project is somehow empty (edge case recovery)
-    if (!targetFile) {
+    if (!targetFile && isGuest) {
       const newFileId = crypto.randomUUID().split('-')[0];
       targetFile = {
-        id: newFileId,
-        name: 'Untitled',
-        updatedAt: Date.now(),
-        canvasConfig: { backgroundColor: '#0f0f0f' },
-        nodes: []
+        id: newFileId, name: 'Untitled', updatedAt: Date.now(),
+        canvasConfig: { backgroundColor: '#0f0f0f' }, nodes: []
       };
-      
-      // Update projects array to include this new file
-      setProjects(prev => prev.map(p => 
-        p.id === targetId ? { ...p, files: [targetFile!] } : p
-      ));
+      setProjects(prev => prev.map(p => p.id === targetId ? { ...p, files: [targetFile!] } : p));
     }
     
-    setNodesState(targetFile.nodes);
-    setSelectedNodeIds([]);
-    setActiveProjectId(targetId);
-    setActiveFileId(targetFile.id);
-    setPast([]);
-    setFuture([]);
+    if (targetFile) {
+      await switchFile(targetFile.id, targetId);
+    }
   };
 
-  const addProject = (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
-    const newId = crypto.randomUUID().split('-')[0];
-    const newFileId = crypto.randomUUID().split('-')[0];
-    
-    const newProj: WorkspaceProject = {
-      id: newId,
-      name,
-      category,
-      updatedAt: Date.now(),
-      files: [
-        {
-          id: newFileId,
-          name: 'Untitled',
-          updatedAt: Date.now(),
-          canvasConfig: { backgroundColor },
-          nodes: []
+  const addProject = async (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
+    if (isGuest) {
+      const newId = crypto.randomUUID().split('-')[0];
+      const newFileId = crypto.randomUUID().split('-')[0];
+      const newProj: WorkspaceProject = {
+        id: newId, name, category, updatedAt: Date.now(),
+        files: [{ id: newFileId, name: 'Untitled', updatedAt: Date.now(), canvasConfig: { backgroundColor }, nodes: [] }]
+      };
+      setProjects(prev => [...prev, newProj]);
+      setNodesState([]);
+      setSelectedNodeIds([]);
+      setActiveProjectId(newId);
+      setActiveFileId(newFileId);
+      setPast([]);
+      setFuture([]);
+      return;
+    }
+
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, category })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newProj: WorkspaceProject = {
+          id: data.id, name: data.name, category: data.category, updatedAt: data.updatedAt,
+          files: data.files?.map((f: any) => ({
+            id: f.id, name: f.name, updatedAt: f.updatedAt,
+            canvasConfig: { backgroundColor: f.canvasBgColor || '#0f0f0f' },
+            nodes: []
+          })) || []
+        };
+        
+        setProjects(prev => [...prev, newProj]);
+        setActiveProjectId(newProj.id);
+        
+        if (newProj.files.length === 0) {
+           await addFile(newProj.id, 'Untitled', backgroundColor);
+        } else {
+           await switchFile(newProj.files[0].id, newProj.id);
         }
-      ]
-    };
-    
-    setProjects(prev => [...prev, newProj]);
-    setNodesState([]);
-    setSelectedNodeIds([]);
-    setActiveProjectId(newId);
-    setActiveFileId(newFileId);
-    setPast([]);
-    setFuture([]);
+      }
+    } catch (error) {
+      console.error('Failed to create project', error);
+    }
   };
 
-  const switchFile = (fileId: string) => {
-    const targetProj = projects.find(p => p.id === activeProjectId);
+  const switchFile = async (fileId: string, projectId: string = activeProjectId) => {
+    const targetProj = projects.find(p => p.id === projectId);
     if (!targetProj) return;
     const targetFile = targetProj.files.find(f => f.id === fileId);
     if (!targetFile) return;
 
-    setNodesState(targetFile.nodes);
-    setSelectedNodeIds([]);
+    setActiveProjectId(projectId);
     setActiveFileId(fileId);
+    setSelectedNodeIds([]);
     setPast([]);
     setFuture([]);
+
+    if (isGuest) {
+      setNodesState(targetFile.nodes);
+      return;
+    }
+
+    setIsFileLoading(true);
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${fileId}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        let loadedNodes: DiagramNode[] = [];
+        if (data.nodes) {
+           loadedNodes = typeof data.nodes === 'string' ? JSON.parse(data.nodes) : data.nodes;
+        }
+        
+        setNodesState(loadedNodes);
+        
+        setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              files: p.files.map(f => f.id === fileId ? { ...f, nodes: loadedNodes } : f)
+            };
+          }
+          return p;
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load file details:', error);
+      setNodesState([]);
+    } finally {
+      setIsFileLoading(false);
+    }
   };
 
-  const addFile = (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
-    const newFileId = crypto.randomUUID().split('-')[0];
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          files: [
-            ...p.files,
-            {
-              id: newFileId,
-              name,
-              updatedAt: Date.now(),
-              canvasConfig: { backgroundColor },
-              nodes: []
-            }
-          ]
-        };
+  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
+    if (isGuest) {
+      const newFileId = crypto.randomUUID().split('-')[0];
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            files: [...p.files, { id: newFileId, name, updatedAt: Date.now(), canvasConfig: { backgroundColor }, nodes: [] }]
+          };
+        }
+        return p;
+      }));
+      if (projectId === activeProjectId) {
+        switchFile(newFileId);
       }
-      return p;
-    }));
-    
-    if (projectId === activeProjectId) {
-      switchFile(newFileId);
+      return;
+    }
+
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects/${projectId}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, backgroundColor })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newFile = {
+          id: data.id, name: data.name, updatedAt: data.updatedAt,
+          canvasConfig: { backgroundColor: data.canvasBgColor || backgroundColor },
+          nodes: []
+        };
+        
+        setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+             return { ...p, files: [...p.files, newFile] };
+          }
+          return p;
+        }));
+        
+        if (projectId === activeProjectId) {
+          await switchFile(newFile.id, projectId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create file', error);
     }
   };
 
@@ -1201,6 +1273,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addFile,
       updateCanvasConfig,
       isLoadingProjects,
+      isFileLoading,
       
       // Sidebar
       isSidebarOpen,
