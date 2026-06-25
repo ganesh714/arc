@@ -50,13 +50,34 @@ export function SidePanel() {
             <span className={styles.sectionTitle}>Page</span>
             <div className={styles.row}>
               <span className={styles.rowLabel}>Background</span>
-              <div className={styles.colorPickerWrapper}>
-                <input
-                  type="color"
-                  value={canvasBg}
-                  onChange={(e) => handleCanvasBgChange(e.target.value)}
-                />
-                <span className={styles.colorHex}>{canvasBg}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                <div className={styles.colorPickerWrapper}>
+                  <input
+                    type="color"
+                    value={canvasBg}
+                    onChange={(e) => handleCanvasBgChange(e.target.value)}
+                  />
+                  <span className={styles.colorHex}>{canvasBg}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingTop: '4px' }}>
+                  {['#1e1e1e', '#ffffff', '#f8fafc', '#111827', '#252526', '#0f172a', '#3b82f6'].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => handleCanvasBgChange(color)}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '4px',
+                        backgroundColor: color,
+                        border: color.toLowerCase() === canvasBg.toLowerCase() ? '2px solid var(--text-primary)' : '1px solid var(--border-default)',
+                        cursor: 'pointer',
+                        padding: 0,
+                        boxSizing: 'border-box'
+                      }}
+                      title={color}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -274,7 +295,7 @@ export function SidePanel() {
   const DepthArrangement = ({ ids }: { ids: string[] }) => (
     <div className={styles.section}>
       <span className={styles.sectionTitle}>Layer Depth</span>
-      <div className={styles.grid}>
+      <div className={styles.paddedGrid}>
         <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
           <ArrowUp size={12} />
           <span>To Front</span>
