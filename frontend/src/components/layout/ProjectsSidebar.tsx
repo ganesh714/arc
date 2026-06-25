@@ -12,9 +12,9 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
   
   const [isCreating, setIsCreating] = useState(false);
 
-  const handleConfirmCreate = (name: string, bgColor: string) => {
+  const handleConfirmCreate = async (name: string, bgColor: string) => {
     if (name.trim()) {
-      addFile(activeProjectId, name.trim(), bgColor);
+      await addFile(activeProjectId, name.trim(), bgColor);
       setIsCreating(false);
     }
   };

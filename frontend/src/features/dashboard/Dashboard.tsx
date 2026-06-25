@@ -40,13 +40,13 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
     setIsCreateModalOpen(true);
   };
 
-  const handleConfirmCreate = (name: string, bgColor: string) => {
-    addProject(name, 'Loom Diagrams', bgColor);
+  const handleConfirmCreate = async (name: string, bgColor: string) => {
+    await addProject(name, 'Loom Diagrams', bgColor);
     onEnterWorkspace();
   };
 
-  const handleProjectClick = (id: string) => {
-    switchProject(id);
+  const handleProjectClick = async (id: string) => {
+    await switchProject(id);
     onEnterWorkspace();
   };
 
