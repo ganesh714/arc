@@ -69,6 +69,7 @@ interface DiagramContextType {
   addFile: (projectId: string, name: string, backgroundColor?: string) => void;
   updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
   isLoadingProjects: boolean;
+  isFileLoading: boolean;
   
   // Sidebar state
   isSidebarOpen: boolean;
@@ -172,16 +173,17 @@ const initialProjects: WorkspaceProject[] = [
 ];
 
 export function DiagramProvider({ children }: { children: ReactNode }) {
-  const { isGuest } = useAuth();
-  const [projects, setProjects] = useState<WorkspaceProject[]>(initialProjects);
-  const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
-  const [activeFileId, setActiveFileId] = useState<string>('file-1');
-  const [nodes, setNodesState] = useState<DiagramNode[]>(initialProjects[0].files[0].nodes);
+  const { isGuest, isAuthenticated, isLoading } = useAuth();
+  const [projects, setProjects] = useState<WorkspaceProject[]>(isGuest ? initialProjects : []);
+  const [activeProjectId, setActiveProjectId] = useState<string>(isGuest ? 'project-1' : '');
+  const [activeFileId, setActiveFileId] = useState<string>(isGuest ? 'file-1' : '');
+  const [nodes, setNodesState] = useState<DiagramNode[]>(isGuest ? initialProjects[0].files[0].nodes : []);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState<number>(1.0);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
+  const [isFileLoading, setIsFileLoading] = useState<boolean>(false);
   
   const { connectToFile, broadcast, incomingActions, clearIncomingActions } = useCollaboration();
 
@@ -213,13 +215,61 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   }, [incomingActions, clearIncomingActions]);
 
-  // Simulate network fetch for projects
+  // Fetch projects from backend
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (isLoading) return; // Wait for Auth context to resolve
+
+    if (isGuest) {
+      setProjects(initialProjects);
+      setActiveProjectId('project-1');
+      setActiveFileId('file-1');
+      setNodesState(initialProjects[0].files[0].nodes);
       setIsLoadingProjects(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+      return;
+    }
+    
+    if (isAuthenticated) {
+      const fetchProjects = async () => {
+        setIsLoadingProjects(true);
+        try {
+          const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+          const response = await fetch(`${loomApiUrl}/api/projects`, { credentials: 'include' });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const mappedProjects: WorkspaceProject[] = data.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              category: p.category || 'Loom Diagrams',
+              updatedAt: p.updatedAt,
+              files: p.files.map((f: any) => ({
+                id: f.id,
+                name: f.name,
+                updatedAt: f.updatedAt,
+                canvasConfig: { backgroundColor: f.canvasBgColor || '#0f0f0f' },
+                nodes: []
+              }))
+            }));
+            
+            setProjects(mappedProjects);
+            
+            if (mappedProjects.length > 0) {
+              setActiveProjectId(mappedProjects[0].id);
+              if (mappedProjects[0].files.length > 0) {
+                setActiveFileId(mappedProjects[0].files[0].id);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch projects', error);
+        } finally {
+          setIsLoadingProjects(false);
+        }
+      };
+      
+      fetchProjects();
+    }
+  }, [isGuest, isAuthenticated, isLoading]);
   
   // History stack states
   const [past, setPast] = useState<DiagramNode[][]>([]);
