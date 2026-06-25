@@ -16,6 +16,7 @@ import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
 import com.arqulat.loom_backend.model.DiagramFile;
 import com.arqulat.loom_backend.model.Project;
 import com.arqulat.loom_backend.repository.DiagramFileRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
