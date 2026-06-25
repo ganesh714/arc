@@ -75,10 +75,11 @@ public class FileService {
             file.setCanvasBgColor(request.getCanvasBgColor());
         }
         if (request.getNodes() != null) {
-            if (request.getNodes().toString().length() > 5_000_000) {
+            JsonNode nodesJson = objectMapper.valueToTree(request.getNodes());
+            if (nodesJson.toString().length() > 5_000_000) {
                 throw new com.arqulat.loom_backend.exception.PayloadTooLargeException("Diagram payload exceeds the maximum allowed size of 5MB");
             }
-            file.setNodes(request.getNodes());
+            file.setNodes(nodesJson);
         }
         DiagramFile updated = fileRepository.save(file);
         return mapToDetail(updated);
