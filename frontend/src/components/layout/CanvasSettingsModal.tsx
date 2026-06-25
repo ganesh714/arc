@@ -54,32 +54,46 @@ export function CanvasSettingsModal({ isOpen, onClose }: CanvasSettingsModalProp
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Background Color
             </label>
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               {PRESET_COLORS.map(color => (
-                <button
-                  key={color}
-                  className={`w-full aspect-video rounded-md border-2 transition-all ${
-                    bgColor === color ? 'border-blue-500 scale-105' : 'border-[#444] hover:border-gray-400'
-                  }`}
-                  style={{ backgroundColor: color, position: 'relative' }}
-                  onClick={() => setBgColor(color)}
-                  title={color}
-                >
-                  {bgColor === color && (
-                    <Check size={16} color={['#ffffff', '#f8f9fa', '#e2e8f0', '#fdf6e3'].includes(color) ? '#000' : '#fff'} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-                  )}
-                </button>
+                <div key={color} className="flex flex-col items-center gap-2">
+                  <button
+                    className={`w-full aspect-video rounded-md border-2 transition-all ${
+                      bgColor === color ? 'border-blue-500 scale-105' : 'border-[#444] hover:border-gray-400'
+                    }`}
+                    style={{ backgroundColor: color, position: 'relative' }}
+                    onClick={() => setBgColor(color)}
+                  >
+                    {bgColor === color && (
+                      <Check size={16} color={['#ffffff', '#f8f9fa', '#e2e8f0', '#fdf6e3'].includes(color) ? '#000' : '#fff'} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                    )}
+                  </button>
+                  <span className="text-xs text-gray-400 font-mono uppercase tracking-wider">{color}</span>
+                </div>
               ))}
             </div>
             
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">Custom hex:</span>
-              <input 
-                type="text" 
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="bg-[#121212] border border-[#333] rounded px-3 py-1.5 text-white text-sm w-full outline-none focus:border-blue-500"
-              />
+            {/* Multi-color Custom Picker Panel */}
+            <div className="flex flex-col gap-2 mt-4">
+              <label className="block text-sm font-medium text-gray-300">
+                Custom Color Picker
+              </label>
+              <div 
+                className="w-full h-12 rounded-md relative cursor-pointer border-2 border-[#444] hover:border-gray-400 transition-all overflow-hidden" 
+                style={{ background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)' }}
+              >
+                <input 
+                  type="color" 
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="absolute -top-4 -left-4 w-[200%] h-[200%] opacity-0 cursor-pointer"
+                />
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <span className="bg-black/60 text-white px-3 py-1 rounded-md text-xs font-semibold backdrop-blur-sm shadow-sm uppercase tracking-wider font-mono">
+                    {bgColor}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

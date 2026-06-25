@@ -76,12 +76,12 @@
   grid-template-columns: 84px 1fr;
   align-items: center;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
   padding: 0 12px;
 }
 
 .row:last-child {
-  margin-bottom: 0;
+  margin-bottom: 20px;
 }
 
 .rowLabel {
@@ -101,6 +101,16 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   width: 100%;
+}
+
+.paddedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  padding: 0 12px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
 }
 
 /* 
