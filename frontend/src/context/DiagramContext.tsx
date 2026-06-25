@@ -1142,7 +1142,13 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         let loadedNodes: DiagramNode[] = [];
         if (data.nodes) {
-           loadedNodes = typeof data.nodes === 'string' ? JSON.parse(data.nodes) : data.nodes;
+           try {
+             const parsed = typeof data.nodes === 'string' ? JSON.parse(data.nodes) : data.nodes;
+             loadedNodes = Array.isArray(parsed) ? parsed : [];
+           } catch (e) {
+             console.error('Failed to parse nodes:', e);
+             loadedNodes = [];
+           }
         }
         
         setNodesState(loadedNodes);
