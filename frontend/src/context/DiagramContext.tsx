@@ -179,6 +179,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [activeFileId, setActiveFileId] = useState<string>(isGuest ? 'file-1' : '');
   const [nodes, setNodesState] = useState<DiagramNode[]>(isGuest ? initialProjects[0].files[0].nodes : []);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  useEffect(() => {
+    console.log('nodes state updated to:', nodes);
+  }, [nodes]);
   const [zoom, setZoom] = useState<number>(1.0);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
@@ -306,6 +309,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
+    console.log('setNodes called with:', newNodes);
     setNodesState(newNodes);
   };
 
@@ -420,7 +424,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     saveHistoryState(nodes);
     
     const newNodes = clipboard.map(node => {
-      const newId = crypto.randomUUID().split('-')[0];
+      const newId = Math.random().toString(36).substring(2, 10);
       const offsetPos = {
         x: node.position.x + 20,
         y: node.position.y + 20
@@ -456,7 +460,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'box',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 50 },
       dimensions: { width, height },
@@ -476,7 +480,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'diamond',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 80, y: 80 },
       dimensions: { width, height },
@@ -497,7 +501,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 100;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'circle',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
       dimensions: { width, height },
@@ -517,7 +521,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'triangle',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 120, y: 120 },
       dimensions: { width, height },
@@ -536,7 +540,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 110;
     const height = 110;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'star',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 150 },
       dimensions: { width, height },
@@ -555,7 +559,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 60;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'pill',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 250 },
       dimensions: { width, height },
@@ -575,7 +579,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'hexagon',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 250 },
       dimensions: { width, height },
@@ -594,7 +598,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'parallelogram',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 250, y: 250 },
       dimensions: { width, height },
@@ -613,7 +617,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 100;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'database',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 350, y: 250 },
       dimensions: { width, height },
@@ -632,7 +636,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 140;
     const height = 140;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'note',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 450, y: 250 },
       dimensions: { width, height },
@@ -654,7 +658,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 150;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'line',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -675,7 +679,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 200;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'arrow',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -694,7 +698,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 160;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'custom-block',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
       dimensions: { width, height },
@@ -717,7 +721,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 200;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'custom-connector',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -1052,7 +1056,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     let targetFile = target.files.length > 0 ? target.files[0] : null;
     
     if (!targetFile && isGuest) {
-      const newFileId = crypto.randomUUID().split('-')[0];
+      const newFileId = Math.random().toString(36).substring(2, 10);
       targetFile = {
         id: newFileId, name: 'Untitled', updatedAt: Date.now(),
         canvasConfig: { backgroundColor: '#0f0f0f' }, nodes: []
@@ -1067,8 +1071,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   const addProject = async (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
     if (isGuest) {
-      const newId = crypto.randomUUID().split('-')[0];
-      const newFileId = crypto.randomUUID().split('-')[0];
+      const newId = Math.random().toString(36).substring(2, 10);
+      const newFileId = Math.random().toString(36).substring(2, 10);
       const newProj: WorkspaceProject = {
         id: newId, name, category, updatedAt: Date.now(),
         files: [{ id: newFileId, name: 'Untitled', updatedAt: Date.now(), canvasConfig: { backgroundColor }, nodes: [] }]
@@ -1173,7 +1177,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
     if (isGuest) {
-      const newFileId = crypto.randomUUID().split('-')[0];
+      const newFileId = Math.random().toString(36).substring(2, 10);
       setProjects(prev => prev.map(p => {
         if (p.id === projectId) {
           return {

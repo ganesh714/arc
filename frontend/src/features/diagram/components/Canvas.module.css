@@ -18,6 +18,22 @@
   overflow: hidden;
 }
 
+.crosshairCursor {
+  cursor: crosshair !important;
+}
+
+.grabCursor {
+  cursor: grab !important;
+}
+
+.grabbingCursor {
+  cursor: grabbing !important;
+}
+
+.cellCursor {
+  cursor: cell !important;
+}
+
 .marqueeBox {
   position: absolute;
   border: 1px solid var(--accent-blue);

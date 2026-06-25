@@ -360,10 +360,12 @@ export function Canvas() {
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('handleMouseDown triggered, activeTool:', activeTool, 'button:', e.button);
     const isMiddleClick = e.button === 1;
     const isSpaceDrag = spacePressed || activeTool === 'hand';
 
     if (isMiddleClick || isSpaceDrag) {
+      console.log('panning mode triggered');
       e.preventDefault();
       setIsPanning(true);
 
@@ -398,7 +400,7 @@ export function Canvas() {
       const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
       if (activeTool === 'comment') {
-        const id = crypto.randomUUID().split('-')[0];
+        const id = Math.random().toString(36).substring(2, 10);
         const newNode: any = {
           id,
           type: 'comment',
@@ -463,7 +465,7 @@ export function Canvas() {
               y: p.y - minY
             }));
 
-            const id = crypto.randomUUID().split('-')[0];
+            const id = Math.random().toString(36).substring(2, 10);
             const newNode: any = {
               id,
               type: 'path',
@@ -491,6 +493,7 @@ export function Canvas() {
       }
 
       // Regular shape drawing mode (box, circle, triangle, diamond, star, line, arrow)
+      console.log('starting shape drawing:', activeTool);
       setDrawingPreview({
         type: activeTool,
         startX,
@@ -506,6 +509,7 @@ export function Canvas() {
       };
 
       const handleMouseUp = () => {
+        console.log('handleMouseUp triggered');
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
 
@@ -522,7 +526,7 @@ export function Canvas() {
           const height = Math.max(10, Math.abs(cY - sY));
 
           if (width > 5 || height > 5) {
-            const id = crypto.randomUUID().split('-')[0];
+            const id = Math.random().toString(36).substring(2, 10);
             const isLineType = activeTool === 'line' || activeTool === 'arrow' || activeTool === 'custom-connector';
             let newNode: any;
 
@@ -799,12 +803,12 @@ export function Canvas() {
     'custom-connector': 'Custom Connector'
   };
 
-  const getCursor = () => {
-    if (isPanning) return 'grabbing';
-    if (spacePressed || activeTool === 'hand') return 'grab';
-    if (activeTool === 'erase') return 'cell';
-    if (isDragSelecting) return 'crosshair';
-    return 'default';
+  const getCursorClass = () => {
+    if (isPanning) return styles.grabbingCursor;
+    if (spacePressed || activeTool === 'hand') return styles.grabCursor;
+    if (activeTool === 'erase') return styles.cellCursor;
+    if (isDragSelecting || activeTool !== 'select') return styles.crosshairCursor;
+    return '';
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -820,17 +824,16 @@ export function Canvas() {
   };
 
   return (
-    <div className={styles.canvasContainer} style={{ backgroundColor: canvasBgColor }}>
+    <div className={styles.canvasWrapper} style={{ backgroundColor: canvasBgColor }}>
       {/* Main Canvas Area */}
       <div 
         ref={canvasRef}
-        className={styles.canvas} 
+        className={`${styles.canvas} ${getCursorClass()}`} 
         onMouseDown={handleMouseDown}
         onPointerMove={handlePointerMove}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         style={{
-          cursor: getCursor(),
           backgroundColor: canvasBgColor,
           backgroundImage: 'radial-gradient(var(--border-default) 1px, transparent 1px)',
           backgroundSize: `${16 * zoom}px ${16 * zoom}px`,
@@ -848,7 +851,7 @@ export function Canvas() {
           left: 0,
           pointerEvents: 'none'
         }}>
-          <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+          <div className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
               <Node key={node.id} node={node} />
             ))}
