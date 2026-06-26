@@ -89,7 +89,7 @@ export function AIChatSidebar() {
     if (isListening) toggleListen();
     
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\\/$/, '');
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
       const response = await fetch(`${loomApiUrl}/api/ai/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
