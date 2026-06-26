@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Send, Sparkles, ChevronDown, History, Plus, Mic, MicOff, Settings, Bot } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
@@ -28,8 +29,18 @@ export function AIChatSidebar() {
   const [isListening, setIsListening] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [activeHistoryId, setActiveHistoryId] = useState('h1');
+  
+  const FAKE_HISTORY = [
+    { id: 'h1', title: 'Login Flow Diagram', date: '2 mins ago' },
+    { id: 'h2', title: 'Database Schema Design', date: '10 hrs ago' },
+    { id: 'h3', title: 'E-commerce Architecture', date: 'Yesterday' },
+    { id: 'h4', title: 'User Onboarding Flow', date: '3 days ago' }
+  ];
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
 
   // Initialize Speech Recognition
@@ -55,6 +66,10 @@ export function AIChatSidebar() {
           
           if (finalTranscript) {
             setInput((prev) => prev + (prev ? ' ' : '') + finalTranscript);
+            if (textareaRef.current) {
+              textareaRef.current.style.height = 'auto';
+              textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+            }
           }
         };
 
@@ -95,6 +110,9 @@ export function AIChatSidebar() {
     
     setMessages((prev) => [...prev, newUserMsg]);
     setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     if (isListening) toggleListen();
     
     // Simulate AI response for now
@@ -112,6 +130,14 @@ export function AIChatSidebar() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [input]);
 
   return (
     <div className={styles.sidebar}>
@@ -147,9 +173,14 @@ export function AIChatSidebar() {
           </div>
 
           <div className={styles.headerActions}>
-            <button className={styles.iconBtn} title="Chat History">
+            <button 
+              className={`${styles.iconBtn} ${isHistoryOpen ? styles.iconBtnActive : ''}`} 
+              title="Chat History"
+              onClick={() => setIsHistoryOpen(true)}
+            >
               <History size={14} />
             </button>
+            
             <button className={styles.iconBtn} title="New Chat">
               <Plus size={14} />
             </button>
@@ -178,11 +209,14 @@ export function AIChatSidebar() {
       <div className={styles.inputArea}>
         <div className={`${styles.inputContainer} ${isListening ? styles.inputContainerListening : ''}`}>
           <textarea 
+            ref={textareaRef}
             placeholder={isListening ? "Listening..." : "Ask AI to create a chart..."}
             className={styles.textarea}
-            rows={Math.min(4, Math.max(1, input.split('\n').length))}
+            rows={1}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -212,6 +246,35 @@ export function AIChatSidebar() {
           Shift + Enter for new line
         </div>
       </div>
+
+      {isHistoryOpen && typeof document !== 'undefined' && createPortal(
+        <div className={styles.historyOverlay} onClick={() => setIsHistoryOpen(false)}>
+          <div className={styles.historyModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.historyModalHeader}>
+              <span>Recent Conversations</span>
+              <button className={styles.closeModalBtn} onClick={() => setIsHistoryOpen(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className={styles.historyModalList}>
+              {FAKE_HISTORY.map((chat) => (
+                <button 
+                  key={chat.id} 
+                  className={`${styles.historyModalItem} ${activeHistoryId === chat.id ? styles.historyModalItemActive : ''}`} 
+                  onClick={() => {
+                    setActiveHistoryId(chat.id);
+                    setIsHistoryOpen(false);
+                  }}
+                >
+                  <div className={styles.historyModalTitle}>{chat.title}</div>
+                  <div className={styles.historyModalDate}>{chat.date}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
