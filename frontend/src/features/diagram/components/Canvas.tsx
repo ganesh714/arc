@@ -361,6 +361,11 @@ export function Canvas() {
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     console.log('handleMouseDown triggered, activeTool:', activeTool, 'button:', e.button);
+
+    // BUG FIX: Close toolbar dropdowns when clicking on canvas
+    if (selectDropdownOpen) setSelectDropdownOpen(false);
+    if (shapeDropdownOpen) setShapeDropdownOpen(false);
+
     const isMiddleClick = e.button === 1;
     const isSpaceDrag = spacePressed || activeTool === 'hand';
 
@@ -767,14 +772,32 @@ export function Canvas() {
     setSelectedNodeIds([]);
   };
 
+  const PillIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="12" rx="6" />
+    </svg>
+  );
+
+  const ParallelogramIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="6 4 22 4 18 20 2 20" />
+    </svg>
+  );
+
+  const FlowchartDiamondIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 22 12 12 22 2 12" />
+    </svg>
+  );
+
   const shapeIcons = {
     box: <Square size={15} />,
-    pill: <Square size={15} style={{ borderRadius: '6px' }} />,
+    pill: <PillIcon size={15} />,
     circle: <Circle size={15} />,
     triangle: <Triangle size={15} />,
     hexagon: <Hexagon size={15} />,
-    diamond: <DiamondIcon size={15} />,
-    parallelogram: <Square size={15} style={{ transform: 'skewX(-15deg)' }} />,
+    diamond: <FlowchartDiamondIcon size={15} />,
+    parallelogram: <ParallelogramIcon size={15} />,
     star: <StarIcon size={15} />,
     database: <Database size={15} />,
     note: <StickyNote size={15} />,
@@ -1092,6 +1115,53 @@ export function Canvas() {
                     />
                   </svg>
                 );
+              } else if (type === 'hexagon') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="25,5 75,5 95,50 75,95 25,95 5,50"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'parallelogram') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="25,5 95,5 75,95 5,95"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'pill') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '999px'
+                  }} />
+                );
+              } else {
+                // Fallback for box, note, database, custom-block, etc.
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '4px'
+                  }} />
+                );
               }
 
               return (
@@ -1219,7 +1289,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1320,7 +1390,7 @@ export function Canvas() {
                   return (
                     <button
                       key={type}
-                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      className={`${styles.dropdownItem} ${styles.dropdownItemAi} ${isSelected ? styles.dropdownItemActive : ''}`}
                       onClick={() => {
                         setCurrentShapeType(type as any);
                         setActiveTool(type);
@@ -1364,7 +1434,6 @@ export function Canvas() {
           className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
           onClick={() => {
             setActiveTool('comment');
-            setCurrentShapeType('comment');
           }}
           title="Comment (C)"
           style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}
