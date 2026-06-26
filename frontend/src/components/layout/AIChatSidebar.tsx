@@ -88,57 +88,39 @@ export function AIChatSidebar() {
     }
     if (isListening) toggleListen();
     
-    // Simulate AI generating JSON tree and visual
-    setTimeout(async () => {
-      try {
-        const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
-        await addFile(activeProjectId, fileName);
-        
-        const mockNodes: any[] = [
-          {
-            id: Math.random().toString(36).substring(2, 10),
-            type: 'box',
-            position: { x: 300, y: 150 },
-            dimensions: { width: 200, height: 100 },
-            content: promptText,
-            style: {
-              backgroundColor: '#2c2c2c',
-              borderColor: '#0c8ce9',
-              color: '#e3e3e3'
-            }
-          },
-          {
-            id: Math.random().toString(36).substring(2, 10),
-            type: 'arrow',
-            position: { x: 400, y: 250 },
-            dimensions: { width: 20, height: 100 },
-            content: '',
-            style: { borderColor: '#555555' },
-            startPoint: { x: 400, y: 250 },
-            endPoint: { x: 400, y: 350 }
-          },
-          {
-            id: Math.random().toString(36).substring(2, 10),
-            type: 'diamond',
-            position: { x: 340, y: 350 },
-            dimensions: { width: 120, height: 120 },
-            content: 'AI Gen Result',
-            style: {
-              backgroundColor: '#2e2c24',
-              borderColor: '#c69c3a',
-              color: '#e3e3e3',
-              borderRadius: '2px'
-            }
-          }
-        ];
-        
-        setNodes(mockNodes);
-      } catch (error) {
-         console.error("Failed to generate AI visual", error);
-      } finally {
-         setIsGenerating(false);
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/ai/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI generation failed: ${response.statusText}`);
       }
-    }, 1500);
+
+      const data = await response.json();
+      
+      const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
+      await addFile(activeProjectId, fileName);
+
+      let parsedNodes = [];
+      if (data.jsonTree) {
+        try {
+          parsedNodes = typeof data.jsonTree === 'string' ? JSON.parse(data.jsonTree) : data.jsonTree;
+        } catch (e) {
+          console.error("Failed to parse JSON tree from AI response", e);
+        }
+      }
+      
+      setNodes(parsedNodes);
+    } catch (error) {
+       console.error("Failed to generate AI visual", error);
+       alert("Failed to generate AI visual. Please try again.");
+    } finally {
+       setIsGenerating(false);
+    }
   };
 
   // Removed message history scroll
