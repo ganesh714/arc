@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
+import { AIChatSidebar } from '@/components/layout/AIChatSidebar';
 import { Canvas } from '@/features/diagram/components/Canvas';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/Dashboard';
@@ -18,7 +19,7 @@ function MainAppContent() {
   const [view, setView] = useState<AppView>('landing');
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
-  const { isSidebarOpen } = useDiagram();
+  const { isSidebarOpen, isAiChatOpen, isDesignPanelOpen } = useDiagram();
   const { isAuthenticated, isGuest, isLoading } = useAuth();
 
   useEffect(() => {
@@ -135,29 +136,40 @@ function MainAppContent() {
             <Canvas />
           </div>
 
+          {/* AI Chat Sidebar */}
+          {isAiChatOpen && (
+            <div style={{ width: '320px', minWidth: '320px', height: '100%', position: 'relative' }}>
+              <AIChatSidebar />
+            </div>
+          )}
+
           {/* Right Resize Divider */}
-          <div
-            onMouseDown={startRightResize}
-            style={{
-              width: '4px',
-              cursor: 'col-resize',
-              backgroundColor: 'transparent',
-              position: 'relative',
-              zIndex: 10,
-              display: 'flex',
-              justifyContent: 'center',
-              height: '100%',
-              flexShrink: 0
-            }}
-            className="group"
-          >
-            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-          </div>
+          {isDesignPanelOpen && (
+            <div
+              onMouseDown={startRightResize}
+              style={{
+                width: '4px',
+                cursor: 'col-resize',
+                backgroundColor: 'transparent',
+                position: 'relative',
+                zIndex: 10,
+                display: 'flex',
+                justifyContent: 'center',
+                height: '100%',
+                flexShrink: 0
+              }}
+              className="group"
+            >
+              <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+            </div>
+          )}
 
           {/* Right Sidebar wrapper */}
-          <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
-            <SidePanel />
-          </div>
+          {isDesignPanelOpen && (
+            <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
+              <SidePanel />
+            </div>
+          )}
         </div>
       </div>
     </div>
