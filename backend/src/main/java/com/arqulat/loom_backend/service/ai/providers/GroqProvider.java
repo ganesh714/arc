@@ -1,33 +1,83 @@
 package com.arqulat.loom_backend.service.ai.providers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class GroqProvider implements AIProvider {
 
-    @Value("${ai.groq.api-key:}")
+    @Value("${ai.groq.api-key:dummy-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    public GroqProvider(RestTemplate restTemplate) {
+    public GroqProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public String generate(String prompt) throws Exception {
-        if (apiKey == null || apiKey.trim().isEmpty()) {
+        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("Groq API key is not configured.");
         }
-        
-        // TODO: Implement actual Groq API call (e.g., https://api.groq.com/openai/v1/chat/completions)
-        if (apiKey.equals("dummy_key")) {
-            throw new RuntimeException("Simulated Groq API failure to trigger fallback.");
+
+        String url = "https://api.groq.com/openai/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("role", "user");
+        message.put("content", prompt);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "llama3-70b-8192");
+        requestBody.put("messages", List.of(message));
+        requestBody.put("temperature", 0.7);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Groq API call failed with status " + response.getStatusCode());
+        }
+
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode choices = root.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            String text = choices.get(0).path("message").path("content").asText();
+            return cleanJsonResponse(text);
         }
         
-        throw new UnsupportedOperationException("Groq generation not fully implemented yet.");
+        throw new RuntimeException("Failed to parse Groq response: " + response.getBody());
+    }
+
+    private String cleanJsonResponse(String response) {
+        String clean = response.trim();
+        if (clean.startsWith("```json")) {
+            clean = clean.substring(7);
+        } else if (clean.startsWith("```")) {
+            clean = clean.substring(3);
+        }
+        if (clean.endsWith("```")) {
+            clean = clean.substring(0, clean.length() - 3);
+        }
+        return clean.trim();
     }
 
     @Override

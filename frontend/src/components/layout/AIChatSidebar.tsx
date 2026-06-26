@@ -9,6 +9,33 @@ const MODELS = [
   'Loom Gemini Pro'
 ];
 
+const SYSTEM_PROMPT = `You are Loom AI, an expert software architecture and diagram designer. 
+The user will provide a request for a visual diagram. Your task is to translate their request into a beautiful, structured 2D diagram.
+
+You must respond ONLY with a raw, valid JSON array of nodes. Do not wrap the JSON in markdown code blocks. Do not include any explanations.
+
+Each node in the array must strictly adhere to this schema:
+{
+  "id": "string (unique)",
+  "type": "box" | "diamond" | "circle" | "triangle" | "line" | "arrow" | "star" | "pill" | "hexagon" | "parallelogram" | "database" | "note" | "custom-block" | "custom-connector",
+  "position": { "x": number, "y": number },
+  "dimensions": { "width": number, "height": number },
+  "content": "string (the text inside the node)",
+  "style": {
+    "backgroundColor": "string (hex code, use dark beautiful colors)",
+    "borderColor": "string (hex code, use vibrant accent colors)",
+    "color": "string (text color, usually white)",
+    "borderRadius": "string (optional)"
+  },
+  "startPoint": { "x": number, "y": number } (Required ONLY for lines/arrows/connectors to denote start coordinate),
+  "endPoint": { "x": number, "y": number } (Required ONLY for lines/arrows/connectors to denote end coordinate)
+}
+
+Design rules:
+1. Space nodes out logically so they don't overlap (assume a grid system where x,y coordinate 0,0 is the center).
+2. Connect related nodes using "arrow" type nodes. The arrow's startPoint should be at the edge of the source node, and the endPoint at the edge of the target node.
+3. Use premium, modern, cohesive color palettes (e.g., deep purples, neon blues, sleek dark grays).`;
+
 export function AIChatSidebar() {
   const { toggleAiChat, activeProjectId, addFile, setNodes } = useDiagram();
   const [input, setInput] = useState('');
@@ -89,10 +116,11 @@ export function AIChatSidebar() {
     
     try {
       const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const fullPrompt = `${SYSTEM_PROMPT}\n\nUser Request: ${promptText}`;
       const response = await fetch(`${loomApiUrl}/api/ai/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: promptText }),
+        body: JSON.stringify({ prompt: fullPrompt }),
       });
 
       if (!response.ok) {

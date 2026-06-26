@@ -1,51 +1,89 @@
 package com.arqulat.loom_backend.service.ai.providers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class OpenRouterProvider implements AIProvider {
 
-    @Value("${ai.openrouter.api-key:}")
+    @Value("${ai.openrouter.api-key:dummy-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    public OpenRouterProvider(RestTemplate restTemplate) {
+    public OpenRouterProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public String generate(String prompt) throws Exception {
-        if (apiKey == null || apiKey.trim().isEmpty()) {
+        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("OpenRouter API key is not configured.");
         }
-        
-        // TODO: Implement actual OpenRouter API call (e.g., https://openrouter.ai/api/v1/chat/completions)
-        if (apiKey.equals("dummy_key")) {
-            throw new RuntimeException("Simulated OpenRouter API failure.");
+
+        String url = "https://openrouter.ai/api/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
+        headers.set("HTTP-Referer", "http://localhost:8081");
+        headers.set("X-Title", "Loom AI");
+
+        Map<String, Object> message = new HashMap<>();
+        message.put("role", "user");
+        message.put("content", prompt);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", "nousresearch/nous-hermes-2-mixtral-8x7b-dpo");
+        requestBody.put("messages", List.of(message));
+        requestBody.put("temperature", 0.7);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("OpenRouter API call failed with status " + response.getStatusCode());
         }
 
-        // Return a dummy JSON response for verification purposes if it reaches the end of the fallback ring
-        return "[\n" +
-                "  {\n" +
-                "    \"id\": \"ai-gen-1\",\n" +
-                "    \"type\": \"box\",\n" +
-                "    \"position\": { \"x\": 200, \"y\": 200 },\n" +
-                "    \"dimensions\": { \"width\": 160, \"height\": 100 },\n" +
-                "    \"content\": \"OpenRouter Result for: " + prompt + "\",\n" +
-                "    \"style\": {\n" +
-                "      \"backgroundColor\": \"#2c2c2c\",\n" +
-                "      \"borderColor\": \"#0c8ce9\",\n" +
-                "      \"color\": \"#e3e3e3\"\n" +
-                "    }\n" +
-                "  }\n" +
-                "]";
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode choices = root.path("choices");
+        if (choices.isArray() && !choices.isEmpty()) {
+            String text = choices.get(0).path("message").path("content").asText();
+            return cleanJsonResponse(text);
+        }
+        
+        throw new RuntimeException("Failed to parse OpenRouter response: " + response.getBody());
+    }
+
+    private String cleanJsonResponse(String response) {
+        String clean = response.trim();
+        if (clean.startsWith("```json")) {
+            clean = clean.substring(7);
+        } else if (clean.startsWith("```")) {
+            clean = clean.substring(3);
+        }
+        if (clean.endsWith("```")) {
+            clean = clean.substring(0, clean.length() - 3);
+        }
+        return clean.trim();
     }
 
     @Override
     public String getProviderName() {
-        return "OpenRouter (GPT-OSS-120B)";
+        return "OpenRouter";
     }
 }
