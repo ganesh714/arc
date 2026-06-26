@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Settings, Bot } from 'lucide-react';
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 
@@ -18,7 +17,7 @@ export function AIChatSidebar() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
 

@@ -9,7 +9,6 @@ import {
   Square, 
   Circle, 
   Triangle, 
-  Diamond as DiamondIcon, 
   Minus, 
   ArrowRight,
   Star as StarIcon,
