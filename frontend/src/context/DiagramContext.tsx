@@ -74,6 +74,14 @@ interface DiagramContextType {
   // Sidebar state
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+
+  // AI Chat state
+  isAiChatOpen: boolean;
+  toggleAiChat: () => void;
+
+  // Design Panel state
+  isDesignPanelOpen: boolean;
+  toggleDesignPanel: () => void;
   
   // History states/functions
   undo: () => void;
@@ -284,6 +292,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   // Sidebar open/close state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+
+  // AI Chat open/close state
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const toggleAiChat = () => setIsAiChatOpen(prev => !prev);
+
+  // Design Panel open/close state
+  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(true);
+  const toggleDesignPanel = () => setIsDesignPanelOpen(prev => !prev);
 
   // Theme state initialization with persistence and system preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -1288,6 +1304,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       // Sidebar
       isSidebarOpen,
       toggleSidebar,
+      
+      // AI Chat
+      isAiChatOpen,
+      toggleAiChat,
+
+      // Design Panel
+      isDesignPanelOpen,
+      toggleDesignPanel,
       
       // History
       undo,

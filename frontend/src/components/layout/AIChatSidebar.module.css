@@ -1,0 +1,138 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-panel);
+  border-left: 1px solid var(--border-default);
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.messageList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.messageGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.aiLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aiMessage {
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 12px;
+  border-radius: 8px;
+  border-top-left-radius: 0;
+  border: 1px solid var(--border-default);
+}
+
+.inputArea {
+  padding: 16px;
+  border-top: 1px solid var(--border-default);
+  background-color: var(--bg-panel);
+  flex-shrink: 0;
+}
+
+.inputContainer {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 4px;
+  transition: border-color 0.2s ease;
+}
+
+.inputContainer:focus-within {
+  border-color: #0c8ce9;
+}
+
+.textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 8px;
+  outline: none;
+  resize: none;
+  max-height: 120px;
+  font-family: inherit;
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.sendBtn {
+  background: none;
+  border: none;
+  color: #0c8ce9;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  margin: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sendBtn:hover {
+  background-color: rgba(12, 140, 233, 0.1);
+  color: #38bdf8;
+}
