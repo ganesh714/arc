@@ -1,14 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Send, Sparkles, ChevronDown, History, Plus, Mic, MicOff, Settings, Bot } from 'lucide-react';
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Settings, Bot } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
-
-type Message = {
-  id: string;
-  role: 'user' | 'ai';
-  content: string;
-};
 
 const MODELS = [
   'Loom GPT-4',
@@ -17,27 +11,12 @@ const MODELS = [
 ];
 
 export function AIChatSidebar() {
-  const { toggleAiChat } = useDiagram();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'ai',
-      content: "Hi there! I'm your Loom Design Agent. I can help you create charts, layout diagrams, and apply beautiful designs. Try selecting some nodes or asking me to build a flowchart!"
-    }
-  ]);
+  const { toggleAiChat, activeProjectId, addFile, setNodes } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [activeHistoryId, setActiveHistoryId] = useState('h1');
-  
-  const FAKE_HISTORY = [
-    { id: 'h1', title: 'Login Flow Diagram', date: '2 mins ago' },
-    { id: 'h2', title: 'Database Schema Design', date: '10 hrs ago' },
-    { id: 'h3', title: 'E-commerce Architecture', date: 'Yesterday' },
-    { id: 'h4', title: 'User Onboarding Flow', date: '3 days ago' }
-  ];
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -99,37 +78,70 @@ export function AIChatSidebar() {
     }
   };
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input.trim()
-    };
-    
-    setMessages((prev) => [...prev, newUserMsg]);
+  const handleSend = async () => {
+    if (!input.trim() || isGenerating) return;
+    const promptText = input.trim();
     setInput('');
+    setIsGenerating(true);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
     if (isListening) toggleListen();
     
-    // Simulate AI response for now
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        content: `I am simulating a response using ${selectedModel}. Your request was: "${newUserMsg.content}"`
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+    // Simulate AI generating JSON tree and visual
+    setTimeout(async () => {
+      try {
+        const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
+        await addFile(activeProjectId, fileName);
+        
+        const mockNodes: any[] = [
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'box',
+            position: { x: 300, y: 150 },
+            dimensions: { width: 200, height: 100 },
+            content: promptText,
+            style: {
+              backgroundColor: '#2c2c2c',
+              borderColor: '#0c8ce9',
+              color: '#e3e3e3'
+            }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'arrow',
+            position: { x: 400, y: 250 },
+            dimensions: { width: 20, height: 100 },
+            content: '',
+            style: { borderColor: '#555555' },
+            startPoint: { x: 400, y: 250 },
+            endPoint: { x: 400, y: 350 }
+          },
+          {
+            id: Math.random().toString(36).substring(2, 10),
+            type: 'diamond',
+            position: { x: 340, y: 350 },
+            dimensions: { width: 120, height: 120 },
+            content: 'AI Gen Result',
+            style: {
+              backgroundColor: '#2e2c24',
+              borderColor: '#c69c3a',
+              color: '#e3e3e3',
+              borderRadius: '2px'
+            }
+          }
+        ];
+        
+        setNodes(mockNodes);
+      } catch (error) {
+         console.error("Failed to generate AI visual", error);
+      } finally {
+         setIsGenerating(false);
+      }
+    }, 1500);
   };
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Removed message history scroll
 
   // Auto-resize textarea
   useEffect(() => {
@@ -173,18 +185,6 @@ export function AIChatSidebar() {
           </div>
 
           <div className={styles.headerActions}>
-            <button 
-              className={`${styles.iconBtn} ${isHistoryOpen ? styles.iconBtnActive : ''}`} 
-              title="Chat History"
-              onClick={() => setIsHistoryOpen(true)}
-            >
-              <History size={14} />
-            </button>
-            
-            <button className={styles.iconBtn} title="New Chat">
-              <Plus size={14} />
-            </button>
-            <div className={styles.divider} />
             <button onClick={toggleAiChat} className={styles.closeBtn} title="Close AI Assistant">
               <X size={14} />
             </button>
@@ -192,17 +192,22 @@ export function AIChatSidebar() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className={styles.messageList}>
-        {messages.map((msg) => (
-          <div key={msg.id} className={`${styles.messageGroup} ${msg.role === 'user' ? styles.userGroup : styles.aiGroup}`}>
-            {msg.role === 'ai' && <span className={styles.aiLabel}><Sparkles size={10} /> AI</span>}
-            <div className={`${styles.messageBubble} ${msg.role === 'user' ? styles.userMessage : styles.aiMessage}`}>
-              {msg.content}
-            </div>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+      {/* Main Content Area */}
+      <div className={styles.messageList} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', color: '#888' }}>
+        <Sparkles size={48} style={{ marginBottom: '16px', color: '#0c8ce9', opacity: 0.8 }} />
+        <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Generation</h3>
+        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+          Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
+        </p>
+        {isGenerating && (
+          <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '8px', color: '#0c8ce9' }}>
+             <div style={{ width: '16px', height: '16px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+             Generating visual...
           </div>
-        ))}
-        <div ref={messagesEndRef} />
+        )}
       </div>
 
       {/* Input Area */}
@@ -236,7 +241,7 @@ export function AIChatSidebar() {
               className={`${styles.sendBtn} ${input.trim() ? styles.sendBtnReady : ''}`} 
               onClick={handleSend}
               title="Send prompt"
-              disabled={!input.trim() && !isListening}
+              disabled={(!input.trim() && !isListening) || isGenerating}
             >
               <Send size={14} />
             </button>
@@ -247,34 +252,6 @@ export function AIChatSidebar() {
         </div>
       </div>
 
-      {isHistoryOpen && typeof document !== 'undefined' && createPortal(
-        <div className={styles.historyOverlay} onClick={() => setIsHistoryOpen(false)}>
-          <div className={styles.historyModal} onClick={e => e.stopPropagation()}>
-            <div className={styles.historyModalHeader}>
-              <span>Recent Conversations</span>
-              <button className={styles.closeModalBtn} onClick={() => setIsHistoryOpen(false)}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className={styles.historyModalList}>
-              {FAKE_HISTORY.map((chat) => (
-                <button 
-                  key={chat.id} 
-                  className={`${styles.historyModalItem} ${activeHistoryId === chat.id ? styles.historyModalItemActive : ''}`} 
-                  onClick={() => {
-                    setActiveHistoryId(chat.id);
-                    setIsHistoryOpen(false);
-                  }}
-                >
-                  <div className={styles.historyModalTitle}>{chat.title}</div>
-                  <div className={styles.historyModalDate}>{chat.date}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 }
