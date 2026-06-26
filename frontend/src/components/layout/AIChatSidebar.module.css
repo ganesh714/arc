@@ -114,9 +114,112 @@
   transition: all 0.2s;
 }
 
-.iconBtn:hover, .closeBtn:hover {
+.iconBtn:hover, .closeBtn:hover, .iconBtnActive {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+.historyOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.historyModal {
+  width: 90vw;
+  max-width: 600px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.historyModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.closeModalBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.closeModalBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.historyModalList {
+  display: flex;
+  flex-direction: column;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  gap: 4px;
+}
+
+.historyModalItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.historyModalItem:hover {
+  background: var(--bg-hover);
+}
+
+.historyModalItemActive {
+  background: rgba(139, 92, 246, 0.05);
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: inset 3px 0 0 var(--accent-purple);
+}
+
+.historyModalTitle {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-align: left;
+}
+
+.historyModalDate {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .divider {
@@ -212,8 +315,9 @@
 }
 
 .inputContainerListening {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15), 0 0 12px rgba(239, 68, 68, 0.1);
+  background-color: rgba(239, 68, 68, 0.02);
 }
 
 .textarea {
@@ -263,8 +367,19 @@
 }
 
 .micBtnActive {
+  background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
-  animation: pulse 1.5s infinite;
+  position: relative;
+}
+
+.micBtnActive::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
+  background: rgba(239, 68, 68, 0.4);
+  z-index: -1;
+  animation: ripple 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
 
 .sendBtnReady {
@@ -282,8 +397,7 @@
   text-align: center;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
+@keyframes ripple {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
