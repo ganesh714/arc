@@ -12,6 +12,8 @@ Tracked issues organized by severity. Updated as issues are resolved.
 | Cri 2 | ~~**Zero input validation on all endpoints**~~ | ~~DTOs (`CreateProjectRequest`, `CreateFileRequest`, etc.) have no `@NotBlank`, `@Size`, or `@Pattern` annotations. Controllers don't use `@Valid`. Allows null names, 100K-char strings, and invalid hex colors.~~ | ✅ Resolved — Added Jakarta Validation annotations & updated GlobalExceptionHandler |
 | Cri 3 | ~~**Unlimited JSONB payload size**~~ | ~~`PUT /api/files/{fileId}` accepts `JsonNode nodes` with no size limit. A single malicious request could send 500MB of JSON, exhausting server memory and filling the database.~~ | ✅ Resolved — Added payload length limits in `FileService` and Tomcat configurations |
 | Cri 4 | ~~**No global exception handler**~~ | ~~No `@ControllerAdvice`. All `RuntimeException`s return raw `500 Internal Server Error` with full Java stack traces leaked to the client. Auth failures also return 500 instead of 403.~~ | ✅ Resolved — Created `GlobalExceptionHandler` with custom exceptions |
+| Cri 5 | ~~**500 Internal Server Error on File Save (Jackson parse error)**~~ | ~~`UpdateFileRequest` expected a `JsonNode` but the frontend payload caused Jackson deserialization errors, resulting in `500` errors on every auto-save.~~ | ✅ Resolved — Changed `nodes` to `Object` in DTO and used `ObjectMapper.valueToTree()` manually |
+| Cri 6 | ~~**Verbose Exception Stack Traces in Logs**~~ | ~~`GlobalExceptionHandler` was printing full stack traces for expected business exceptions (e.g., 404 Not Found), cluttering logs and making debugging difficult.~~ | ✅ Resolved — Suppressed full stack traces for handled exceptions, keeping concise messages |
 
 ---
 
