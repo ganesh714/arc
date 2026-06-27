@@ -24,3 +24,10 @@ Loom delegates all authentication (login, registration, SSO) to the central `arq
 
 ## Canvas Mechanics
 Loom does not use an external canvas library like Fabric.js; it builds an SVG/DOM-based infinite canvas manually to maintain total control over interactions, panning, zooming, and node customization. Nodes are rendered absolutely positioned based on the context state.
+- **Custom Shapes**: Flowchart nodes (Pills, Parallelograms, Diamonds) are drawn using handcrafted, optimized inline SVGs that match standard `lucide-react` stroke weights and scale responsively.
+- **Live Preview Engine**: As users drag to draw, a highly responsive secondary layer renders dynamic SVG bounds representing the exact shape prior to commit.
+
+## AI Component Architecture
+The application features an embedded Antigravity-style agent via the `AIChatSidebar` component.
+- **Speech-to-Text**: Integrates directly with the `window.SpeechRecognition` API for live voice dictation.
+- **State Segregation**: Chat history and model selection are managed locally to provide an ultra-responsive UI, backed by centralized portal modals (e.g. `historyModal`) to bypass nested CSS stack constraints.
