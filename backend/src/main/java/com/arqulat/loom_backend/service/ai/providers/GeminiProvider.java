@@ -2,6 +2,7 @@ package com.arqulat.loom_backend.service.ai.providers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.arqulat.loom_backend.service.ai.AIPrompts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,17 +16,15 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class GeminiProvider implements AIProvider {
+public class GeminiProvider extends AbstractAIProvider {
 
     @Value("${ai.gemini.api-key:dummy-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-
     public GeminiProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        super(objectMapper);
         this.restTemplate = restTemplate;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -50,6 +49,13 @@ public class GeminiProvider implements AIProvider {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> requestBody = new HashMap<>();
+        
+        Map<String, Object> systemPart = new HashMap<>();
+        systemPart.put("text", AIPrompts.SYSTEM_PROMPT);
+        Map<String, Object> systemInstruction = new HashMap<>();
+        systemInstruction.put("parts", List.of(systemPart));
+        requestBody.put("system_instruction", systemInstruction);
+
         Map<String, Object> part = new HashMap<>();
         part.put("text", prompt);
         Map<String, Object> content = new HashMap<>();
@@ -70,24 +76,11 @@ public class GeminiProvider implements AIProvider {
             JsonNode parts = candidates.get(0).path("content").path("parts");
             if (parts.isArray() && !parts.isEmpty()) {
                 String text = parts.get(0).path("text").asText();
-                return cleanJsonResponse(text);
+                return cleanAndValidateJsonResponse(text);
             }
         }
 
         throw new RuntimeException("Failed to parse Gemini response: " + response.getBody());
-    }
-
-    private String cleanJsonResponse(String response) {
-        String clean = response.trim();
-        if (clean.startsWith("```json")) {
-            clean = clean.substring(7);
-        } else if (clean.startsWith("```")) {
-            clean = clean.substring(3);
-        }
-        if (clean.endsWith("```")) {
-            clean = clean.substring(0, clean.length() - 3);
-        }
-        return clean.trim();
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.arqulat.loom_backend.service.ai.providers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.arqulat.loom_backend.service.ai.AIPrompts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,17 +16,15 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class GroqProvider implements AIProvider {
+public class GroqProvider extends AbstractAIProvider {
 
     @Value("${ai.groq.api-key:dummy-key}")
     private String apiKey;
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-
     public GroqProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
+        super(objectMapper);
         this.restTemplate = restTemplate;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -40,13 +39,17 @@ public class GroqProvider implements AIProvider {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
 
-        Map<String, Object> message = new HashMap<>();
-        message.put("role", "user");
-        message.put("content", prompt);
+        Map<String, Object> systemMessage = new HashMap<>();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", AIPrompts.SYSTEM_PROMPT);
+
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
+        userMessage.put("content", prompt);
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
-        requestBody.put("messages", List.of(message));
+        requestBody.put("messages", List.of(systemMessage, userMessage));
         requestBody.put("temperature", 0.7);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -61,23 +64,10 @@ public class GroqProvider implements AIProvider {
         JsonNode choices = root.path("choices");
         if (choices.isArray() && !choices.isEmpty()) {
             String text = choices.get(0).path("message").path("content").asText();
-            return cleanJsonResponse(text);
+            return cleanAndValidateJsonResponse(text);
         }
         
         throw new RuntimeException("Failed to parse Groq response: " + response.getBody());
-    }
-
-    private String cleanJsonResponse(String response) {
-        String clean = response.trim();
-        if (clean.startsWith("```json")) {
-            clean = clean.substring(7);
-        } else if (clean.startsWith("```")) {
-            clean = clean.substring(3);
-        }
-        if (clean.endsWith("```")) {
-            clean = clean.substring(0, clean.length() - 3);
-        }
-        return clean.trim();
     }
 
     @Override
