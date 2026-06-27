@@ -75,13 +75,6 @@ export function Header() {
             className={styles.btn} 
             onClick={() => setIsSettingsOpen(true)} 
             title="Canvas Settings"
-            style={{
-              padding: '6px 8px',
-              minWidth: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
           >
             <Settings size={14} />
           </button>

@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
+import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './Dashboard.module.css';
 
@@ -31,6 +32,7 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,7 +101,10 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
         </nav>
 
         <nav className={styles.navSection} style={{ marginTop: 'auto' }}>
-          <div className={styles.navLink} style={{ opacity: 0.4, cursor: 'not-allowed' }}>
+          <div 
+            className={styles.navLink} 
+            onClick={() => setIsSettingsModalOpen(true)}
+          >
             <Settings size={18} />
             <span>Settings</span>
           </div>
@@ -235,6 +240,11 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
         onConfirm={handleConfirmCreate}
         title="Create New Project"
         defaultName={`New Project ${projects.length + 1}`}
+      />
+
+      <DashboardSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </div>
   );
