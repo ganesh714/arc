@@ -24,7 +24,9 @@ export function SidePanel() {
     updateLinePoints,
     bringToFront,
     sendToBack,
-    alignSelected
+    alignSelected,
+    groupSelected,
+    ungroupSelected
   } = useDiagram();
 
   const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
@@ -291,22 +293,40 @@ export function SidePanel() {
     </div>
   );
 
-  // Depth control buttons
-  const DepthArrangement = ({ ids }: { ids: string[] }) => (
-    <div className={styles.section}>
-      <span className={styles.sectionTitle}>Layer Depth</span>
-      <div className={styles.paddedGrid}>
-        <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-          <ArrowUp size={12} />
-          <span>To Front</span>
-        </button>
-        <button className={styles.select} onClick={() => sendToBack(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-          <ArrowDown size={12} />
-          <span>To Back</span>
-        </button>
+  // Depth and Grouping control buttons
+  const DepthAndGroupArrangement = ({ ids }: { ids: string[] }) => {
+    // Check if the current selection forms a single existing group
+    const isSingleGroup = ids.length > 1 && ids.every(id => {
+      const n = nodes.find(node => node.id === id);
+      return n?.groupId && n.groupId === nodes.find(node => node.id === ids[0])?.groupId;
+    });
+
+    return (
+      <div className={styles.section}>
+        <span className={styles.sectionTitle}>Arrange & Group</span>
+        <div className={styles.paddedGrid}>
+          <button className={styles.select} onClick={() => bringToFront(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <ArrowUp size={12} />
+            <span>To Front</span>
+          </button>
+          <button className={styles.select} onClick={() => sendToBack(ids)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <ArrowDown size={12} />
+            <span>To Back</span>
+          </button>
+          
+          {!isSingleGroup ? (
+            <button className={styles.select} onClick={groupSelected} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', gridColumn: 'span 2', marginTop: '4px', backgroundColor: 'var(--primary-color)' }}>
+              <span style={{color: 'white'}}>Group Selection</span>
+            </button>
+          ) : (
+            <button className={styles.select} onClick={ungroupSelected} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', gridColumn: 'span 2', marginTop: '4px' }}>
+              <span>Ungroup</span>
+            </button>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (selectedNodes.length > 1) {
     const allShapes = selectedNodes.every(n => n.type !== 'line' && n.type !== 'arrow' && n.type !== 'custom-connector');
@@ -442,7 +462,7 @@ export function SidePanel() {
                 </div>
               </div>
 
-              <DepthArrangement ids={selectedNodeIds} />
+              <DepthAndGroupArrangement ids={selectedNodeIds} />
 
               <div className={styles.section}>
                 <span className={styles.sectionTitle}>Typography</span>

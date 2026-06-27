@@ -60,6 +60,8 @@ interface DiagramContextType {
   setActiveTool: (tool: string) => void;
   selectToolMode: 'move' | 'scale';
   setSelectToolMode: (mode: 'move' | 'scale') => void;
+  groupSelected: () => void;
+  ungroupSelected: () => void;
   projects: WorkspaceProject[];
   activeProjectId: string;
   activeFileId: string;
@@ -946,18 +948,59 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     ));
   };
 
-  const selectNode = (id: string | null, multi?: boolean) => {
+  const selectNode = (id: string | null, multi: boolean = false) => {
     if (id === null) {
       setSelectedNodeIds([]);
-    } else if (multi) {
-      setSelectedNodeIds(prev => 
-        prev.includes(id) 
-          ? prev.filter(item => item !== id) 
-          : [...prev, id]
-      );
-    } else {
-      setSelectedNodeIds([id]);
+      return;
     }
+    
+    // Find the node to check if it's in a group
+    const targetNode = nodes.find(n => n.id === id);
+    const groupId = targetNode?.groupId;
+    
+    let idsToSelect = [id];
+    
+    // If it has a groupId, select all nodes in that group
+    if (groupId) {
+      idsToSelect = nodes.filter(n => n.groupId === groupId).map(n => n.id);
+    }
+    
+    setSelectedNodeIds(prev => {
+      if (multi) {
+        // Toggle selection for all idsToSelect
+        const allSelected = idsToSelect.every(item => prev.includes(item));
+        if (allSelected) {
+          return prev.filter(p => !idsToSelect.includes(p));
+        } else {
+          return [...new Set([...prev, ...idsToSelect])];
+        }
+      }
+      return idsToSelect;
+    });
+  };
+
+  const groupSelected = () => {
+    if (selectedNodeIds.length < 2) return;
+    const newGroupId = `group-${Math.random().toString(36).substring(2, 10)}`;
+    saveHistoryState(nodes);
+    setNodes(prev => prev.map(node => {
+      if (selectedNodeIds.includes(node.id)) {
+        return { ...node, groupId: newGroupId };
+      }
+      return node;
+    }));
+  };
+
+  const ungroupSelected = () => {
+    if (selectedNodeIds.length === 0) return;
+    saveHistoryState(nodes);
+    setNodes(prev => prev.map(node => {
+      if (selectedNodeIds.includes(node.id)) {
+        const { groupId, ...rest } = node;
+        return rest as DiagramNode;
+      }
+      return node;
+    }));
   };
 
   const bringToFront = (ids: string[]) => {
@@ -1284,6 +1327,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       bringToFront,
       sendToBack,
       alignSelected,
+      groupSelected,
+      ungroupSelected,
       zoom,
       setZoom,
       activeTool,
