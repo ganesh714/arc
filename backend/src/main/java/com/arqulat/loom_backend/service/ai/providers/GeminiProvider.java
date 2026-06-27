@@ -35,10 +35,10 @@ public class GeminiProvider extends AbstractAIProvider {
         }
 
         try {
-            return callGeminiApi(prompt, "gemini-3.1-pro-preview");
+            return callGeminiApi(prompt, "gemini-1.5-pro");
         } catch (Exception e) {
-            System.err.println("Gemini 3.1 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Pro...");
-            return callGeminiApi(prompt, "gemini-2.5-pro");
+            System.err.println("Gemini 1.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 1.5 Flash...");
+            return callGeminiApi(prompt, "gemini-1.5-flash");
         }
     }
 
@@ -108,7 +108,7 @@ public class GeminiProvider extends AbstractAIProvider {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.POST, entity, JsonNode.class);
         JsonNode root = response.getBody();
 
