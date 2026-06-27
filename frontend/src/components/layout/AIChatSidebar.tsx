@@ -142,6 +142,14 @@ export function AIChatSidebar() {
         }
       }
       
+      if (Array.isArray(parsedNodes)) {
+        parsedNodes = parsedNodes.map((n: any) => ({
+          ...n,
+          position: n.position || { x: 0, y: 0 },
+          dimensions: n.dimensions || { width: 100, height: 100 }
+        }));
+      }
+
       setNodes(parsedNodes);
     } catch (error) {
        console.error("Failed to generate AI visual", error);
