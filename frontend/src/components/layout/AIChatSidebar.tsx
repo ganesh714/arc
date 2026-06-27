@@ -120,6 +120,7 @@ export function AIChatSidebar() {
       const response = await fetch(`${loomApiUrl}/api/ai/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ prompt: fullPrompt }),
       });
 
