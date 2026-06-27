@@ -35,7 +35,7 @@ public class GeminiProvider implements AIProvider {
         }
 
         try {
-            return callGeminiApi(prompt, "gemini-3.1-pro");
+            return callGeminiApi(prompt, "gemini-3.1-pro-preview");
         } catch (Exception e) {
             System.err.println("Gemini 3.1 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Pro...");
             return callGeminiApi(prompt, "gemini-2.5-pro");
@@ -43,7 +43,8 @@ public class GeminiProvider implements AIProvider {
     }
 
     private String callGeminiApi(String prompt, String model) throws Exception {
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key="
+                + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -72,7 +73,7 @@ public class GeminiProvider implements AIProvider {
                 return cleanJsonResponse(text);
             }
         }
-        
+
         throw new RuntimeException("Failed to parse Gemini response: " + response.getBody());
     }
 
