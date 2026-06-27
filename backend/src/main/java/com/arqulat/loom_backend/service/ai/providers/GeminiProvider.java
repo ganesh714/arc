@@ -34,7 +34,16 @@ public class GeminiProvider implements AIProvider {
             throw new IllegalStateException("Gemini API key is not configured.");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" + apiKey;
+        try {
+            return callGeminiApi(prompt, "gemini-3.1-pro");
+        } catch (Exception e) {
+            System.err.println("Gemini 3.1 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Pro...");
+            return callGeminiApi(prompt, "gemini-2.5-pro");
+        }
+    }
+
+    private String callGeminiApi(String prompt, String model) throws Exception {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

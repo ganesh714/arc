@@ -47,7 +47,7 @@ public class OpenRouterProvider implements AIProvider {
         message.put("content", prompt);
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "nousresearch/nous-hermes-2-mixtral-8x7b-dpo");
+        requestBody.put("model", "meta-llama/llama-3.1-70b-instruct");
         requestBody.put("messages", List.of(message));
         requestBody.put("temperature", 0.7);
 

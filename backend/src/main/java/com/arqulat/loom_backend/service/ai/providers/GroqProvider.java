@@ -45,7 +45,7 @@ public class GroqProvider implements AIProvider {
         message.put("content", prompt);
 
         Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", "llama3-70b-8192");
+        requestBody.put("model", "llama-3.3-70b-versatile");
         requestBody.put("messages", List.of(message));
         requestBody.put("temperature", 0.7);
 
