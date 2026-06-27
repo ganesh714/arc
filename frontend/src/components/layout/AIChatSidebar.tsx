@@ -135,6 +135,24 @@ export function AIChatSidebar() {
         }
       }
       
+      // Extract nodes array if AI wrapped it in an object
+      if (parsedNodes && !Array.isArray(parsedNodes)) {
+        if (Array.isArray(parsedNodes.nodes)) {
+          parsedNodes = parsedNodes.nodes;
+        } else if (Array.isArray(parsedNodes.elements)) {
+          parsedNodes = parsedNodes.elements;
+        } else if (Array.isArray(parsedNodes.data)) {
+          parsedNodes = parsedNodes.data;
+        } else {
+          // Can't find an array, wrap it in an array if it looks like a single node, or throw
+          if (parsedNodes.id && parsedNodes.type) {
+            parsedNodes = [parsedNodes];
+          } else {
+            throw new Error("AI response could not be parsed into a node array");
+          }
+        }
+      }
+
       if (Array.isArray(parsedNodes)) {
         parsedNodes = parsedNodes.map((n: any) => ({
           ...n,
@@ -146,9 +164,11 @@ export function AIChatSidebar() {
         if (aiMode === 'generate') {
           parsedNodes = autoLayoutNodes(parsedNodes);
         }
+        
+        setNodes(parsedNodes);
+      } else {
+        throw new Error("Parsed nodes is not an array");
       }
-
-      setNodes(parsedNodes);
     } catch (error) {
        console.error("Failed to generate AI visual", error);
        alert("Failed to generate AI visual. Please try again.");
