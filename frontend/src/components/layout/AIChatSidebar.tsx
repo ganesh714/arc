@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Wand2, Edit3 } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
+import { autoLayoutNodes } from '../../../utils/layoutEngine';
 
 const MODELS = [
   'Loom GPT-4',
@@ -138,8 +139,13 @@ export function AIChatSidebar() {
         parsedNodes = parsedNodes.map((n: any) => ({
           ...n,
           position: n.position || { x: 0, y: 0 },
-          dimensions: n.dimensions || { width: 100, height: 100 }
+          dimensions: n.dimensions || { width: 220, height: 90 }
         }));
+        
+        // Apply auto-layout if it's a generation task (not an edit that requires maintaining layout)
+        if (aiMode === 'generate') {
+          parsedNodes = autoLayoutNodes(parsedNodes);
+        }
       }
 
       setNodes(parsedNodes);

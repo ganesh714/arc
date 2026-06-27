@@ -11,8 +11,8 @@ public class AIPrompts {
         "{\n" +
         "  \"id\": \"string (unique)\",\n" +
         "  \"type\": \"box\" | \"diamond\" | \"circle\" | \"triangle\" | \"line\" | \"arrow\" | \"star\" | \"pill\" | \"hexagon\" | \"parallelogram\" | \"database\" | \"note\" | \"custom-block\" | \"custom-connector\",\n" +
-        "  \"position\": { \"x\": number, \"y\": number },\n" +
-        "  \"dimensions\": { \"width\": number, \"height\": number },\n" +
+        "  \"position\": { \"x\": 0, \"y\": 0 } (Optional, layout is handled automatically),\n" +
+        "  \"dimensions\": { \"width\": 220, \"height\": 90 } (Optional, defaults to 220x90),\n" +
         "  \"content\": \"string (the text inside the node)\",\n" +
         "  \"style\": {\n" +
         "    \"backgroundColor\": \"string (hex code, use dark beautiful colors)\",\n" +
@@ -20,22 +20,18 @@ public class AIPrompts {
         "    \"color\": \"string (text color, usually white)\",\n" +
         "    \"borderRadius\": \"string (optional)\"\n" +
         "  },\n" +
-        "  \"startPoint\": { \"x\": number, \"y\": number } (Required ONLY for lines/arrows/connectors to denote start coordinate),\n" +
-        "  \"endPoint\": { \"x\": number, \"y\": number } (Required ONLY for lines/arrows/connectors to denote end coordinate)\n" +
+        "  \"startConnection\": { \"nodeId\": \"source_node_id\" } (Required ONLY for arrows/connectors),\n" +
+        "  \"endConnection\": { \"nodeId\": \"target_node_id\" } (Required ONLY for arrows/connectors)\n" +
         "}\n" +
         "\n" +
         "Design rules:\n" +
-        "1. VISUAL LAYOUT (CRITICAL): Calculate EXACT mathematical coordinates (x, y) so nodes NEVER overlap.\n" +
-        "   - Horizontal spacing: at least 300px between nodes.\n" +
-        "   - Vertical spacing: at least 200px between layers/rows.\n" +
-        "   - Standard node dimensions: 220 width, 90 height.\n" +
-        "   - Build perfect grids or trees (e.g. Root at x=0, y=0. Children at x=-300, y=250 and x=300, y=250).\n" +
+        "1. NO MANUAL LAYOUT REQUIRED: Do not calculate precise X/Y coordinates. Our engine will auto-layout your nodes as long as you define the connections properly.\n" +
         "2. CONNECTORS: For EVERY connection, you MUST create an 'arrow' node.\n" +
-        "   - 'startPoint' must exactly touch the border of the source node.\n" +
-        "   - 'endPoint' must exactly touch the border of the target node.\n" +
+        "   - You MUST set 'startConnection.nodeId' to the ID of the source node.\n" +
+        "   - You MUST set 'endConnection.nodeId' to the ID of the target node.\n" +
         "3. PREMIUM AESTHETICS: Use ultra-modern SaaS color palettes.\n" +
-        "   - Backgrounds: Dark slate (e.g., #1E1E2E, #181825).\n" +
-        "   - Borders: Vibrant neon accents (e.g., #89B4FA blue, #F38BA8 red, #A6E3A1 green).\n" +
+        "   - Backgrounds: Dark slate (e.g., #1E1E2E, #181825, #0F172A).\n" +
+        "   - Borders: Vibrant neon accents (e.g., #89B4FA blue, #F38BA8 red, #A6E3A1 green, #F9E2AF yellow).\n" +
         "   - Text: #FFFFFF with soft borderRadius like \"12px\".";
 
     public static final String EDIT_SYSTEM_PROMPT = 
@@ -47,6 +43,6 @@ public class AIPrompts {
         "1. DO NOT change the 'id' of any existing nodes unless you are replacing them entirely.\n" +
         "2. To remove a node, simply omit it from the array.\n" +
         "3. To add a node, append it to the array. Make sure you connect it properly using startPoint/endPoint or lines if requested.\n" +
-        "5. RESPECT LAYOUT: If adding new nodes, calculate exact x,y coordinates so they sit beautifully alongside existing nodes (spaced by at least 250px).\n" +
+        "5. NO MANUAL LAYOUT REQUIRED: Just ensure 'startConnection.nodeId' and 'endConnection.nodeId' are accurate for new connections. Layout is auto-calculated.\n" +
         "6. ONLY RETURN RAW JSON ARRAY. No explanations, no markdown block wrappers. Just the valid JSON array starting with [ and ending with ].";
 }
