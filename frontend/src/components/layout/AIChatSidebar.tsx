@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot } from 'lucide-react';
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Wand2, Edit3 } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 
@@ -11,12 +11,13 @@ const MODELS = [
 
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [aiMode, setAiMode] = useState<'generate' | 'edit'>('generate');
   
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,21 +91,39 @@ export function AIChatSidebar() {
     
     try {
       const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/ai/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ prompt: promptText }),
-      });
+      let response;
+      if (aiMode === 'generate') {
+        response = await fetch(`${loomApiUrl}/api/ai/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ prompt: promptText }),
+        });
+      } else {
+        // Prepare context
+        const contextPayload = nodes.map(n => {
+          const { customConnectorStyle, ...safeNode } = n;
+          return safeNode;
+        });
+        
+        response = await fetch(`${loomApiUrl}/api/ai/edit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ prompt: promptText, contextNodes: contextPayload }),
+        });
+      }
 
       if (!response.ok) {
-        throw new Error(`AI generation failed: ${response.statusText}`);
+        throw new Error(`AI ${aiMode} failed: ${response.statusText}`);
       }
 
       const data = await response.json();
       
-      const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
-      await addFile(activeProjectId, fileName);
+      if (aiMode === 'generate') {
+        const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
+        await addFile(activeProjectId, fileName);
+      }
 
       let parsedNodes = [];
       if (data.jsonTree) {
@@ -188,11 +207,23 @@ export function AIChatSidebar() {
       `}</style>
       {/* Main Content Area */}
       <div className={styles.messageList} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', color: '#888' }}>
-        <Sparkles size={48} style={{ marginBottom: '16px', color: '#0c8ce9', opacity: 0.8 }} />
-        <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Generation</h3>
-        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
-          Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
-        </p>
+        {aiMode === 'generate' ? (
+          <>
+            <Sparkles size={48} style={{ marginBottom: '16px', color: '#0c8ce9', opacity: 0.8 }} />
+            <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Generation</h3>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+              Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
+            </p>
+          </>
+        ) : (
+          <>
+            <Edit3 size={48} style={{ marginBottom: '16px', color: '#10b981', opacity: 0.8 }} />
+            <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Iteration</h3>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+              Ask the AI to modify the existing diagram. E.g., "Change all boxes to blue" or "Add a database node".
+            </p>
+          </>
+        )}
         {isGenerating && (
           <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '8px', color: '#0c8ce9' }}>
              <div style={{ width: '16px', height: '16px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -203,6 +234,25 @@ export function AIChatSidebar() {
 
       {/* Input Area */}
       <div className={styles.inputArea}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%' }}>
+          <button 
+            className={`${styles.modeBtn} ${aiMode === 'generate' ? styles.modeBtnActive : ''}`}
+            onClick={() => setAiMode('generate')}
+            title="Generate New Canvas"
+          >
+            <Sparkles size={12} />
+            New
+          </button>
+          <button 
+            className={`${styles.modeBtn} ${aiMode === 'edit' ? styles.modeBtnEditActive : ''}`}
+            onClick={() => setAiMode('edit')}
+            title="Edit Existing Canvas"
+          >
+            <Edit3 size={12} />
+            Edit
+          </button>
+        </div>
+
         <div className={`${styles.inputContainer} ${isListening ? styles.inputContainerListening : ''}`}>
           <textarea 
             ref={textareaRef}

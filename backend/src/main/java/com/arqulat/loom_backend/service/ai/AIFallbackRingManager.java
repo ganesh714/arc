@@ -45,4 +45,23 @@ public class AIFallbackRingManager implements AIService {
         logger.error("All AI providers in the fallback ring have failed.");
         throw new Exception("Unable to generate diagram nodes. All configured AI providers failed.");
     }
+
+    @Override
+    public String editDiagramNodes(String prompt, String contextNodes) throws Exception {
+        for (AIProvider provider : fallbackRing) {
+            try {
+                logger.info("Attempting AI edit using provider: {}", provider.getProviderName());
+                String result = provider.edit(prompt, contextNodes);
+                
+                logger.info("Successfully edited diagram nodes using {}", provider.getProviderName());
+                return result;
+                
+            } catch (Exception e) {
+                logger.warn("Provider {} failed to edit. Reason: {}. Falling back to next provider...", provider.getProviderName(), e.getMessage());
+            }
+        }
+        
+        logger.error("All AI providers in the fallback ring have failed to edit.");
+        throw new Exception("Unable to edit diagram nodes. All configured AI providers failed.");
+    }
 }

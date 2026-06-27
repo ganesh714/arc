@@ -8,4 +8,13 @@ public interface AIService {
      * @throws Exception if generation fails across all fallback providers.
      */
     String generateDiagramNodes(String prompt) throws Exception;
+
+    /**
+     * Edits the existing diagram nodes based on the prompt and context.
+     * @param prompt The user's edit instruction.
+     * @param contextNodes The current nodes in JSON format.
+     * @return A JSON string representing the updated nodes.
+     * @throws Exception if generation fails.
+     */
+    String editDiagramNodes(String prompt, String contextNodes) throws Exception;
 }

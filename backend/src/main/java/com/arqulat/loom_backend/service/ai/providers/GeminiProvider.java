@@ -6,6 +6,7 @@ import com.arqulat.loom_backend.service.ai.AIPrompts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -71,6 +72,50 @@ public class GeminiProvider extends AbstractAIProvider {
         }
 
         JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode candidates = root.path("candidates");
+        if (candidates.isArray() && !candidates.isEmpty()) {
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (parts.isArray() && !parts.isEmpty()) {
+                String text = parts.get(0).path("text").asText();
+                return cleanAndValidateJsonResponse(text);
+            }
+        }
+
+        throw new RuntimeException("Failed to parse Gemini response: " + response.getBody());
+    }
+
+    @Override
+    public String edit(String prompt, String contextNodes) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        
+        Map<String, Object> systemPart = new HashMap<>();
+        systemPart.put("text", AIPrompts.EDIT_SYSTEM_PROMPT);
+        Map<String, Object> systemInstruction = new HashMap<>();
+        systemInstruction.put("parts", List.of(systemPart));
+        requestBody.put("system_instruction", systemInstruction);
+
+        Map<String, Object> part1 = new HashMap<>();
+        part1.put("text", "CURRENT DIAGRAM JSON:\n" + contextNodes);
+        Map<String, Object> part2 = new HashMap<>();
+        part2.put("text", "USER REQUEST:\n" + prompt);
+        
+        Map<String, Object> content = new HashMap<>();
+        content.put("parts", List.of(part1, part2));
+        requestBody.put("contents", List.of(content));
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey;
+        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.POST, entity, JsonNode.class);
+        JsonNode root = response.getBody();
+
+        if (root == null) {
+            throw new RuntimeException("Empty response from Gemini");
+        }
+
         JsonNode candidates = root.path("candidates");
         if (candidates.isArray() && !candidates.isEmpty()) {
             JsonNode parts = candidates.get(0).path("content").path("parts");
