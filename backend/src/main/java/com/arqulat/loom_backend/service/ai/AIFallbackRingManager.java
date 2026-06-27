@@ -19,9 +19,9 @@ public class AIFallbackRingManager implements AIService {
     
     private final List<AIProvider> fallbackRing;
 
-    public AIFallbackRingManager(GroqProvider groqProvider) {
-        // Defines the exact fallback order: Groq Only
-        this.fallbackRing = Arrays.asList(groqProvider);
+    public AIFallbackRingManager(GeminiProvider geminiProvider, GroqProvider groqProvider, OpenRouterProvider openRouterProvider) {
+        // Defines the exact fallback order: Gemini -> Groq -> OpenRouter
+        this.fallbackRing = Arrays.asList(geminiProvider, groqProvider, openRouterProvider);
     }
 
     @Override

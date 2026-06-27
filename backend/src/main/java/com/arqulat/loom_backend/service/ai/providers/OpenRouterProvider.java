@@ -48,7 +48,7 @@ public class OpenRouterProvider extends AbstractAIProvider {
 
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", prompt);
+        userMessage.put("content", prompt + "\n\nCRITICAL INSTRUCTION: You MUST output ONLY a valid JSON array. Do not wrap in markdown or include any explanations.");
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "meta-llama/llama-3.1-70b-instruct");
@@ -87,7 +87,7 @@ public class OpenRouterProvider extends AbstractAIProvider {
 
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", "CURRENT DIAGRAM JSON:\n" + contextNodes + "\n\nUSER REQUEST:\n" + prompt);
+        userMessage.put("content", "CURRENT DIAGRAM JSON:\n" + contextNodes + "\n\nUSER REQUEST:\n" + prompt + "\n\nCRITICAL INSTRUCTION: You MUST output ONLY a valid JSON array. Do not wrap in markdown or include any explanations.");
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "meta-llama/llama-3.1-70b-instruct");
