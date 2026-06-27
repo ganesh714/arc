@@ -1040,7 +1040,7 @@ export function SidePanel() {
           </div>
         </div>
 
-        <DepthArrangement ids={selectedNodeIds} />
+        {/* <DepthArrangement ids={selectedNodeIds} /> */}
 
         {!isLine && node.type !== 'custom-block' && (
           <div className={styles.section}>

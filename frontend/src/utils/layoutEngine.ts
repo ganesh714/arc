@@ -1,5 +1,5 @@
 import dagre from 'dagre';
-import { DiagramNode } from '../types';
+import type { DiagramNode } from '../types';
 
 export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   const g = new dagre.graphlib.Graph();
@@ -45,23 +45,29 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
 
   // Now that nodes are positioned, update edge startPoint and endPoint for the initial render
   return layoutedNodes.map(node => {
-    if (isEdge(node) && node.startConnection?.nodeId && node.endConnection?.nodeId) {
-      const sourceNode = layoutedNodes.find(n => n.id === node.startConnection!.nodeId);
-      const targetNode = layoutedNodes.find(n => n.id === node.endConnection!.nodeId);
+    if (isEdge(node)) {
+      // Default fallback to prevent fatal crashes during render
+      node.startPoint = node.startPoint || { x: 0, y: 0 };
+      node.endPoint = node.endPoint || { x: 100, y: 100 };
 
-      if (sourceNode && targetNode) {
-        // Automatically calculate anchor points (bottom of source, top of target)
-        node.startConnection.anchor = 'bottom';
-        node.endConnection.anchor = 'top';
-        
-        node.startPoint = {
-          x: sourceNode.position.x + (sourceNode.dimensions.width / 2),
-          y: sourceNode.position.y + sourceNode.dimensions.height
-        };
-        node.endPoint = {
-          x: targetNode.position.x + (targetNode.dimensions.width / 2),
-          y: targetNode.position.y
-        };
+      if (node.startConnection?.nodeId && node.endConnection?.nodeId) {
+        const sourceNode = layoutedNodes.find(n => n.id === node.startConnection!.nodeId);
+        const targetNode = layoutedNodes.find(n => n.id === node.endConnection!.nodeId);
+
+        if (sourceNode && targetNode) {
+          // Automatically calculate anchor points (bottom of source, top of target)
+          node.startConnection.anchor = 'bottom';
+          node.endConnection.anchor = 'top';
+          
+          node.startPoint = {
+            x: sourceNode.position.x + (sourceNode.dimensions.width / 2),
+            y: sourceNode.position.y + sourceNode.dimensions.height
+          };
+          node.endPoint = {
+            x: targetNode.position.x + (targetNode.dimensions.width / 2),
+            y: targetNode.position.y
+          };
+        }
       }
     }
     return node;
