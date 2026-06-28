@@ -29,20 +29,20 @@ public class GeminiProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String generate(String prompt) throws Exception {
+    public String generate(String prompt, String systemPrompt) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("Gemini API key is not configured.");
         }
 
         try {
-            return callGeminiApi(prompt, "gemini-1.5-pro");
+            return callGeminiApi(prompt, systemPrompt, "gemini-1.5-pro");
         } catch (Exception e) {
             System.err.println("Gemini 1.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 1.5 Flash...");
-            return callGeminiApi(prompt, "gemini-1.5-flash");
+            return callGeminiApi(prompt, systemPrompt, "gemini-1.5-flash");
         }
     }
 
-    private String callGeminiApi(String prompt, String model) throws Exception {
+    private String callGeminiApi(String prompt, String systemPrompt, String model) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key="
                 + apiKey;
 
@@ -52,7 +52,7 @@ public class GeminiProvider extends AbstractAIProvider {
         Map<String, Object> requestBody = new HashMap<>();
         
         Map<String, Object> systemPart = new HashMap<>();
-        systemPart.put("text", AIPrompts.SYSTEM_PROMPT);
+        systemPart.put("text", systemPrompt);
         Map<String, Object> systemInstruction = new HashMap<>();
         systemInstruction.put("parts", List.of(systemPart));
         requestBody.put("system_instruction", systemInstruction);
@@ -77,7 +77,8 @@ public class GeminiProvider extends AbstractAIProvider {
             JsonNode parts = candidates.get(0).path("content").path("parts");
             if (parts.isArray() && !parts.isEmpty()) {
                 String text = parts.get(0).path("text").asText();
-                return cleanAndValidateJsonResponse(text);
+                boolean expectsJson = systemPrompt.contains("JSON");
+                return expectsJson ? cleanAndValidateJsonResponse(text) : text;
             }
         }
 
