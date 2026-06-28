@@ -4,6 +4,8 @@ import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
+import { renderExtendedShape } from './ShapeRenderers';
+import { getSemanticStyle } from '../../../utils/semanticStyles';
 
 const parseCssString = (css: string) => {
   if (!css || typeof css !== 'string') return null;
@@ -231,9 +233,14 @@ export function Node({ node }: NodeProps) {
   const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const isComment = node.type === 'comment';
 
+  // Semantic auto-coloring
+  const semanticStyle = getSemanticStyle(node.tag);
+  const effectiveBorder = node.style?.borderColor || semanticStyle.borderColor;
+  const effectiveColor = node.style?.color || semanticStyle.color;
+
   // Build text style object
   const textStyle: React.CSSProperties = {
-    color: node.style?.color || '#e3e3e3',
+    color: effectiveColor || '#e3e3e3',
     fontSize: node.style?.fontSize || '11px',
     fontWeight: node.style?.fontWeight || 'normal',
     textAlign: node.style?.textAlign || 'center',
@@ -244,6 +251,8 @@ export function Node({ node }: NodeProps) {
   // Shadow filters vs css box shadows
   const hasShadow = !!node.style?.boxShadow;
   const shadowFilter = hasShadow ? `drop-shadow(${node.style!.boxShadow})` : 'none';
+
+  const extendedShape = renderExtendedShape({ node, textStyle, shadowFilter });
 
   return (
     <Rnd
@@ -374,7 +383,7 @@ export function Node({ node }: NodeProps) {
         opacity: node.style?.opacity !== undefined ? Number(node.style.opacity) : 1,
       }}
     >
-      {node.type === 'diamond' ? (
+      {extendedShape ? extendedShape : node.type === 'diamond' ? (
         <div
           style={{
             width: '70.7%',
@@ -753,27 +762,72 @@ export function Node({ node }: NodeProps) {
             <defs>
               <marker
                 id={`arrowhead-end-${node.id}`}
-                markerWidth="6"
-                markerHeight="5"
-                refX="5"
-                refY="2.5"
-                orient="auto"
+                markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto"
               >
-                <polygon points="0 0, 6 2.5, 0 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                {node.arrowHead === 'hollow' ? (
+                  <polygon points="0 0, 6 2.5, 0 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowHead === 'open' ? (
+                  <polyline points="0 0, 5 2.5, 0 5" fill="none" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1.5" />
+                ) : node.arrowHead === 'diamond-filled' ? (
+                  <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                ) : node.arrowHead === 'diamond-hollow' ? (
+                  <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowHead === 'circle' ? (
+                  <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : (
+                  <polygon points="0 0, 6 2.5, 0 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                )}
               </marker>
               <marker
                 id={`arrowhead-start-${node.id}`}
-                markerWidth="6"
-                markerHeight="5"
-                refX="1"
-                refY="2.5"
-                orient="auto"
+                markerWidth="6" markerHeight="5" refX="1" refY="2.5" orient="auto"
               >
-                <polygon points="6 0, 0 2.5, 6 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                {node.arrowTail === 'hollow' ? (
+                  <polygon points="6 0, 0 2.5, 6 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowTail === 'open' ? (
+                  <polyline points="6 0, 1 2.5, 6 5" fill="none" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1.5" />
+                ) : node.arrowTail === 'diamond-filled' ? (
+                  <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                ) : node.arrowTail === 'diamond-hollow' ? (
+                  <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowTail === 'circle' ? (
+                  <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : (
+                  <polygon points="6 0, 0 2.5, 6 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                )}
               </marker>
             </defs>
 
-            {node.lineCurve === 'curved' ? (() => {
+            {node.routing === 'elbow' ? (() => {
+              const startX = node.startPoint!.x - node.position.x;
+              const startY = node.startPoint!.y - node.position.y;
+              const endX = node.endPoint!.x - node.position.x;
+              const endY = node.endPoint!.y - node.position.y;
+              const midX = (startX + endX) / 2;
+              
+              const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
+
+              return (
+                <g style={{ cursor: 'move' }}>
+                  <path
+                    d={`M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`}
+                    stroke="transparent"
+                    strokeWidth="16"
+                    fill="none"
+                  />
+                  <path
+                    d={`M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray={dasharray}
+                    markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
+                    markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
+                  />
+                </g>
+              );
+            })() : node.lineCurve === 'curved' ? (() => {
               const startX = node.startPoint!.x - node.position.x;
               const startY = node.startPoint!.y - node.position.y;
               const endX = node.endPoint!.x - node.position.x;
@@ -790,6 +844,7 @@ export function Node({ node }: NodeProps) {
               const controlY = midY + ny * curveOffset;
 
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
               return (
                 <g style={{ cursor: 'move' }}>
@@ -801,10 +856,10 @@ export function Node({ node }: NodeProps) {
                   />
                   <path
                     d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
                     fill="none"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
+                    strokeDasharray={dasharray}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -817,6 +872,7 @@ export function Node({ node }: NodeProps) {
               const endY = node.endPoint!.y - node.position.y;
 
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
               return (
                 <g style={{ cursor: 'move' }}>
@@ -833,9 +889,9 @@ export function Node({ node }: NodeProps) {
                     y1={startY}
                     x2={endX}
                     y2={endY}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
+                    strokeDasharray={dasharray}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -843,6 +899,56 @@ export function Node({ node }: NodeProps) {
               );
             })()}
           </svg>
+          
+          {/* Edge Label */}
+          {node.label && (() => {
+            const startX = node.startPoint!.x - node.position.x;
+            const startY = node.startPoint!.y - node.position.y;
+            const endX = node.endPoint!.x - node.position.x;
+            const endY = node.endPoint!.y - node.position.y;
+            let labelX = (startX + endX) / 2;
+            let labelY = (startY + endY) / 2;
+
+            if (node.routing === 'elbow') {
+              labelX = (startX + endX) / 2;
+              labelY = startY;
+            } else if (node.lineCurve === 'curved') {
+              const dx = endX - startX;
+              const dy = endY - startY;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              const curveOffset = Math.max(15, Math.min(60, len * 0.15));
+              const nx = len > 0 ? -dy / len : 0;
+              const ny = len > 0 ? dx / len : 0;
+              labelX += nx * (curveOffset * 0.5);
+              labelY += ny * (curveOffset * 0.5);
+            }
+
+            if (node.labelPosition === 'start') {
+              labelX = startX + (endX - startX) * 0.2;
+              labelY = startY + (endY - startY) * 0.2;
+            } else if (node.labelPosition === 'end') {
+              labelX = startX + (endX - startX) * 0.8;
+              labelY = startY + (endY - startY) * 0.8;
+            }
+
+            return (
+              <div style={{
+                position: 'absolute',
+                left: `${labelX}px`,
+                top: `${labelY}px`,
+                transform: 'translate(-50%, -50%)',
+                background: node.style?.backgroundColor || 'var(--bg-canvas)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: node.style?.fontSize || '10px',
+                color: effectiveColor || 'var(--text-primary)',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap'
+              }}>
+                {node.label}
+              </div>
+            );
+          })()}
         </div>
         )
       ) : node.type === 'path' ? (
