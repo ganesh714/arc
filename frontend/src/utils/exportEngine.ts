@@ -1,4 +1,6 @@
 import type { DiagramNode } from '../types';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { renderExtendedShape } from '../features/diagram/components/ShapeRenderers';
 
 export function generateExportCode(nodes: DiagramNode[]): string {
   let html = `<div style="position: relative; width: 1080px; height: 600px; border: 1px solid #ccc; background-color: #ffffff;">\n`;
@@ -177,21 +179,43 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `    </svg>\n`;
       html += `  </div>\n`;
     } else {
-      let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; `;
-      
-      if (node.style) {
-        if (node.style.backgroundColor) styleStr += `background-color: ${node.style.backgroundColor}; `;
-        if (node.style.borderColor) styleStr += `border: 2px solid ${node.style.borderColor}; `;
-        if (node.style.color) styleStr += `color: ${node.style.color}; `;
-        if (node.style.fontSize) styleStr += `font-size: ${node.style.fontSize}; `;
-        styleStr += `border-radius: ${node.style.borderRadius || '4px'}; `;
-        styleStr += `transform: rotate(${node.rotation || 0}deg); `;
-        styleStr += `display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
+      const extendedShape = renderExtendedShape({
+        node,
+        textStyle: {
+          color: node.style?.color || '#e3e3e3',
+          fontSize: node.style?.fontSize || '11px',
+          fontWeight: node.style?.fontWeight || 'normal',
+          textAlign: (node.style?.textAlign as any) || 'center',
+          width: '100%',
+          wordBreak: 'break-word',
+        },
+        shadowFilter: 'none'
+      });
+
+      if (extendedShape) {
+        const innerHtml = renderToStaticMarkup(extendedShape);
+        let wrapperStyle = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; z-index: 5;`;
+        if (node.rotation) {
+          wrapperStyle += ` transform: rotate(${node.rotation}deg);`;
+        }
+        html += `  <div style="${wrapperStyle}">\n    ${innerHtml}\n  </div>\n`;
       } else {
-        styleStr += `background-color: #f0f0f0; border: 2px solid #333; border-radius: 4px; transform: rotate(${node.rotation || 0}deg); display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
+        let styleStr = `position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; box-sizing: border-box; z-index: 5; `;
+        
+        if (node.style) {
+          if (node.style.backgroundColor) styleStr += `background-color: ${node.style.backgroundColor}; `;
+          if (node.style.borderColor) styleStr += `border: 2px solid ${node.style.borderColor}; `;
+          if (node.style.color) styleStr += `color: ${node.style.color}; `;
+          if (node.style.fontSize) styleStr += `font-size: ${node.style.fontSize}; `;
+          styleStr += `border-radius: ${node.style.borderRadius || '4px'}; `;
+          styleStr += `transform: rotate(${node.rotation || 0}deg); `;
+          styleStr += `display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
+        } else {
+          styleStr += `background-color: #f0f0f0; border: 2px solid #333; border-radius: 4px; transform: rotate(${node.rotation || 0}deg); display: flex; align-items: center; justify-content: center; font-family: sans-serif; `;
+        }
+        
+        html += `  <div style="${styleStr.trim()}">\n    ${node.content || ''}\n  </div>\n`;
       }
-      
-      html += `  <div style="${styleStr.trim()}">\n    ${node.content || ''}\n  </div>\n`;
     }
   });
 
