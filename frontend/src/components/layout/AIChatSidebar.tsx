@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Wand2, Edit3 } from 'lucide-react';
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3 } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
