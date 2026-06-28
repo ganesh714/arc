@@ -21,7 +21,7 @@ public class AIPrompts {
     public static final String PASS2_STYLE_PROMPT = "You are a diagram JSON formatter. Given the SLD (Semantic Layout Description) below, produce a valid JSON array of DiagramNode objects.\n" +
             "\n" +
             "Rules:\n" +
-            "1. Use the exact type names from the SLD. DO NOT use types that are not in the allowed list.\n" +
+            "1. You MUST include 'id', 'type', and 'content' fields for EVERY node based on the SLD. Use the exact type names from the SLD.\n" +
             "2. Set 'stereotype' field for uml-* types (e.g. \"Interface\", \"Service\").\n" +
             "3. Set 'tag' for EVERY node. The tag determines its color (options: interface, abstract, class, enum, service, controller, repository, entity, database, queue, cache, gateway, client, server, start, end, decision, input, output).\n" +
             "4. For uml-class: use 'sections' array with {title, items[]} for attributes/methods.\n" +
