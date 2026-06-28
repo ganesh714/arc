@@ -805,16 +805,22 @@ export function Node({ node }: NodeProps) {
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
               const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
+              const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+              const midY = (startY + endY) / 2;
+              const elbowPath = isVerticalElbow 
+                ? `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`
+                : `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+
               return (
                 <g style={{ cursor: 'move' }}>
                   <path
-                    d={`M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`}
+                    d={elbowPath}
                     stroke="transparent"
                     strokeWidth="16"
                     fill="none"
                   />
                   <path
-                    d={`M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`}
+                    d={elbowPath}
                     stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
                     fill="none"
