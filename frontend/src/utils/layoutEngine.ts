@@ -12,9 +12,19 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   const edges = nodes.filter(n => isEdge(n));
 
   realNodes.forEach(node => {
+    let defaultWidth = 220;
+    let defaultHeight = 90;
+    if (node.type === 'diamond' || node.type === 'circle') {
+      defaultWidth = 140;
+      defaultHeight = 140;
+    } else if (node.type === 'terminator') {
+      defaultWidth = 160;
+      defaultHeight = 70;
+    }
+    
     g.setNode(node.id, { 
-      width: node.dimensions?.width || 220, 
-      height: node.dimensions?.height || 90 
+      width: node.dimensions?.width || defaultWidth, 
+      height: node.dimensions?.height || defaultHeight 
     });
   });
 
@@ -31,11 +41,25 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
     if (!isEdge(node)) {
       const dagreNode = g.node(node.id);
       if (dagreNode) {
+        let defaultWidth = 220;
+        let defaultHeight = 90;
+        if (node.type === 'diamond' || node.type === 'circle') {
+          defaultWidth = 140;
+          defaultHeight = 140;
+        } else if (node.type === 'terminator') {
+          defaultWidth = 160;
+          defaultHeight = 70;
+        }
+
+        const width = node.dimensions?.width || defaultWidth;
+        const height = node.dimensions?.height || defaultHeight;
+
         return {
           ...node,
+          dimensions: { width, height },
           position: {
-            x: Math.round(dagreNode.x - (node.dimensions?.width || 220) / 2),
-            y: Math.round(dagreNode.y - (node.dimensions?.height || 90) / 2)
+            x: Math.round(dagreNode.x - width / 2),
+            y: Math.round(dagreNode.y - height / 2)
           }
         };
       }

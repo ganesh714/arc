@@ -33,9 +33,10 @@ public class AIPrompts {
             "}\n" +
             "\n" +
             "Rules:\n" +
-            "1. You MUST include 'id', 'type', and 'content' fields for EVERY node based on the SLD. Use the exact type names from the SLD.\n" +
+            "1. You MUST include 'id', 'type', and 'content' fields for EVERY node based on the SLD. Use the exact type names from the SLD. Do NOT use type 'arrow' for normal nodes.\n" +
             "2. CONNECTORS: For EVERY connection defined in the SLD, you MUST create a node with 'type': 'arrow'.\n" +
             "   - You MUST set 'startConnection.nodeId' and 'endConnection.nodeId' to valid IDs.\n" +
+            "   - For text on a connector (e.g. 'Yes', 'No'), use the 'label' field, NOT the 'content' field.\n" +
             "3. Set 'tag' for EVERY node. The tag determines its color (options: interface, abstract, class, enum, service, controller, repository, entity, database, queue, cache, gateway, client, server, start, end, decision, input, output).\n" +
             "4. DO NOT set position or dimension fields — auto-layout handles it.\n" +
             "\n" +

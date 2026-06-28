@@ -177,6 +177,15 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       }
 
       html += `    </svg>\n`;
+
+      if (node.label) {
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        html += `    <div style="position: absolute; left: ${midX}px; top: ${midY}px; transform: translate(-50%, -50%); background: #ffffff; padding: 2px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; color: #333; z-index: 10; font-family: sans-serif;">\n`;
+        html += `      ${node.label}\n`;
+        html += `    </div>\n`;
+      }
+
       html += `  </div>\n`;
     } else {
       const extendedShape = renderExtendedShape({
