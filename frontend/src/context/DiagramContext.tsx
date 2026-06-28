@@ -1,12 +1,27 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { DiagramNode } from '@/types';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useAuth } from './AuthContext';
+import { useCollaboration } from './CollaborationContext';
 
-export interface Project {
+export interface CanvasConfig {
+  backgroundColor: string;
+}
+
+export interface DiagramFile {
+  id: string;
+  name: string;
+  nodes: DiagramNode[];
+  canvasConfig: CanvasConfig;
+  updatedAt: number;
+}
+
+export interface WorkspaceProject {
   id: string;
   name: string;
   category: string;
-  nodes: DiagramNode[];
+  files: DiagramFile[];
   updatedAt: number;
 }
 
@@ -45,14 +60,30 @@ interface DiagramContextType {
   setActiveTool: (tool: string) => void;
   selectToolMode: 'move' | 'scale';
   setSelectToolMode: (mode: 'move' | 'scale') => void;
-  projects: Project[];
+  groupSelected: () => void;
+  ungroupSelected: () => void;
+  projects: WorkspaceProject[];
   activeProjectId: string;
+  activeFileId: string;
   switchProject: (id: string) => void;
-  addProject: (name: string, category?: string) => void;
+  addProject: (name: string, category?: string, backgroundColor?: string) => void;
+  switchFile: (id: string) => void;
+  addFile: (projectId: string, name: string, backgroundColor?: string) => void;
+  updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
+  isLoadingProjects: boolean;
+  isFileLoading: boolean;
   
   // Sidebar state
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+
+  // AI Chat state
+  isAiChatOpen: boolean;
+  toggleAiChat: () => void;
+
+  // Design Panel state
+  isDesignPanelOpen: boolean;
+  toggleDesignPanel: () => void;
   
   // History states/functions
   undo: () => void;
@@ -74,48 +105,56 @@ interface DiagramContextType {
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 
-const initialProjects: Project[] = [
+const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-1',
     name: 'Loom Diagram',
     category: 'Loom Diagrams',
     updatedAt: Date.now(),
-    nodes: [
+    files: [
       {
-        id: 'node-1',
-        type: 'box',
-        position: { x: 80, y: 80 },
-        dimensions: { width: 160, height: 100 },
-        content: 'Figma Canvas',
-        style: {
-          backgroundColor: '#2c2c2c',
-          borderColor: '#555555',
-          color: '#e3e3e3'
-        }
-      },
-      {
-        id: 'node-2',
-        type: 'circle',
-        position: { x: 340, y: 80 },
-        dimensions: { width: 100, height: 100 },
-        content: 'Brainstorm',
-        style: {
-          backgroundColor: '#2c2c2c',
-          borderColor: '#555555',
-          color: '#e3e3e3'
-        }
-      },
-      {
-        id: 'node-3',
-        type: 'arrow',
-        position: { x: 240, y: 120 },
-        dimensions: { width: 100, height: 20 },
-        content: '',
-        style: {
-          borderColor: '#0c8ce9'
-        },
-        startPoint: { x: 240, y: 130 },
-        endPoint: { x: 340, y: 130 }
+        id: 'file-1',
+        name: 'Main Canvas',
+        updatedAt: Date.now(),
+        canvasConfig: { backgroundColor: '#0f0f0f' },
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'box',
+            position: { x: 80, y: 80 },
+            dimensions: { width: 160, height: 100 },
+            content: 'Figma Canvas',
+            style: {
+              backgroundColor: '#2c2c2c',
+              borderColor: '#555555',
+              color: '#e3e3e3'
+            }
+          },
+          {
+            id: 'node-2',
+            type: 'circle',
+            position: { x: 340, y: 80 },
+            dimensions: { width: 100, height: 100 },
+            content: 'Brainstorm',
+            style: {
+              backgroundColor: '#2c2c2c',
+              borderColor: '#555555',
+              color: '#e3e3e3'
+            }
+          },
+          {
+            id: 'node-3',
+            type: 'arrow',
+            position: { x: 240, y: 120 },
+            dimensions: { width: 100, height: 20 },
+            content: '',
+            style: {
+              borderColor: '#0c8ce9'
+            },
+            startPoint: { x: 240, y: 130 },
+            endPoint: { x: 340, y: 130 }
+          }
+        ]
       }
     ]
   },
@@ -124,25 +163,126 @@ const initialProjects: Project[] = [
     name: 'Personal Flowchart',
     category: 'Loom Diagrams',
     updatedAt: Date.now() - 3600000,
-    nodes: []
+    files: [
+      {
+        id: 'file-2',
+        name: 'Untitled',
+        updatedAt: Date.now() - 3600000,
+        canvasConfig: { backgroundColor: '#0f0f0f' },
+        nodes: []
+      }
+    ]
   },
   {
     id: 'project-3',
     name: 'Personal Wireframe',
     category: 'Website Wireframes',
     updatedAt: Date.now() - 86400000,
-    nodes: []
+    files: []
   }
 ];
 
 export function DiagramProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [activeProjectId, setActiveProjectId] = useState<string>('project-1');
-  const [nodes, setNodesState] = useState<DiagramNode[]>(initialProjects[0].nodes);
+  const { isGuest, isAuthenticated, isLoading } = useAuth();
+  const [projects, setProjects] = useState<WorkspaceProject[]>(isGuest ? initialProjects : []);
+  const [activeProjectId, setActiveProjectId] = useState<string>(isGuest ? 'project-1' : '');
+  const [activeFileId, setActiveFileId] = useState<string>(isGuest ? 'file-1' : '');
+  const [nodes, setNodesState] = useState<DiagramNode[]>(isGuest ? initialProjects[0].files[0].nodes : []);
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  useEffect(() => {
+    console.log('nodes state updated to:', nodes);
+  }, [nodes]);
   const [zoom, setZoom] = useState<number>(1.0);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
+  const [isFileLoading, setIsFileLoading] = useState<boolean>(false);
+  
+  const { connectToFile, broadcast, incomingActions, clearIncomingActions } = useCollaboration();
+
+  // Connect to WebSocket room for this file
+  useEffect(() => {
+    connectToFile(activeFileId);
+  }, [activeFileId, connectToFile]);
+
+  // Process incoming WebSocket actions
+  useEffect(() => {
+    if (incomingActions.length > 0) {
+      setNodesState(prev => {
+        let next = [...prev];
+        incomingActions.forEach(action => {
+          if (action.type === 'NODE_MOVED') {
+            next = next.map(node => node.id === action.payload.id ? { ...node, position: action.payload.position, startPoint: action.payload.startPoint, endPoint: action.payload.endPoint } : node);
+          } else if (action.type === 'NODE_ADDED') {
+            next.push(action.payload);
+          } else if (action.type === 'NODE_UPDATED') {
+            next = next.map(node => node.id === action.payload.id ? { ...node, ...action.payload } : node);
+          } else if (action.type === 'NODES_DELETED') {
+            const idsToDelete = action.payload.ids as string[];
+            next = next.filter(node => !idsToDelete.includes(node.id));
+          }
+        });
+        return next;
+      });
+      clearIncomingActions();
+    }
+  }, [incomingActions, clearIncomingActions]);
+
+  // Fetch projects from backend
+  useEffect(() => {
+    if (isLoading) return; // Wait for Auth context to resolve
+
+    if (isGuest) {
+      setProjects(initialProjects);
+      setActiveProjectId('project-1');
+      setActiveFileId('file-1');
+      setNodesState(initialProjects[0].files[0].nodes);
+      setIsLoadingProjects(false);
+      return;
+    }
+    
+    if (isAuthenticated) {
+      const fetchProjects = async () => {
+        setIsLoadingProjects(true);
+        try {
+          const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+          const response = await fetch(`${loomApiUrl}/api/projects`, { credentials: 'include' });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const mappedProjects: WorkspaceProject[] = data.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              category: p.category || 'Loom Diagrams',
+              updatedAt: p.updatedAt,
+              files: p.files.map((f: any) => ({
+                id: f.id,
+                name: f.name,
+                updatedAt: f.updatedAt,
+                canvasConfig: { backgroundColor: f.canvasBgColor || '#0f0f0f' },
+                nodes: []
+              }))
+            }));
+            
+            setProjects(mappedProjects);
+            
+            if (mappedProjects.length > 0) {
+              setActiveProjectId(mappedProjects[0].id);
+              if (mappedProjects[0].files.length > 0) {
+                setActiveFileId(mappedProjects[0].files[0].id);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch projects', error);
+        } finally {
+          setIsLoadingProjects(false);
+        }
+      };
+      
+      fetchProjects();
+    }
+  }, [isGuest, isAuthenticated, isLoading]);
   
   // History stack states
   const [past, setPast] = useState<DiagramNode[][]>([]);
@@ -154,6 +294,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   // Sidebar open/close state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+
+  // AI Chat open/close state
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const toggleAiChat = () => setIsAiChatOpen(prev => !prev);
+
+  // Design Panel open/close state
+  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(true);
+  const toggleDesignPanel = () => setIsDesignPanelOpen(prev => !prev);
 
   // Theme state initialization with persistence and system preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -179,19 +327,64 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   // Synced setNodes state wrapper
   const setNodes = (newNodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => {
+    console.log('setNodes called with:', newNodes);
     setNodesState(newNodes);
   };
 
   // Sync nodes state to projects array whenever nodes change
   useEffect(() => {
     setProjects(prevProjects => 
-      prevProjects.map(p => 
-        p.id === activeProjectId 
-          ? { ...p, nodes, updatedAt: Date.now() } 
-          : p
-      )
+      prevProjects.map(p => {
+        if (p.id === activeProjectId) {
+          const updatedFiles = p.files.map(f => 
+            f.id === activeFileId ? { ...f, nodes, updatedAt: Date.now() } : f
+          );
+          return { ...p, files: updatedFiles, updatedAt: Date.now() };
+        }
+        return p;
+      })
     );
-  }, [nodes, activeProjectId]);
+  }, [nodes, activeProjectId, activeFileId]);
+
+  // Auto-save mechanism with 1000ms debounce
+  const debouncedNodes = useDebounce(nodes, 1000);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (!activeFileId || isGuest || isFileLoading) return;
+
+    const autoSave = async () => {
+      try {
+        const targetFile = projects.find(p => p.id === activeProjectId)?.files.find(f => f.id === activeFileId);
+        if (!targetFile) return;
+
+        const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+        const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            name: targetFile.name,
+            canvasBgColor: targetFile.canvasConfig.backgroundColor,
+            nodes: debouncedNodes 
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Auto-save failed:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Failed to auto-save to backend:', error);
+      }
+    };
+
+    autoSave();
+  }, [debouncedNodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
@@ -240,6 +433,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     if (selectedNodeIds.length === 0) return;
     saveHistoryState(nodes);
     setNodes(prev => prev.filter(node => !selectedNodeIds.includes(node.id)));
+    broadcast('NODES_DELETED', { ids: selectedNodeIds });
     setSelectedNodeIds([]);
   };
 
@@ -248,7 +442,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     saveHistoryState(nodes);
     
     const newNodes = clipboard.map(node => {
-      const newId = crypto.randomUUID().split('-')[0];
+      const newId = Math.random().toString(36).substring(2, 10);
       const offsetPos = {
         x: node.position.x + 20,
         y: node.position.y + 20
@@ -284,7 +478,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'box',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 50 },
       dimensions: { width, height },
@@ -296,6 +490,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addDiamond = (position?: { x: number; y: number }) => {
@@ -303,7 +498,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'diamond',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 80, y: 80 },
       dimensions: { width, height },
@@ -316,6 +511,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addCircle = (position?: { x: number; y: number }) => {
@@ -323,7 +519,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 100;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'circle',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
       dimensions: { width, height },
@@ -335,6 +531,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       }
     };
     setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
   };
 
   const addTriangle = (position?: { x: number; y: number }) => {
@@ -342,7 +539,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'triangle',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 120, y: 120 },
       dimensions: { width, height },
@@ -361,7 +558,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 110;
     const height = 110;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'star',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 150 },
       dimensions: { width, height },
@@ -380,7 +577,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 60;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'pill',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 50, y: 250 },
       dimensions: { width, height },
@@ -400,7 +597,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 120;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'hexagon',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 150, y: 250 },
       dimensions: { width, height },
@@ -419,7 +616,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 150;
     const height = 100;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'parallelogram',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 250, y: 250 },
       dimensions: { width, height },
@@ -438,7 +635,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 100;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'database',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 350, y: 250 },
       dimensions: { width, height },
@@ -457,7 +654,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 140;
     const height = 140;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'note',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 450, y: 250 },
       dimensions: { width, height },
@@ -479,7 +676,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 150;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'line',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -500,7 +697,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 200;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'arrow',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -519,7 +716,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const width = 160;
     const height = 120;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'custom-block',
       position: position ? { x: position.x - width / 2, y: position.y - height / 2 } : { x: 100, y: 100 },
       dimensions: { width, height },
@@ -542,7 +739,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     const startX = position ? position.x - width / 2 : 150;
     const startY = position ? position.y - height / 2 : 200;
     const newNode: DiagramNode = {
-      id: crypto.randomUUID().split('-')[0],
+      id: Math.random().toString(36).substring(2, 10),
       type: 'custom-connector',
       position: { x: startX, y: startY },
       dimensions: { width, height },
@@ -586,6 +783,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const updateNode = (updatedNode: DiagramNode) => {
     saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
+    broadcast('NODE_UPDATED', updatedNode);
   };
 
   const updateMultipleNodes = (ids: string[], updates: Partial<DiagramNode>) => {
@@ -646,11 +844,24 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           
           newNode.position = { x: minX, y: minY };
           newNode.dimensions = { width, height };
+          broadcast('NODE_UPDATED', newNode);
           return newNode;
         }
         return node;
       });
     });
+    
+    // Broadcast the main node move
+    const finalNodes = nodes;
+    const nodeToBroadcast = finalNodes.find(n => n.id === id);
+    if (nodeToBroadcast) {
+        broadcast('NODE_MOVED', { 
+            id, 
+            position, 
+            startPoint: nodeToBroadcast.startPoint, 
+            endPoint: nodeToBroadcast.endPoint 
+        });
+    }
   };
 
   const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right') => {
@@ -737,18 +948,59 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     ));
   };
 
-  const selectNode = (id: string | null, multi?: boolean) => {
+  const selectNode = (id: string | null, multi: boolean = false) => {
     if (id === null) {
       setSelectedNodeIds([]);
-    } else if (multi) {
-      setSelectedNodeIds(prev => 
-        prev.includes(id) 
-          ? prev.filter(item => item !== id) 
-          : [...prev, id]
-      );
-    } else {
-      setSelectedNodeIds([id]);
+      return;
     }
+    
+    // Find the node to check if it's in a group
+    const targetNode = nodes.find(n => n.id === id);
+    const groupId = targetNode?.groupId;
+    
+    let idsToSelect = [id];
+    
+    // If it has a groupId, select all nodes in that group
+    if (groupId) {
+      idsToSelect = nodes.filter(n => n.groupId === groupId).map(n => n.id);
+    }
+    
+    setSelectedNodeIds(prev => {
+      if (multi) {
+        // Toggle selection for all idsToSelect
+        const allSelected = idsToSelect.every(item => prev.includes(item));
+        if (allSelected) {
+          return prev.filter(p => !idsToSelect.includes(p));
+        } else {
+          return [...new Set([...prev, ...idsToSelect])];
+        }
+      }
+      return idsToSelect;
+    });
+  };
+
+  const groupSelected = () => {
+    if (selectedNodeIds.length < 2) return;
+    const newGroupId = `group-${Math.random().toString(36).substring(2, 10)}`;
+    saveHistoryState(nodes);
+    setNodes(prev => prev.map(node => {
+      if (selectedNodeIds.includes(node.id)) {
+        return { ...node, groupId: newGroupId };
+      }
+      return node;
+    }));
+  };
+
+  const ungroupSelected = () => {
+    if (selectedNodeIds.length === 0) return;
+    saveHistoryState(nodes);
+    setNodes(prev => prev.map(node => {
+      if (selectedNodeIds.includes(node.id)) {
+        const { groupId, ...rest } = node;
+        return rest as DiagramNode;
+      }
+      return node;
+    }));
   };
 
   const bringToFront = (ids: string[]) => {
@@ -856,31 +1108,193 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const switchProject = (targetId: string) => {
+  const switchProject = async (targetId: string) => {
     const target = projects.find(p => p.id === targetId);
-    setNodesState(target ? target.nodes : []);
-    setSelectedNodeIds([]);
-    setActiveProjectId(targetId);
-    setPast([]);
-    setFuture([]);
+    if (!target) return;
+    
+    let targetFile = target.files.length > 0 ? target.files[0] : null;
+    
+    if (!targetFile && isGuest) {
+      const newFileId = Math.random().toString(36).substring(2, 10);
+      targetFile = {
+        id: newFileId, name: 'Untitled', updatedAt: Date.now(),
+        canvasConfig: { backgroundColor: '#0f0f0f' }, nodes: []
+      };
+      setProjects(prev => prev.map(p => p.id === targetId ? { ...p, files: [targetFile!] } : p));
+    }
+    
+    if (targetFile) {
+      await switchFile(targetFile.id, targetId);
+    }
   };
 
-  const addProject = (name: string, category: string = 'Loom Diagrams') => {
-    const newId = crypto.randomUUID().split('-')[0];
-    const newProj: Project = {
-      id: newId,
-      name,
-      category,
-      updatedAt: Date.now(),
-      nodes: []
-    };
-    
-    setProjects(prev => [...prev, newProj]);
-    setNodesState([]);
+  const addProject = async (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
+    if (isGuest) {
+      const newId = Math.random().toString(36).substring(2, 10);
+      const newFileId = Math.random().toString(36).substring(2, 10);
+      const newProj: WorkspaceProject = {
+        id: newId, name, category, updatedAt: Date.now(),
+        files: [{ id: newFileId, name: 'Untitled', updatedAt: Date.now(), canvasConfig: { backgroundColor }, nodes: [] }]
+      };
+      setProjects(prev => [...prev, newProj]);
+      setNodesState([]);
+      setSelectedNodeIds([]);
+      setActiveProjectId(newId);
+      setActiveFileId(newFileId);
+      setPast([]);
+      setFuture([]);
+      return;
+    }
+
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, category })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newProj: WorkspaceProject = {
+          id: data.id, name: data.name, category: data.category, updatedAt: data.updatedAt,
+          files: data.files?.map((f: any) => ({
+            id: f.id, name: f.name, updatedAt: f.updatedAt,
+            canvasConfig: { backgroundColor: f.canvasBgColor || '#0f0f0f' },
+            nodes: []
+          })) || []
+        };
+        
+        setProjects(prev => [...prev, newProj]);
+        setActiveProjectId(newProj.id);
+        
+        if (newProj.files.length === 0) {
+           await addFile(newProj.id, 'Untitled', backgroundColor);
+        } else {
+           await switchFile(newProj.files[0].id, newProj.id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create project', error);
+    }
+  };
+
+  const switchFile = async (fileId: string, projectId: string = activeProjectId) => {
+    const targetProj = projects.find(p => p.id === projectId);
+    if (!targetProj) return;
+    const targetFile = targetProj.files.find(f => f.id === fileId);
+    if (!targetFile) return;
+
+    setActiveProjectId(projectId);
+    setActiveFileId(fileId);
     setSelectedNodeIds([]);
-    setActiveProjectId(newId);
     setPast([]);
     setFuture([]);
+
+    if (isGuest) {
+      setNodesState(targetFile.nodes);
+      return;
+    }
+
+    setIsFileLoading(true);
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${fileId}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        let loadedNodes: DiagramNode[] = [];
+        if (data.nodes) {
+           try {
+             const parsed = typeof data.nodes === 'string' ? JSON.parse(data.nodes) : data.nodes;
+             loadedNodes = Array.isArray(parsed) ? parsed : [];
+           } catch (e) {
+             console.error('Failed to parse nodes:', e);
+             loadedNodes = [];
+           }
+        }
+        
+        setNodesState(loadedNodes);
+        
+        setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+            return {
+              ...p,
+              files: p.files.map(f => f.id === fileId ? { ...f, nodes: loadedNodes } : f)
+            };
+          }
+          return p;
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load file details:', error);
+      setNodesState([]);
+    } finally {
+      setIsFileLoading(false);
+    }
+  };
+
+  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
+    if (isGuest) {
+      const newFileId = Math.random().toString(36).substring(2, 10);
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            files: [...p.files, { id: newFileId, name, updatedAt: Date.now(), canvasConfig: { backgroundColor }, nodes: [] }]
+          };
+        }
+        return p;
+      }));
+      if (projectId === activeProjectId) {
+        switchFile(newFileId);
+      }
+      return;
+    }
+
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects/${projectId}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, backgroundColor })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newFile = {
+          id: data.id, name: data.name, updatedAt: data.updatedAt,
+          canvasConfig: { backgroundColor: data.canvasBgColor || backgroundColor },
+          nodes: []
+        };
+        
+        setProjects(prev => prev.map(p => {
+          if (p.id === projectId) {
+             return { ...p, files: [...p.files, newFile] };
+          }
+          return p;
+        }));
+        
+        if (projectId === activeProjectId) {
+          await switchFile(newFile.id, projectId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to create file', error);
+    }
+  };
+
+  const updateCanvasConfig = (fileId: string, config: Partial<CanvasConfig>) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === activeProjectId) {
+        return {
+          ...p,
+          files: p.files.map(f => f.id === fileId ? { ...f, canvasConfig: { ...f.canvasConfig, ...config } } : f)
+        };
+      }
+      return p;
+    }));
   };
 
   return (
@@ -913,6 +1327,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       bringToFront,
       sendToBack,
       alignSelected,
+      groupSelected,
+      ungroupSelected,
       zoom,
       setZoom,
       activeTool,
@@ -921,12 +1337,26 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       setSelectToolMode,
       projects,
       activeProjectId,
+      activeFileId,
       switchProject,
       addProject,
+      switchFile,
+      addFile,
+      updateCanvasConfig,
+      isLoadingProjects,
+      isFileLoading,
       
       // Sidebar
       isSidebarOpen,
       toggleSidebar,
+      
+      // AI Chat
+      isAiChatOpen,
+      toggleAiChat,
+
+      // Design Panel
+      isDesignPanelOpen,
+      toggleDesignPanel,
       
       // History
       undo,

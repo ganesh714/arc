@@ -55,4 +55,5 @@ export interface DiagramNode {
   arrowType?: 'none' | 'single' | 'double';
   points?: Point[];
   customConnectorStyle?: Record<string, string | number>;
+  groupId?: string;
 }

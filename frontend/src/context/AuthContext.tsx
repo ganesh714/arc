@@ -28,13 +28,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check if the user is authenticated via the backend
     const fetchUser = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/v1/auth/me', {
+        // Pointing to the arqulat_auth service
+        const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+        const response = await fetch(`${authApiUrl}/api/v1/user/me`, {
           credentials: 'include' // Important for session cookies
         });
         
         if (response.ok) {
           const data = await response.json();
-          setUser(data);
+          setUser({
+            id: data.id,
+            email: data.email,
+            name: data.name,
+            picture: '' // Auth response might not have picture yet
+          });
           setIsGuest(false);
         } else {
           setUser(null);
@@ -51,18 +58,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = () => {
-    // Redirect to the backend OAuth2 endpoint
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    // Redirect to the auth frontend for login, passing our current URL so it knows where to return
+    const authFrontendUrl = (import.meta.env.VITE_AUTH_FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+    const redirectUri = encodeURIComponent(window.location.origin);
+    window.location.href = `${authFrontendUrl}?redirect_uri=${redirectUri}`;
   };
 
-  const logout = () => {
+  const logout = async () => {
     // If guest, just reset guest status
     if (isGuest) {
       setIsGuest(false);
       return;
     }
-    // Redirect to the backend logout endpoint
-    window.location.href = 'http://localhost:8080/logout';
+    
+    try {
+      // Call arqulat_auth logout endpoint to blacklist token and clear cookie
+      const authApiUrl = (import.meta.env.VITE_AUTH_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+      await fetch(`${authApiUrl}/api/v1/user/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (e) {
+      console.error("Logout failed", e);
+    }
+    
+    // Issue #4: Clear cached state before redirecting
+    setUser(null);
+    setIsGuest(false);
+    
+    // Redirect to home or force reload
+    window.location.href = '/';
   };
 
   const enterGuestMode = () => {

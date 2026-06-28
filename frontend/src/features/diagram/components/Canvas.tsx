@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { Node } from './Node';
+import { RemoteCursors } from './RemoteCursors';
+import { useCollaboration } from '@/context/CollaborationContext';
 import styles from './Canvas.module.css';
 import { 
   MousePointer2, 
   Square, 
   Circle, 
   Triangle, 
-  Diamond as DiamondIcon, 
   Minus, 
   ArrowRight,
   Star as StarIcon,
@@ -33,6 +34,9 @@ import {
 export function Canvas() {
   const { 
     nodes, 
+    projects,
+    activeProjectId,
+    activeFileId,
     selectedNodeIds,
     selectNode,
     setSelectedNodeIds,
@@ -48,6 +52,7 @@ export function Canvas() {
     addParallelogram,
     addDatabase,
     addNote,
+    addLine,
     addArrow,
     addCustomBlock,
     addCustomConnector,
@@ -67,11 +72,17 @@ export function Canvas() {
     cutSelected,
     deleteSelected
   } = useDiagram();
+  const { broadcast } = useCollaboration();
+
+  const activeProject = projects.find(p => p.id === activeProjectId);
+  const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+  const canvasBgColor = activeFile?.canvasConfig?.backgroundColor || 'var(--bg-canvas)';
 
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const lastCursorBroadcastRef = useRef<number>(0);
 
   const [drawingPreview, setDrawingPreview] = useState<{
     type: string;
@@ -338,6 +349,7 @@ export function Canvas() {
     else if (type === 'pill') addPill({ x, y });
     else if (type === 'hexagon') addHexagon({ x, y });
     else if (type === 'parallelogram') addParallelogram({ x, y });
+    else if (type === 'database') addDatabase({ x, y });
     else if (type === 'note') addNote({ x, y });
     else if (type === 'line') addLine({ x, y });
     else if (type === 'arrow') addArrow({ x, y });
@@ -347,10 +359,17 @@ export function Canvas() {
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('handleMouseDown triggered, activeTool:', activeTool, 'button:', e.button);
+
+    // BUG FIX: Close toolbar dropdowns when clicking on canvas
+    if (selectDropdownOpen) setSelectDropdownOpen(false);
+    if (shapeDropdownOpen) setShapeDropdownOpen(false);
+
     const isMiddleClick = e.button === 1;
     const isSpaceDrag = spacePressed || activeTool === 'hand';
 
     if (isMiddleClick || isSpaceDrag) {
+      console.log('panning mode triggered');
       e.preventDefault();
       setIsPanning(true);
 
@@ -385,7 +404,7 @@ export function Canvas() {
       const startY = (e.clientY - rect.top) / zoom - panOffset.y;
 
       if (activeTool === 'comment') {
-        const id = crypto.randomUUID().split('-')[0];
+        const id = Math.random().toString(36).substring(2, 10);
         const newNode: any = {
           id,
           type: 'comment',
@@ -450,7 +469,7 @@ export function Canvas() {
               y: p.y - minY
             }));
 
-            const id = crypto.randomUUID().split('-')[0];
+            const id = Math.random().toString(36).substring(2, 10);
             const newNode: any = {
               id,
               type: 'path',
@@ -478,6 +497,7 @@ export function Canvas() {
       }
 
       // Regular shape drawing mode (box, circle, triangle, diamond, star, line, arrow)
+      console.log('starting shape drawing:', activeTool);
       setDrawingPreview({
         type: activeTool,
         startX,
@@ -493,6 +513,7 @@ export function Canvas() {
       };
 
       const handleMouseUp = () => {
+        console.log('handleMouseUp triggered');
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
 
@@ -509,7 +530,7 @@ export function Canvas() {
           const height = Math.max(10, Math.abs(cY - sY));
 
           if (width > 5 || height > 5) {
-            const id = crypto.randomUUID().split('-')[0];
+            const id = Math.random().toString(36).substring(2, 10);
             const isLineType = activeTool === 'line' || activeTool === 'arrow' || activeTool === 'custom-connector';
             let newNode: any;
 
@@ -564,39 +585,39 @@ export function Canvas() {
                 }
               };
             } else {
-              let defaultBg = 'var(--bg-hover)';
-              let defaultBorder = 'var(--border-active)';
+              let defaultBg = '#2c2c2c';
+              let defaultBorder = '#0c8ce9';
               let defaultText = 'Rectangle';
               let customStyle: any = {};
 
               if (activeTool === 'diamond') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#c69c3a';
                 defaultText = 'Diamond';
                 customStyle = { borderRadius: '2px' };
               } else if (activeTool === 'circle') {
                 defaultText = 'Ellipse';
               } else if (activeTool === 'triangle') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#2b8a4e';
                 defaultText = 'Triangle';
               } else if (activeTool === 'star') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#9e7c1d';
                 defaultText = 'Star';
               } else if (activeTool === 'pill') {
                 defaultText = 'Pill';
                 customStyle = { borderRadius: '999px' };
               } else if (activeTool === 'hexagon') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#824ea0';
                 defaultText = 'Hexagon';
               } else if (activeTool === 'parallelogram') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#4e82a0';
                 defaultText = 'Parallelogram';
               } else if (activeTool === 'database') {
-                defaultBg = 'var(--bg-hover)';
+                defaultBg = '#2c2c2c';
                 defaultBorder = '#a04e4e';
                 defaultText = 'Database';
               } else if (activeTool === 'note') {
@@ -615,7 +636,7 @@ export function Canvas() {
                 style: {
                   backgroundColor: defaultBg,
                   borderColor: defaultBorder,
-                  color: 'var(--text-primary)',
+                  color: customStyle.color || '#e3e3e3',
                   ...customStyle
                 }
               };
@@ -750,14 +771,32 @@ export function Canvas() {
     setSelectedNodeIds([]);
   };
 
+  const PillIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="12" rx="6" />
+    </svg>
+  );
+
+  const ParallelogramIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="6 4 22 4 18 20 2 20" />
+    </svg>
+  );
+
+  const FlowchartDiamondIcon = ({ size = 15, color = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 22 12 12 22 2 12" />
+    </svg>
+  );
+
   const shapeIcons = {
     box: <Square size={15} />,
-    pill: <Square size={15} style={{ borderRadius: '6px' }} />,
+    pill: <PillIcon size={15} />,
     circle: <Circle size={15} />,
     triangle: <Triangle size={15} />,
     hexagon: <Hexagon size={15} />,
-    diamond: <DiamondIcon size={15} />,
-    parallelogram: <Square size={15} style={{ transform: 'skewX(-15deg)' }} />,
+    diamond: <FlowchartDiamondIcon size={15} />,
+    parallelogram: <ParallelogramIcon size={15} />,
     star: <StarIcon size={15} />,
     database: <Database size={15} />,
     note: <StickyNote size={15} />,
@@ -786,26 +825,38 @@ export function Canvas() {
     'custom-connector': 'Custom Connector'
   };
 
-  const getCursor = () => {
-    if (isPanning) return 'grabbing';
-    if (spacePressed || activeTool === 'hand') return 'grab';
-    if (activeTool === 'erase') return 'cell';
-    if (isDragSelecting) return 'crosshair';
-    return 'default';
+  const getCursorClass = () => {
+    if (isPanning) return styles.grabbingCursor;
+    if (spacePressed || activeTool === 'hand') return styles.grabCursor;
+    if (activeTool === 'erase') return styles.cellCursor;
+    if (isDragSelecting || activeTool !== 'select') return styles.crosshairCursor;
+    return '';
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const now = Date.now();
+    if (now - lastCursorBroadcastRef.current > 50) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const currentX = (e.clientX - rect.left) / zoom - panOffset.x;
+      const currentY = (e.clientY - rect.top) / zoom - panOffset.y;
+      
+      broadcast('CURSOR_MOVED', { x: currentX, y: currentY });
+      lastCursorBroadcastRef.current = now;
+    }
   };
 
   return (
-    <div className={styles.canvasWrapper}>
+    <div className={styles.canvasWrapper} style={{ backgroundColor: canvasBgColor }}>
       {/* Main Canvas Area */}
       <div 
         ref={canvasRef}
-        className={styles.canvas} 
+        className={`${styles.canvas} ${getCursorClass()}`} 
         onMouseDown={handleMouseDown}
+        onPointerMove={handlePointerMove}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         style={{
-          cursor: getCursor(),
-          backgroundColor: 'var(--bg-canvas)',
+          backgroundColor: canvasBgColor,
           backgroundImage: 'radial-gradient(var(--border-default) 1px, transparent 1px)',
           backgroundSize: `${16 * zoom}px ${16 * zoom}px`,
           backgroundPosition: `${panOffset.x * zoom}px ${panOffset.y * zoom}px`,
@@ -822,10 +873,11 @@ export function Canvas() {
           left: 0,
           pointerEvents: 'none'
         }}>
-          <div style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+          <div className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
               <Node key={node.id} node={node} />
             ))}
+            <RemoteCursors />
 
             {/* Floating Contextual Menu directly above the selected shape */}
             {selectedNode && (() => {
@@ -1062,6 +1114,53 @@ export function Canvas() {
                     />
                   </svg>
                 );
+              } else if (type === 'hexagon') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="25,5 75,5 95,50 75,95 25,95 5,50"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'parallelogram') {
+                innerElement = (
+                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ display: 'block' }}>
+                    <polygon
+                      points="25,5 95,5 75,95 5,95"
+                      fill="rgba(12, 140, 233, 0.1)"
+                      stroke="#0c8ce9"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                  </svg>
+                );
+              } else if (type === 'pill') {
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '999px'
+                  }} />
+                );
+              } else {
+                // Fallback for box, note, database, custom-block, etc.
+                innerElement = (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    border: '1.5px dashed #0c8ce9',
+                    backgroundColor: 'rgba(12, 140, 233, 0.1)',
+                    boxSizing: 'border-box',
+                    borderRadius: '4px'
+                  }} />
+                );
               }
 
               return (
@@ -1189,7 +1288,7 @@ export function Canvas() {
         
         <div className={styles.shapeSelectorContainer}>
           <button
-            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'comment', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
+            className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
             title={shapeLabels[currentShapeType]}
           >
@@ -1290,7 +1389,7 @@ export function Canvas() {
                   return (
                     <button
                       key={type}
-                      className={`${styles.dropdownItem} ${isSelected ? styles.dropdownItemActive : ''}`}
+                      className={`${styles.dropdownItem} ${styles.dropdownItemAi} ${isSelected ? styles.dropdownItemActive : ''}`}
                       onClick={() => {
                         setCurrentShapeType(type as any);
                         setActiveTool(type);
@@ -1334,7 +1433,6 @@ export function Canvas() {
           className={`${styles.toolButton} ${activeTool === 'comment' ? styles.toolButtonActive : ''}`}
           onClick={() => {
             setActiveTool('comment');
-            setCurrentShapeType('comment');
           }}
           title="Comment (C)"
           style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}

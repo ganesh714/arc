@@ -17,6 +17,9 @@ import {
   Grid3X3,
   X
 } from 'lucide-react';
+import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
+import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './Dashboard.module.css';
 
 interface DashboardProps {
@@ -24,25 +27,28 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onEnterWorkspace }: DashboardProps) {
-  const { projects, addProject, switchProject } = useDiagram();
+  const { projects, addProject, switchProject, isLoadingProjects } = useDiagram();
   const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalNodes = projects.reduce((acc, p) => acc + p.nodes.length, 0);
-
   const handleCreateNew = () => {
-    const name = `New Project ${projects.length + 1}`;
-    addProject(name);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleConfirmCreate = async (name: string, bgColor: string) => {
+    await addProject(name, 'Loom Diagrams', bgColor);
     onEnterWorkspace();
   };
 
-  const handleProjectClick = (id: string) => {
-    switchProject(id);
+  const handleProjectClick = async (id: string) => {
+    await switchProject(id);
     onEnterWorkspace();
   };
 
@@ -74,8 +80,8 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
             <span>Recent Projects</span>
           </div>
           <div 
-            className={`${styles.navLink} ${activeNav === 'starred' ? styles.activeNavLink : ''}`}
-            onClick={() => setActiveNav('starred')}
+            className={styles.navLink}
+            style={{ opacity: 0.4, cursor: 'not-allowed' }}
           >
             <Star size={18} />
             <span>Starred</span>
@@ -84,18 +90,21 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
 
         <nav className={styles.navSection}>
           <div className={styles.navLabel}>Organization</div>
-          <div className={styles.navLink}>
+          <div className={styles.navLink} style={{ opacity: 0.4, cursor: 'not-allowed' }}>
             <Users size={18} />
             <span>Team Workspace</span>
           </div>
-          <div className={styles.navLink}>
+          <div className={styles.navLink} style={{ opacity: 0.4, cursor: 'not-allowed' }}>
             <Grid3X3 size={18} />
             <span>Templates</span>
           </div>
         </nav>
 
         <nav className={styles.navSection} style={{ marginTop: 'auto' }}>
-          <div className={styles.navLink}>
+          <div 
+            className={styles.navLink} 
+            onClick={() => setIsSettingsModalOpen(true)}
+          >
             <Settings size={18} />
             <span>Settings</span>
           </div>
@@ -155,33 +164,22 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
           </div>
         </header>
 
-        {/* Stats Row */}
-        <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}><FolderKanban size={24} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statValue}>{projects.length}</span>
-              <span className={styles.statLabel}>Total Projects</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIcon}><Layers size={24} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statValue}>{totalNodes}</span>
-              <span className={styles.statLabel}>Active Layers</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statIcon} style={{ color: '#10b981' }}><Sparkles size={24} /></div>
-            <div className={styles.statInfo}>
-              <span className={styles.statValue}>Pro</span>
-              <span className={styles.statLabel}>Current Plan</span>
-            </div>
-          </div>
-        </div>
+
 
         {/* Main Grid */}
-        {filteredProjects.length > 0 ? (
+        {isLoadingProjects ? (
+          <div className={styles.grid}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className={styles.card} style={{ pointerEvents: 'none', border: 'none' }}>
+                <Skeleton height="140px" borderRadius="12px 12px 0 0" />
+                <div style={{ padding: '16px' }}>
+                  <Skeleton height="20px" width="70%" className="mb-2" />
+                  <Skeleton height="14px" width="40%" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProjects.length > 0 ? (
           <div className={styles.grid}>
             {filteredProjects.sort((a, b) => b.updatedAt - a.updatedAt).map((project) => (
               <div 
@@ -193,7 +191,7 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
                   <div className={styles.previewGradient} />
                   <div className={styles.cardIcon}>
                     <FolderKanban size={64} strokeWidth={1} />
-                  </div>                  {project.nodes.length > 0 && (
+                  </div>                  {project.files.length > 0 && (
                     <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: '#0c8ce920', padding: '6px', borderRadius: '50%' }}>
                       <Sparkles size={14} color="#0c8ce9" />
                     </div>
@@ -215,7 +213,7 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
                     </div>
                     <div className={styles.nodeCount}>
                       <Layers size={12} />
-                      <span>{project.nodes.length}</span>
+                      <span>{project.files.length}</span>
                     </div>
                   </div>
                 </div>
@@ -235,6 +233,19 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
           </div>
         )}
       </main>
+
+      <CreateEntityModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onConfirm={handleConfirmCreate}
+        title="Create New Project"
+        defaultName={`New Project ${projects.length + 1}`}
+      />
+
+      <DashboardSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 .container {
   min-height: 100vh;
-  background: radial-gradient(circle at top left, #121520 0%, #08090d 100%);
-  color: #fff;
+  background-color: var(--bg-canvas);
+  background-image: radial-gradient(circle at top left, var(--bg-surface) 0%, var(--bg-canvas) 100%);
+  color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
 }
@@ -15,7 +16,7 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .logo {
@@ -46,7 +47,7 @@
 }
 
 .navLinks a {
-  color: #94a3b8;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -54,21 +55,21 @@
 }
 
 .navLinks a:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .loginBtn {
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .getStartedBtn {
-  background: #fff;
-  color: #000;
+  background: var(--text-primary);
+  color: var(--bg-canvas);
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
@@ -80,7 +81,7 @@
 
 .getStartedBtn:hover {
   transform: translateY(-2px);
-  background: #f1f5f9;
+  background: var(--text-secondary);
 }
 
 .hero {
@@ -121,7 +122,7 @@
 
 .heroSubtitle {
   font-size: 20px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   max-width: 700px;
   line-height: 1.6;
   margin-bottom: 48px;
@@ -154,9 +155,9 @@
 }
 
 .secondaryBtn {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
   padding: 16px 32px;
   border-radius: 12px;
   font-size: 16px;
@@ -169,25 +170,26 @@
 }
 
 .secondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover);
 }
 
 .previewContainer {
   width: 100%;
   max-width: 1000px;
-  background: #1e293b;
+  background: var(--bg-panel);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-default);
   overflow: hidden;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-lg);
 }
 
 .previewHeader {
-  background: #0f172a;
+  background: var(--bg-surface);
   padding: 12px 20px;
   display: flex;
   align-items: center;
   gap: 40px;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .dots {
@@ -199,17 +201,18 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #334155;
+  background: var(--border-section);
 }
 
 .addressBar {
-  background: #1e293b;
+  background: var(--bg-canvas);
   flex: 1;
   border-radius: 6px;
   padding: 4px 12px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted);
   text-align: left;
+  border: 1px solid var(--border-default);
 }
 
 .previewContent {
@@ -219,14 +222,14 @@
 
 .previewSidebar {
   width: 200px;
-  background: #0f172a;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-default);
 }
 
 .previewCanvas {
   flex: 1;
   position: relative;
-  background-image: radial-gradient(#334155 1px, transparent 1px);
+  background-image: radial-gradient(var(--border-default) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -262,23 +265,24 @@
 }
 
 .featureCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   padding: 40px;
   border-radius: 24px;
   text-align: left;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, transform 0.2s;
 }
 
 .featureCard:hover {
-  border-color: rgba(12, 140, 233, 0.3);
+  border-color: var(--accent-blue);
+  transform: translateY(-4px);
 }
 
 .iconBox {
   width: 48px;
   height: 48px;
-  background: rgba(12, 140, 233, 0.1);
-  color: #38bdf8;
+  background: var(--accent-blue-subtle);
+  color: var(--accent-blue);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -290,18 +294,19 @@
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 16px;
+  color: var(--text-primary);
 }
 
 .featureCard p {
-  color: #94a3b8;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
 .footer {
   padding: 80px 20px;
   text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  color: #475569;
+  border-top: 1px solid var(--border-default);
+  color: var(--text-muted);
   font-size: 14px;
 }
 

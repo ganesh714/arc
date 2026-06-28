@@ -1,8 +1,8 @@
 .container {
   height: 100vh;
   width: 100%;
-  background-color: #08090d;
-  color: #e3e3e3;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
   display: flex;
   overflow: hidden;
 }
@@ -10,8 +10,8 @@
 .sidebar {
   width: 260px;
   min-width: 260px;
-  background-color: #0b0c10;
-  border-right: 1px solid #1a1d26;
+  background-color: var(--bg-panel);
+  border-right: 1px solid var(--border-default);
   display: flex;
   flex-direction: column;
   padding: 24px 12px;
@@ -89,7 +89,7 @@
 .navLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #444;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 0 12px 12px;
@@ -101,20 +101,20 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #888;
+  color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .navLink:hover {
-  background-color: #12141a;
-  color: #fff;
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .activeNavLink {
-  background-color: #161922;
-  color: #0c8ce9;
+  background-color: var(--bg-active);
+  color: var(--accent-blue);
 }
 
 .header {
@@ -128,13 +128,11 @@
   font-size: 28px;
   font-weight: 600;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, #888 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
 }
 
 .titleSection p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 15px;
   margin-top: 6px;
 }
@@ -173,8 +171,8 @@
 }
 
 .statCard {
-  background-color: #12141a;
-  border: 1px solid #1a1d26;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -185,19 +183,19 @@
 }
 
 .statCard:hover {
-  border-color: #333;
+  border-color: var(--border-active);
   transform: translateY(-2px);
 }
 
 .statIcon {
   width: 52px;
   height: 52px;
-  background-color: #161922;
+  background-color: var(--bg-panel);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0c8ce9;
+  color: var(--accent-blue);
 }
 
 .statInfo {
@@ -208,12 +206,12 @@
 .statValue {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .statLabel {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .grid {
@@ -223,8 +221,8 @@
 }
 
 .card {
-  background-color: #12141a;
-  border: 1px solid #1a1d26;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -233,23 +231,23 @@
 }
 
 .card:hover {
-  border-color: #0c8ce9;
+  border-color: var(--border-active);
   transform: translateY(-4px);
-  background-color: #161922;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  background-color: var(--bg-hover);
+  box-shadow: var(--shadow-lg);
 }
 
 .preview {
   height: 130px;
-  background-color: #0b0c10;
+  background-color: var(--bg-canvas);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid #1a1d26;
+  border-bottom: 1px solid var(--border-default);
   background-image: 
-    radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+    radial-gradient(circle at 2px 2px, var(--border-default) 1px, transparent 0);
   background-size: 20px 20px;
 }
 
@@ -261,7 +259,7 @@
 }
 
 .cardIcon {
-  color: #1a1d26;
+  color: var(--text-muted);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 }
@@ -288,7 +286,7 @@
 .projectName {
   font-weight: 600;
   font-size: 15px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .projectMeta {
@@ -296,17 +294,17 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .nodeCount {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #1a1d26;
+  background: var(--bg-panel);
   padding: 4px 10px;
   border-radius: 8px;
-  color: #0c8ce9;
+  color: var(--accent-blue);
   font-weight: 600;
 }
 
@@ -316,16 +314,16 @@
   align-items: center;
   justify-content: center;
   padding: 100px;
-  background-color: #0b0c10;
-  border: 2px dashed #1a1d26;
+  background-color: var(--bg-panel);
+  border: 2px dashed var(--border-default);
   border-radius: 24px;
   gap: 20px;
-  color: #444;
+  color: var(--text-secondary);
   text-align: center;
 }
 
 .emptyState h2 {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   font-size: 24px;
 }

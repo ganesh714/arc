@@ -18,6 +18,22 @@
   overflow: hidden;
 }
 
+.crosshairCursor {
+  cursor: crosshair !important;
+}
+
+.grabCursor {
+  cursor: grab !important;
+}
+
+.grabbingCursor {
+  cursor: grabbing !important;
+}
+
+.cellCursor {
+  cursor: cell !important;
+}
+
 .marqueeBox {
   position: absolute;
   border: 1px solid var(--accent-blue);
@@ -27,6 +43,31 @@
   border-radius: 1px;
 }
 
+/* Adaptive translucent theme for floating panels */
+.toolbar, .historyToolbar, .zoomHUD, .contextMenu, .shapeDropdown {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+:global([data-theme="light"]) .toolbar,
+:global([data-theme="light"]) .historyToolbar,
+:global([data-theme="light"]) .zoomHUD,
+:global([data-theme="light"]) .contextMenu,
+:global([data-theme="light"]) .shapeDropdown {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+:global([data-theme="dark"]) .toolbar,
+:global([data-theme="dark"]) .historyToolbar,
+:global([data-theme="dark"]) .zoomHUD,
+:global([data-theme="dark"]) .contextMenu,
+:global([data-theme="dark"]) .shapeDropdown {
+  background-color: rgba(20, 20, 20, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
 /* Floating Toolbar styles - Relocated to bottom center (Figma UI3 style) */
 .toolbar {
   position: absolute;
@@ -72,7 +113,7 @@
   border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -120,7 +161,7 @@
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   font-size: 12px;
   transition: all 0.15s;
@@ -242,7 +283,7 @@
   border-radius: 0 6px 6px 0;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   margin-left: -1px;
   padding: 0;
@@ -274,6 +315,19 @@
   box-shadow: var(--shadow-xl);
   z-index: 100;
   gap: 2px;
+  animation: slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom center;
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
 .dropdownColumn {
@@ -306,7 +360,7 @@
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   text-align: left;
   font-size: 12px;
@@ -321,6 +375,25 @@
 .dropdownItemActive {
   background-color: var(--bg-active);
   color: var(--accent-blue);
+}
+
+.dropdownItemAi {
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdownItemAi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.05), transparent);
+  z-index: -1;
+  border-radius: 4px;
+}
+
+.dropdownItemAi:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #a78bfa;
 }
 
 .dropdownItemIcon {

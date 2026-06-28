@@ -39,6 +39,23 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
         setErrorMsg('Invalid format: The diagram data must be a JSON array of nodes.');
         return null;
       }
+
+      // Basic structure validation for all nodes
+      for (const node of parsedData) {
+        if (!node || typeof node !== 'object') {
+          setErrorMsg('Invalid format: Nodes must be objects.');
+          return null;
+        }
+        if (typeof node.id !== 'string' || typeof node.type !== 'string') {
+          setErrorMsg('Invalid format: Each node must have a string "id" and "type".');
+          return null;
+        }
+        if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') {
+          setErrorMsg('Invalid format: Each node must have a valid "position" with x and y coordinates.');
+          return null;
+        }
+      }
+
       setErrorMsg('');
       return parsedData;
     } catch (err) {
