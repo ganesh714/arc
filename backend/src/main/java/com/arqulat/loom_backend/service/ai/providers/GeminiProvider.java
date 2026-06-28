@@ -23,6 +23,7 @@ public class GeminiProvider extends AbstractAIProvider {
     private String apiKey;
 
     private final RestTemplate restTemplate;
+
     public GeminiProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
         super(objectMapper);
         this.restTemplate = restTemplate;
@@ -35,10 +36,10 @@ public class GeminiProvider extends AbstractAIProvider {
         }
 
         try {
-            return callGeminiApi(prompt, systemPrompt, "gemini-1.5-pro");
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro");
         } catch (Exception e) {
-            System.err.println("Gemini 1.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 1.5 Flash...");
-            return callGeminiApi(prompt, systemPrompt, "gemini-1.5-flash");
+            System.err.println("Gemini 2.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Flash...");
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-flash");
         }
     }
 
@@ -50,7 +51,7 @@ public class GeminiProvider extends AbstractAIProvider {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> requestBody = new HashMap<>();
-        
+
         Map<String, Object> systemPart = new HashMap<>();
         systemPart.put("text", systemPrompt);
         Map<String, Object> systemInstruction = new HashMap<>();
@@ -91,7 +92,7 @@ public class GeminiProvider extends AbstractAIProvider {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> requestBody = new HashMap<>();
-        
+
         Map<String, Object> systemPart = new HashMap<>();
         systemPart.put("text", AIPrompts.EDIT_SYSTEM_PROMPT);
         Map<String, Object> systemInstruction = new HashMap<>();
@@ -102,14 +103,15 @@ public class GeminiProvider extends AbstractAIProvider {
         part1.put("text", "CURRENT DIAGRAM JSON:\n" + contextNodes);
         Map<String, Object> part2 = new HashMap<>();
         part2.put("text", "USER REQUEST:\n" + prompt);
-        
+
         Map<String, Object> content = new HashMap<>();
         content.put("parts", List.of(part1, part2));
         requestBody.put("contents", List.of(content));
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+                + apiKey;
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.POST, entity, JsonNode.class);
         JsonNode root = response.getBody();
 
