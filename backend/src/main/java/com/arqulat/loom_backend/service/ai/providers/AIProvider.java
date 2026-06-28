@@ -4,10 +4,11 @@ public interface AIProvider {
     /**
      * Attempts to generate a JSON response for the given prompt using the specific AI provider.
      * @param prompt The user's input prompt.
-     * @return The JSON string of nodes.
+     * @param systemPrompt The system instructions.
+     * @return The JSON string of nodes or raw text.
      * @throws Exception if this provider fails to generate or returns invalid data.
      */
-    String generate(String prompt) throws Exception;
+    String generate(String prompt, String systemPrompt) throws Exception;
 
     /**
      * Attempts to edit the existing nodes based on the prompt.
