@@ -350,6 +350,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const debouncedNodes = useDebounce(nodes, 1000);
   const isInitialMount = useRef(true);
 
+  const lastSavedNodesStr = useRef<string>('');
+
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -362,6 +364,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       try {
         const targetFile = projects.find(p => p.id === activeProjectId)?.files.find(f => f.id === activeFileId);
         if (!targetFile) return;
+
+        const currentNodesStr = JSON.stringify(debouncedNodes);
+        if (currentNodesStr === lastSavedNodesStr.current) {
+          // No changes since last save/load, skip saving
+          return;
+        }
 
         const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
         const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
@@ -377,6 +385,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         
         if (!response.ok) {
           console.error('Auto-save failed:', response.statusText);
+        } else {
+          lastSavedNodesStr.current = currentNodesStr;
         }
       } catch (error) {
         console.error('Failed to auto-save to backend:', error);
@@ -1214,6 +1224,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
            }
         }
         
+        lastSavedNodesStr.current = JSON.stringify(loadedNodes);
         setNodesState(loadedNodes);
         
         setProjects(prev => prev.map(p => {
@@ -1279,9 +1290,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         if (projectId === activeProjectId) {
           await switchFile(newFile.id, projectId);
         }
+      } else if (response.status === 409) {
+        throw new Error('Name is already exist');
+      } else {
+        throw new Error('Failed to create file');
       }
     } catch (error) {
       console.error('Failed to create file', error);
+      throw error;
     }
   };
 

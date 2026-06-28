@@ -4,7 +4,7 @@ import { X, Check, AlertCircle } from 'lucide-react';
 interface CreateEntityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (name: string, backgroundColor: string) => void;
+  onConfirm: (name: string, backgroundColor: string) => Promise<void> | void;
   title: string;
   defaultName: string;
 }
@@ -21,14 +21,24 @@ const PRESET_COLORS = [
 ];
 
 export function CreateEntityModal({ isOpen, onClose, onConfirm, title, defaultName }: CreateEntityModalProps) {
-  const [name, setName] = useState(defaultName);
+  const [name, setName] = useState('');
   const [bgColor, setBgColor] = useState('#0f0f0f');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    onConfirm(name || defaultName, bgColor);
-    onClose();
+  const handleSave = async () => {
+    try {
+      setError(null);
+      setIsSubmitting(true);
+      await onConfirm(name || defaultName, bgColor);
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -97,18 +107,28 @@ export function CreateEntityModal({ isOpen, onClose, onConfirm, title, defaultNa
           </div>
         </div>
 
+        {error && (
+          <div className="px-6 pb-2 text-sm text-red-500 font-medium text-center">
+            {error}
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-3 p-4 border-t border-[#333] bg-[#161616]">
           <button 
             onClick={onClose}
             className="px-4 py-2 rounded-md text-sm font-medium text-gray-300 hover:bg-[#333] transition-colors"
+            disabled={isSubmitting}
           >
             Cancel
           </button>
           <button 
             onClick={handleSave}
-            className="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+            disabled={isSubmitting}
+            className={`px-4 py-2 rounded-md text-sm font-medium text-white transition-colors ${
+              isSubmitting ? 'bg-blue-600/50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'
+            }`}
           >
-            Create
+            {isSubmitting ? 'Creating...' : 'Create'}
           </button>
         </div>
       </div>

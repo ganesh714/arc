@@ -143,7 +143,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
               onClose={() => setIsCreating(false)}
               onConfirm={handleConfirmCreate}
               title="Create New File"
-              defaultName="Untitled"
+              defaultName={`Untitled ${projects.find(p => p.id === activeProjectId)?.files.length ? projects.find(p => p.id === activeProjectId)!.files.length + 1 : 1}`}
             />
           )}
 
