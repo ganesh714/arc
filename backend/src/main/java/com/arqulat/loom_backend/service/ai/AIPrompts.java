@@ -1,42 +1,35 @@
 package com.arqulat.loom_backend.service.ai;
 
 public class AIPrompts {
-    public static final String SYSTEM_PROMPT = "You are Arqulat AI, an expert software architecture and diagram designer. \n"
-            +
-            "The user will provide a request for a visual diagram. Your task is to translate their request into a beautiful, structured 2D diagram.\n"
-            +
+    public static final String PASS1_SLD_PROMPT = "You are an expert software architecture and diagram designer. \n" +
+            "Given the user's request, produce a Semantic Layout Description (SLD).\n" +
+            "Write ONLY plain text — no JSON, no styling, no colors. Do not use markdown blocks.\n" +
             "\n" +
-            "You must respond ONLY with a raw, valid JSON array of nodes. Do not wrap the JSON in markdown code blocks. Do not include any explanations.\n"
-            +
+            "For each node write: [type] id — content; optional details\n" +
+            "For each connection write: source_id --relationship--> target_id\n" +
             "\n" +
-            "Each node in the array must strictly adhere to this schema:\n" +
-            "{\n" +
-            "  \"id\": \"string (unique)\",\n" +
-            "  \"type\": \"box\" | \"diamond\" | \"circle\" | \"triangle\" | \"line\" | \"arrow\" | \"star\" | \"pill\" | \"hexagon\" | \"parallelogram\" | \"database\" | \"note\" | \"custom-block\" | \"custom-connector\",\n"
-            +
-            "  \"position\": { \"x\": 0, \"y\": 0 } (Optional, layout is handled automatically),\n" +
-            "  \"dimensions\": { \"width\": 220, \"height\": 90 } (Optional, defaults to 220x90),\n" +
-            "  \"content\": \"string (the text inside the node)\",\n" +
-            "  \"style\": {\n" +
-            "    \"backgroundColor\": \"string (hex code, use dark beautiful colors)\",\n" +
-            "    \"borderColor\": \"string (hex code, use vibrant accent colors)\",\n" +
-            "    \"color\": \"string (text color, usually white)\",\n" +
-            "    \"borderRadius\": \"string (optional)\"\n" +
-            "  },\n" +
-            "  \"startConnection\": { \"nodeId\": \"source_node_id\" } (Required ONLY for arrows/connectors),\n" +
-            "  \"endConnection\": { \"nodeId\": \"target_node_id\" } (Required ONLY for arrows/connectors)\n" +
-            "}\n" +
+            "Available node types: uml-class, uml-interface, uml-abstract, uml-enum, " +
+            "actor, use-case, component, cloud, cylinder, queue, server, browser, " +
+            "rounded-rect, terminator, process, document, diamond, group-frame, callout, " +
+            "box, circle, database, hexagon, pill, badge\n" +
             "\n" +
-            "Design rules:\n" +
-            "1. NO MANUAL LAYOUT REQUIRED: Do not calculate precise X/Y coordinates. Our engine will auto-layout your nodes as long as you define the connections properly.\n"
-            +
-            "2. CONNECTORS: For EVERY connection, you MUST create an 'arrow' node.\n" +
-            "   - You MUST set 'startConnection.nodeId' to the ID of the source node.\n" +
-            "   - You MUST set 'endConnection.nodeId' to the ID of the target node.\n" +
-            "3. PREMIUM AESTHETICS: Use ultra-modern SaaS color palettes.\n" +
-            "   - Backgrounds: Dark slate (e.g., #1E1E2E, #181825, #0F172A).\n" +
-            "   - Borders: Vibrant neon accents (e.g., #89B4FA blue, #F38BA8 red, #A6E3A1 green, #F9E2AF yellow).\n" +
-            "   - Text: #FFFFFF with soft borderRadius like \"12px\".";
+            "For connections, specify the relationship name and arrowHead type:\n" +
+            "arrowHead options: filled, hollow (inheritance), open (dependency), " +
+            "diamond-filled (composition), diamond-hollow (aggregation), circle, none\n" +
+            "lineStyle options: solid, dashed, dotted";
+
+    public static final String PASS2_STYLE_PROMPT = "You are a diagram JSON formatter. Given the SLD (Semantic Layout Description) below, produce a valid JSON array of DiagramNode objects.\n" +
+            "\n" +
+            "Rules:\n" +
+            "1. Use the exact type names from the SLD. DO NOT use types that are not in the allowed list.\n" +
+            "2. Set 'stereotype' field for uml-* types (e.g. \"Interface\", \"Service\").\n" +
+            "3. Set 'tag' for EVERY node. The tag determines its color (options: interface, abstract, class, enum, service, controller, repository, entity, database, queue, cache, gateway, client, server, start, end, decision, input, output).\n" +
+            "4. For uml-class: use 'sections' array with {title, items[]} for attributes/methods.\n" +
+            "5. For connections: set 'arrowHead', 'arrowTail', 'lineStyle', 'label' fields. 'startConnection.nodeId' and 'endConnection.nodeId' MUST point to valid node IDs.\n" +
+            "6. DO NOT set position or dimension fields — auto-layout handles it.\n" +
+            "7. ONLY use 'style' to OVERRIDE colors when the user explicitly requests a specific color. Otherwise, rely on 'tag' for auto-coloring.\n" +
+            "\n" +
+            "You MUST output ONLY a valid JSON array starting with [ and ending with ]. Do not wrap in markdown or include any explanations.";
 
     public static final String EDIT_SYSTEM_PROMPT = "You are Loom AI, an expert software architecture and diagram editor.\n"
             +
