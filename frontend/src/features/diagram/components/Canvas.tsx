@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
+import type { NodeType } from '@/types';
 import { Node } from './Node';
 import { RemoteCursors } from './RemoteCursors';
 import { useCollaboration } from '@/context/CollaborationContext';
@@ -101,7 +102,7 @@ export function Canvas() {
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment' | 'custom-block' | 'custom-connector'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<NodeType>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -825,6 +826,42 @@ export function Canvas() {
     'custom-connector': 'Custom Connector'
   };
 
+  const tooltips = {
+    box: 'Rectangle',
+    pill: 'Pill',
+    circle: 'Ellipse',
+    triangle: 'Triangle',
+    hexagon: 'Hexagon',
+    diamond: 'Diamond',
+    parallelogram: 'Parallelogram',
+    star: 'Star',
+    database: 'Database',
+    note: 'Sticky Note',
+    comment: 'Comment',
+    line: 'Line',
+    arrow: 'Arrow',
+    'custom-block': 'Custom Block',
+    'custom-connector': 'Custom Connector'
+  };
+
+  const nodeIcons = {
+    box: <Square size={15} />,
+    pill: <PillIcon size={15} />,
+    circle: <Circle size={15} />,
+    triangle: <Triangle size={15} />,
+    hexagon: <Hexagon size={15} />,
+    diamond: <FlowchartDiamondIcon size={15} />,
+    parallelogram: <ParallelogramIcon size={15} />,
+    star: <StarIcon size={15} />,
+    database: <Database size={15} />,
+    note: <StickyNote size={15} />,
+    comment: <MessageSquare size={15} />,
+    line: <Minus size={15} />,
+    arrow: <ArrowRight size={15} />,
+    'custom-block': <Sparkles size={15} />,
+    'custom-connector': <Link size={15} />
+  };
+
   const getCursorClass = () => {
     if (isPanning) return styles.grabbingCursor;
     if (spacePressed || activeTool === 'hand') return styles.grabCursor;
@@ -898,6 +935,9 @@ export function Canvas() {
                     left: `${menuLeft}px`
                   }}
                 >
+                  <div className={styles.toolIcon}>
+                    {(nodeIcons as Record<string, React.ReactNode>)[currentShapeType as string] || nodeIcons['box']}
+                  </div>
                   {/* Fill Color Picker (Only if shape) */}
                   {!isLine && (
                     <div className={styles.contextColorWrapper} title="Fill Color">
@@ -1290,9 +1330,9 @@ export function Canvas() {
           <button
             className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
-            title={shapeLabels[currentShapeType]}
+            title={`Draw ${(tooltips as Record<string, string>)[currentShapeType as string] || 'Shape'} (S)`}
           >
-            {shapeIcons[currentShapeType]}
+            {(shapeIcons as Record<string, React.ReactNode>)[currentShapeType as string]}
           </button>
           <button
             className={`${styles.chevronButton} ${shapeDropdownOpen ? styles.chevronButtonActive : ''}`}
