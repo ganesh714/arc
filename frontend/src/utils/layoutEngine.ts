@@ -30,7 +30,15 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
 
   edges.forEach(edge => {
     if (edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
-      g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId);
+      let minlen = 1;
+      const labelLower = (edge.label || '').toLowerCase();
+      const sourceNode = nodes.find(n => n.id === edge.startConnection!.nodeId);
+      
+      if (sourceNode?.type === 'diamond' && (labelLower === 'yes' || labelLower === 'true')) {
+        minlen = 0; // Force true/yes branch to lay out horizontally (same rank)
+      }
+      
+      g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId, { minlen });
     }
   });
 
@@ -79,14 +87,37 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
         const targetNode = layoutedNodes.find(n => n.id === node.endConnection!.nodeId);
 
         if (sourceNode && targetNode) {
-          // Automatically calculate anchor points (bottom of source, top of target)
-          node.startConnection.anchor = 'bottom';
-          node.endConnection.anchor = 'top';
+          // Force edge to use elbow routing for a clean flowchart look
+          node.routing = 'elbow';
+
+          // Automatically calculate anchor points
+          const labelLower = (node.label || '').toLowerCase();
           
-          node.startPoint = {
-            x: sourceNode.position.x + (sourceNode.dimensions.width / 2),
-            y: sourceNode.position.y + sourceNode.dimensions.height
-          };
+          if (sourceNode.type === 'diamond') {
+            if (labelLower === 'yes' || labelLower === 'true') {
+              node.startConnection.anchor = 'right';
+            } else {
+              node.startConnection.anchor = 'bottom';
+            }
+          } else {
+            node.startConnection.anchor = 'bottom';
+          }
+          
+          node.endConnection.anchor = 'top';
+
+          // Calculate start/end points based on anchors
+          if (node.startConnection.anchor === 'right') {
+            node.startPoint = {
+              x: sourceNode.position.x + sourceNode.dimensions.width,
+              y: sourceNode.position.y + (sourceNode.dimensions.height / 2)
+            };
+          } else {
+            node.startPoint = {
+              x: sourceNode.position.x + (sourceNode.dimensions.width / 2),
+              y: sourceNode.position.y + sourceNode.dimensions.height
+            };
+          }
+          
           node.endPoint = {
             x: targetNode.position.x + (targetNode.dimensions.width / 2),
             y: targetNode.position.y

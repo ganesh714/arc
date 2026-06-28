@@ -386,12 +386,11 @@ export function Node({ node }: NodeProps) {
       {extendedShape ? extendedShape : node.type === 'diamond' ? (
         <div
           style={{
-            width: '70.7%',
-            height: '70.7%',
-            transform: `rotate(${45 + (node.rotation || 0)}deg)`,
-            backgroundColor: node.style?.backgroundColor || '#2e2c24',
-            border: `1.5px solid ${node.style?.borderColor || '#c69c3a'}`,
-            borderRadius: node.style?.borderRadius || '2px',
+            width: '100%',
+            height: '100%',
+            backgroundColor: node.style?.backgroundColor || semanticStyle.backgroundColor || '#2e2c24',
+            border: `2px ${node.style?.borderStyle || 'solid'} ${effectiveBorder || '#c69c3a'}`,
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -399,10 +398,8 @@ export function Node({ node }: NodeProps) {
             filter: shadowFilter
           }}
         >
-          <div style={{ transform: `rotate(${-45 - (node.rotation || 0)}deg)`, width: '141.4%', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ ...textStyle, padding: '4px' }}>
-              {node.content}
-            </div>
+          <div style={{ ...textStyle, padding: '16px', textAlign: 'center' }}>
+            {node.content}
           </div>
         </div>
       ) : node.type === 'circle' ? (
