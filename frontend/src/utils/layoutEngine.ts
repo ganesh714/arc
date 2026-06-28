@@ -93,6 +93,16 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
           };
         }
       }
+      
+      // Calculate bounding box so Rnd in Node.tsx doesn't crash on undefined dimensions
+      node.position = {
+        x: Math.min(node.startPoint.x, node.endPoint.x),
+        y: Math.min(node.startPoint.y, node.endPoint.y)
+      };
+      node.dimensions = {
+        width: Math.max(15, Math.abs(node.endPoint.x - node.startPoint.x)),
+        height: Math.max(15, Math.abs(node.endPoint.y - node.startPoint.y))
+      };
     }
     return node;
   });

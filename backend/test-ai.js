@@ -56,7 +56,7 @@ async function test() {
   console.log("=== PASS 1: SLD Generation ===");
   const sld = await callGemini(PASS1_SLD_PROMPT, "create a flow chart for if else latter in programming");
   console.log(sld);
-  
+
   console.log("\n=== PASS 2: JSON Generation ===");
   const json = await callGemini(PASS2_STYLE_PROMPT, "SLD:\n" + sld);
   console.log(json);
