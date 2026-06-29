@@ -73,6 +73,34 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   dagre.layout(g);
 
   // Orthogonal Flowchart Post-pass: force strict alignment for diamond branches
+  const mainSpine = new Set<string>();
+  const graphRoots = nodes.filter(n => !edges.some(e => e.endConnection?.nodeId === n.id));
+  
+  const traverseSpine = (nodeId: string) => {
+    if (mainSpine.has(nodeId)) return;
+    mainSpine.add(nodeId);
+    
+    const outEdges = outgoingEdges.get(nodeId) || [];
+    outEdges.forEach(e => {
+      const labelLower = (e.label || '').toLowerCase();
+      let isYes = false;
+      const srcNode = nodes.find(n => n.id === e.startConnection?.nodeId);
+      if (srcNode?.type === 'diamond' || srcNode?.type === 'decision-merge') {
+        if (labelLower === 'yes' || labelLower === 'true') {
+          isYes = true;
+        } else if (labelLower === 'no' || labelLower === 'false') {
+          isYes = false;
+        } else {
+          isYes = outEdges.length > 1 && outEdges[1].id === e.id;
+        }
+      }
+      if (!isYes && e.endConnection?.nodeId) {
+        traverseSpine(e.endConnection.nodeId);
+      }
+    });
+  };
+  graphRoots.forEach(n => traverseSpine(n.id));
+
   edges.forEach(edge => {
     if (edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
       const sourceId = edge.startConnection.nodeId;
@@ -96,9 +124,43 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
         }
         
         if (isYes) {
+          const oldX = gTarget.x;
+          const oldY = gTarget.y;
+          
           // Force horizontal alignment (same Y) and space out to the right
           gTarget.y = gSource.y;
           gTarget.x = gSource.x + (gSource.width / 2) + 120 + (gTarget.width / 2);
+          
+          const dx = gTarget.x - oldX;
+          const dy = gTarget.y - oldY;
+          
+          if (dx !== 0 || dy !== 0) {
+            const visited = new Set<string>();
+            const shiftSubTree = (nodeId: string) => {
+              if (visited.has(nodeId) || mainSpine.has(nodeId)) return;
+              visited.add(nodeId);
+              
+              const gn = g.node(nodeId);
+              if (gn) {
+                gn.x += dx;
+                gn.y += dy;
+              }
+              
+              const outEdges = outgoingEdges.get(nodeId) || [];
+              outEdges.forEach(e => {
+                if (e.endConnection?.nodeId) {
+                  shiftSubTree(e.endConnection.nodeId);
+                }
+              });
+            };
+            
+            const targetOutEdges = outgoingEdges.get(targetId) || [];
+            targetOutEdges.forEach(e => {
+              if (e.endConnection?.nodeId) {
+                shiftSubTree(e.endConnection.nodeId);
+              }
+            });
+          }
         } else {
           // Force vertical alignment (same X) for main spine
           gTarget.x = gSource.x;
