@@ -12,7 +12,7 @@ const MODELS = [
 
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -122,7 +122,8 @@ export function AIChatSidebar() {
       const data = await response.json();
       
       if (aiMode === 'generate') {
-        const fileName = promptText.length > 20 ? promptText.substring(0, 20) + '...' : promptText;
+        const fileCount = projects.find(p => p.id === activeProjectId)?.files.length || 0;
+        const fileName = "Untitled " + (fileCount + 1) + " (AI)";
         await addFile(activeProjectId, fileName);
       }
 
