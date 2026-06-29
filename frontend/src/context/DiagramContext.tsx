@@ -366,6 +366,13 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         if (!targetFile) return;
 
         const currentNodesStr = JSON.stringify(debouncedNodes);
+        
+        // Ensure debouncedNodes has caught up to nodes
+        // This prevents saving stale state from a previous file immediately after switching
+        if (JSON.stringify(nodes) !== currentNodesStr) {
+          return;
+        }
+
         if (currentNodesStr === lastSavedNodesStr.current) {
           // No changes since last save/load, skip saving
           return;
@@ -394,7 +401,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     };
 
     autoSave();
-  }, [debouncedNodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
+  }, [debouncedNodes, nodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
