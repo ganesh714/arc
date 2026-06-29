@@ -924,6 +924,7 @@ export function Canvas() {
                 onWaypointDragStart={(e, nodeId, index) => {
                   e.stopPropagation();
                   setDraggingWaypoint({ nodeId, index });
+                  saveHistoryState(nodes); // Save pre-drag state
                   
                   // If this is a newly initialized waypoint (from the generated elbows),
                   // we need to make sure the state is initialized in the context
@@ -942,7 +943,8 @@ export function Canvas() {
                       const midX = (startX + endX) / 2;
                       initialWaypoints = [{ x: midX, y: startY }, { x: midX, y: endY }];
                     }
-                    updateNode({ ...node, waypoints: initialWaypoints });
+                    // Use setNodes to avoid recursive broadcast/history issues
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, waypoints: initialWaypoints } : n));
                   }
                   
                   const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -957,8 +959,15 @@ export function Canvas() {
                     document.removeEventListener('mousemove', handleMouseMove);
                     document.removeEventListener('mouseup', handleMouseUp);
                     setDraggingWaypoint(null);
-                    // Force a history save
-                    updateNode(nodes.find(n => n.id === nodeId)!);
+                    
+                    // Broadcast final position
+                    setNodes(prev => {
+                      const finalNode = prev.find(n => n.id === nodeId);
+                      if (finalNode) {
+                        setTimeout(() => broadcast('NODE_UPDATED', finalNode), 0);
+                      }
+                      return prev;
+                    });
                   };
                   
                   document.addEventListener('mousemove', handleMouseMove);
