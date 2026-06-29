@@ -64,6 +64,48 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
 
   dagre.layout(g);
 
+  // Orthogonal Flowchart Post-pass: force strict alignment for diamond branches
+  edges.forEach(edge => {
+    if (edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
+      const sourceId = edge.startConnection.nodeId;
+      const targetId = edge.endConnection.nodeId;
+      const sourceNode = nodes.find(n => n.id === sourceId);
+      const gSource = g.node(sourceId);
+      const gTarget = g.node(targetId);
+      const labelLower = (edge.label || '').toLowerCase();
+      
+      if (sourceNode?.type === 'diamond' && gSource && gTarget) {
+        const sourceEdges = outgoingEdges.get(sourceId) || [];
+        const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
+        const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+        
+        if (isYes) {
+          // Force horizontal alignment (same Y) and space out to the right
+          gTarget.y = gSource.y;
+          gTarget.x = gSource.x + (gSource.width / 2) + 120 + (gTarget.width / 2);
+        } else {
+          // Force vertical alignment (same X) for main spine
+          gTarget.x = gSource.x;
+        }
+      }
+    }
+  });
+
+  // Final alignment pass to ensure nodes merging back to the main spine (like 'terminator')
+  // get aligned with the root nodes if dagre offset them.
+  const rootNodes = nodes.filter(n => !edges.some(e => e.endConnection?.nodeId === n.id));
+  if (rootNodes.length > 0) {
+    const mainX = g.node(rootNodes[0].id)?.x;
+    if (mainX !== undefined) {
+      nodes.forEach(n => {
+        if (n.type === 'terminator' || n.type === 'decision-merge') {
+          const gn = g.node(n.id);
+          if (gn) gn.x = mainX;
+        }
+      });
+    }
+  }
+
   // Apply calculated layout back to the real nodes
   const layoutedNodes = nodes.map(node => {
     if (!isEdge(node)) {
@@ -120,14 +162,15 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
             
             if (isYes) {
               node.startConnection.anchor = 'right';
+              node.endConnection.anchor = 'left';
             } else {
               node.startConnection.anchor = 'bottom';
+              node.endConnection.anchor = 'top';
             }
           } else {
             node.startConnection.anchor = 'bottom';
+            node.endConnection.anchor = 'top';
           }
-          
-          node.endConnection.anchor = 'top';
 
           // Calculate start/end points based on anchors
           if (node.startConnection.anchor === 'right') {
@@ -142,10 +185,17 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
             };
           }
           
-          node.endPoint = {
-            x: targetNode.position.x + (targetNode.dimensions.width / 2),
-            y: targetNode.position.y
-          };
+          if (node.endConnection.anchor === 'left') {
+            node.endPoint = {
+              x: targetNode.position.x,
+              y: targetNode.position.y + (targetNode.dimensions.height / 2)
+            };
+          } else {
+            node.endPoint = {
+              x: targetNode.position.x + (targetNode.dimensions.width / 2),
+              y: targetNode.position.y
+            };
+          }
         }
       }
       
