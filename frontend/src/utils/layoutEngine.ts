@@ -44,10 +44,18 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
       const labelLower = (edge.label || '').toLowerCase();
       const sourceNode = nodes.find(n => n.id === edge.startConnection!.nodeId);
       
-      if (sourceNode?.type === 'diamond') {
+      if (sourceNode?.type === 'diamond' || sourceNode?.type === 'decision-merge') {
         const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
         const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
-        const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+        
+        let isYes = false;
+        if (labelLower === 'yes' || labelLower === 'true') {
+          isYes = true;
+        } else if (labelLower === 'no' || labelLower === 'false') {
+          isYes = false;
+        } else {
+          isYes = isSecondEdge;
+        }
 
         if (isYes) {
           minlen = 1;
@@ -74,10 +82,18 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
       const gTarget = g.node(targetId);
       const labelLower = (edge.label || '').toLowerCase();
       
-      if (sourceNode?.type === 'diamond' && gSource && gTarget) {
+      if ((sourceNode?.type === 'diamond' || sourceNode?.type === 'decision-merge') && gSource && gTarget) {
         const sourceEdges = outgoingEdges.get(sourceId) || [];
         const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
-        const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+        
+        let isYes = false;
+        if (labelLower === 'yes' || labelLower === 'true') {
+          isYes = true;
+        } else if (labelLower === 'no' || labelLower === 'false') {
+          isYes = false;
+        } else {
+          isYes = isSecondEdge;
+        }
         
         if (isYes) {
           // Force horizontal alignment (same Y) and space out to the right
@@ -155,10 +171,18 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
           // Automatically calculate anchor points
           const labelLower = (node.label || '').toLowerCase();
           
-          if (sourceNode.type === 'diamond') {
+          if (sourceNode.type === 'diamond' || sourceNode.type === 'decision-merge') {
             const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
             const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === node.id;
-            const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+            
+            let isYes = false;
+            if (labelLower === 'yes' || labelLower === 'true') {
+              isYes = true;
+            } else if (labelLower === 'no' || labelLower === 'false') {
+              isYes = false;
+            } else {
+              isYes = isSecondEdge;
+            }
             
             if (isYes) {
               node.startConnection.anchor = 'right';
