@@ -16,7 +16,21 @@ public class AIPrompts {
             "For connections, specify the relationship name and arrowHead type:\n" +
             "arrowHead options: filled, hollow (inheritance), open (dependency), " +
             "diamond-filled (composition), diamond-hollow (aggregation), circle, none\n" +
-            "lineStyle options: solid, dashed, dotted";
+            "lineStyle options: solid, dashed, dotted\n" +
+            "\n" +
+            "EXAMPLE - For Loop Flowchart:\n" +
+            "[terminator] start — Start\n" +
+            "[box] init — Initialization (int i = 1)\n" +
+            "[diamond] cond — Condition (i <= 10?)\n" +
+            "[box] body — Execute Body (Print i)\n" +
+            "[box] update — Update (i++)\n" +
+            "[terminator] end — End\n" +
+            "start ----> init\n" +
+            "init ----> cond\n" +
+            "cond --True--> body\n" +
+            "body ----> update\n" +
+            "update ----> cond\n" +
+            "cond --False--> end";
 
     public static final String PASS2_STYLE_PROMPT = "You are a diagram JSON formatter. Given the SLD (Semantic Layout Description) below, produce a valid JSON array of DiagramNode objects.\n" +
             "\n" +
