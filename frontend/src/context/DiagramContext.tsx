@@ -42,6 +42,7 @@ interface DiagramContextType {
   addArrow: (position?: { x: number; y: number }) => void;
   addCustomBlock: (position?: { x: number; y: number }) => void;
   addCustomConnector: (position?: { x: number; y: number }) => void;
+  addShape: (type: string, position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
@@ -777,7 +778,61 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
+  const addShape = (type: string, position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const isEdge = type === 'line' || type === 'arrow';
+    const isDiamond = type === 'diamond' || type === 'decision-merge';
+    const isUML = type.startsWith('uml-') || type === 'actor' || type === 'use-case' || type === 'component';
+    const isCircle = type === 'circle' || type === 'use-case';
+    const isTerminator = type === 'terminator';
+    
+    const width = isDiamond || isCircle ? 130 : isTerminator ? 160 : isUML ? 220 : 160;
+    const height = isDiamond || isCircle ? 130 : isTerminator ? 60 : isUML ? 120 : 90;
+
+    const cx = position ? position.x : 200;
+    const cy = position ? position.y : 200;
+
+    if (isEdge) {
+      const startX = cx - 80;
+      const startY = cy;
+      const newNode: DiagramNode = {
+        id: Math.random().toString(36).substring(2, 10),
+        type: type as any,
+        position: { x: startX, y: startY - 10 },
+        dimensions: { width: 160, height: 20 },
+        content: '',
+        style: { borderColor: type === 'arrow' ? '#0c8ce9' : '#888888' },
+        startPoint: { x: startX, y: startY },
+        endPoint: { x: startX + 160, y: startY },
+      };
+      setNodes((prev) => [...prev, newNode]);
+      return;
+    }
+
+    const newNode: DiagramNode = {
+      id: Math.random().toString(36).substring(2, 10),
+      type: type as any,
+      position: { x: cx - width / 2, y: cy - height / 2 },
+      dimensions: { width, height },
+      content: type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' '),
+      style: {
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3',
+      },
+      ...(isUML && {
+        sections: [
+          { title: 'Attributes', items: ['+ field: Type'] },
+          { title: 'Methods', items: ['+ method(): void'] },
+        ]
+      })
+    };
+    setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
+  };
+
   const updateLinePoints = (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
+
     setNodes((prev) => prev.map(node => {
       if (node.id === id) {
         const x = Math.min(startPoint.x, endPoint.x);
@@ -1338,6 +1393,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addArrow, 
       addCustomBlock,
       addCustomConnector,
+      addShape,
       updateLinePoints, 
       updateNode, 
       updateMultipleNodes,

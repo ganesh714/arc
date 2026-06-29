@@ -10,46 +10,137 @@ import {
   Minus, 
   ArrowRight, 
   Trash2, 
-  FolderSync,
   GripVertical,
   Hexagon,
   Database,
   StickyNote,
   Sparkles,
-  Link
+  Link,
+  Cpu,
+  Globe,
+  Server,
+  Cloud,
+  ChevronDown,
+  ChevronRight,
+  Workflow,
+  Box,
 } from 'lucide-react';
 
+// ─── Shape Categories ───────────────────────────────────────────────────────
+const SHAPE_CATEGORIES = [
+  {
+    label: 'Basic',
+    shapes: [
+      { type: 'box',          label: 'Box',          icon: Square },
+      { type: 'rounded-rect', label: 'Rounded Rect', icon: Square },
+      { type: 'circle',       label: 'Circle',       icon: Circle },
+      { type: 'diamond',      label: 'Diamond',      icon: Diamond },
+      { type: 'hexagon',      label: 'Hexagon',      icon: Hexagon },
+      { type: 'pill',         label: 'Pill',         icon: Square },
+      { type: 'triangle',     label: 'Triangle',     icon: Triangle },
+      { type: 'star',         label: 'Star',         icon: Sparkles },
+      { type: 'parallelogram',label: 'Parallelogram',icon: Square },
+      { type: 'badge',        label: 'Badge',        icon: Box },
+    ]
+  },
+  {
+    label: 'Flowchart',
+    shapes: [
+      { type: 'terminator',     label: 'Start / End',   icon: Circle },
+      { type: 'process',        label: 'Process',        icon: Square },
+      { type: 'decision-merge', label: 'Decision Merge', icon: Diamond },
+      { type: 'document',       label: 'Document',       icon: StickyNote },
+      { type: 'manual-input',   label: 'Manual Input',   icon: Box },
+      { type: 'io-data',        label: 'I/O Data',       icon: Box },
+      { type: 'callout',        label: 'Callout',        icon: Box },
+      { type: 'note',           label: 'Note',           icon: StickyNote },
+      { type: 'group-frame',    label: 'Group Frame',    icon: Layers },
+    ]
+  },
+  {
+    label: 'UML',
+    shapes: [
+      { type: 'uml-class',     label: 'Class',      icon: Cpu },
+      { type: 'uml-interface', label: 'Interface',  icon: Cpu },
+      { type: 'uml-abstract',  label: 'Abstract',   icon: Cpu },
+      { type: 'uml-enum',      label: 'Enum',       icon: Cpu },
+      { type: 'actor',         label: 'Actor',      icon: Workflow },
+      { type: 'use-case',      label: 'Use Case',   icon: Circle },
+      { type: 'component',     label: 'Component',  icon: Box },
+    ]
+  },
+  {
+    label: 'Architecture',
+    shapes: [
+      { type: 'cloud',    label: 'Cloud',    icon: Cloud },
+      { type: 'server',   label: 'Server',   icon: Server },
+      { type: 'cylinder', label: 'Database', icon: Database },
+      { type: 'queue',    label: 'Queue',    icon: Box },
+      { type: 'browser',  label: 'Browser',  icon: Globe },
+      { type: 'mobile',   label: 'Mobile',   icon: Box },
+      { type: 'database', label: 'DB Icon',  icon: Database },
+    ]
+  },
+  {
+    label: 'Connectors',
+    shapes: [
+      { type: 'line',  label: 'Line',  icon: Minus },
+      { type: 'arrow', label: 'Arrow', icon: ArrowRight },
+    ]
+  },
+];
+
 export function LeftSidebar() {
-  const [activeTab, setActiveTab] = useState<'layers' | 'assets'>('layers');
-  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState } = useDiagram();
+  const [activeTab, setActiveTab] = useState<'layers' | 'shapes'>('layers');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
+  const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState, addShape } = useDiagram();
   
   // Drag and drop states for layer reordering
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  const toggleCategory = (label: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
   const getNodeIcon = (type: string) => {
     const size = 12;
     switch (type) {
-      case 'box':
+      case 'box': case 'rounded-rect': case 'process':
         return <Square size={size} className={styles.layerIcon} />;
-      case 'pill':
+      case 'pill': case 'badge': case 'terminator':
         return <Square size={size} style={{ borderRadius: '3px' }} className={styles.layerIcon} />;
-      case 'circle':
+      case 'circle': case 'use-case':
         return <Circle size={size} className={styles.layerIcon} />;
       case 'triangle':
         return <Triangle size={size} className={styles.layerIcon} />;
       case 'hexagon':
         return <Hexagon size={size} className={styles.layerIcon} />;
-      case 'diamond':
+      case 'diamond': case 'decision-merge':
         return <Diamond size={size} className={styles.layerIcon} />;
-      case 'parallelogram':
+      case 'parallelogram': case 'io-data':
         return <Square size={size} style={{ transform: 'skewX(-15deg)' }} className={styles.layerIcon} />;
       case 'star':
         return <Layers size={size} style={{ color: '#d69e2e' }} className={styles.layerIcon} />;
-      case 'database':
+      case 'database': case 'cylinder':
         return <Database size={size} className={styles.layerIcon} />;
-      case 'note':
+      case 'note': case 'callout': case 'document':
         return <StickyNote size={size} className={styles.layerIcon} />;
+      case 'cloud':
+        return <Cloud size={size} className={styles.layerIcon} />;
+      case 'server':
+        return <Server size={size} className={styles.layerIcon} />;
+      case 'browser':
+        return <Globe size={size} className={styles.layerIcon} />;
+      case 'uml-class': case 'uml-interface': case 'uml-abstract': case 'uml-enum': case 'component':
+        return <Cpu size={size} className={styles.layerIcon} />;
+      case 'actor':
+        return <Workflow size={size} className={styles.layerIcon} />;
       case 'line':
         return <Minus size={size} className={styles.layerIcon} />;
       case 'arrow':
@@ -83,7 +174,6 @@ export function LeftSidebar() {
   // Reorder HTML5 drag and drop handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
-    // Required for Firefox
     e.dataTransfer.setData('text/plain', index.toString());
   };
 
@@ -98,7 +188,6 @@ export function LeftSidebar() {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === targetIndex) return;
 
-    // Convert display indexes (reversed) back to original nodes array indexes
     const dragOriginalIdx = nodes.length - 1 - draggedIndex;
     const dropOriginalIdx = nodes.length - 1 - targetIndex;
 
@@ -117,7 +206,6 @@ export function LeftSidebar() {
     setDragOverIndex(null);
   };
 
-  // Display nodes list reversed so top layer in display is top layer on canvas
   const displayNodes = [...nodes].reverse();
 
   return (
@@ -130,10 +218,10 @@ export function LeftSidebar() {
           Layers
         </button>
         <button 
-          className={`${styles.tab} ${activeTab === 'assets' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('assets')}
+          className={`${styles.tab} ${activeTab === 'shapes' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('shapes')}
         >
-          Assets
+          Shapes
         </button>
       </div>
 
@@ -149,7 +237,7 @@ export function LeftSidebar() {
               <div className={styles.emptyState}>
                 <Layers size={24} strokeWidth={1.5} />
                 <span className={styles.emptyTitle}>No layers yet</span>
-                <span className={styles.emptyDesc}>Add shapes to the canvas using the floating toolbar above</span>
+                <span className={styles.emptyDesc}>Add shapes using the Shapes tab or AI generation</span>
               </div>
             ) : (
               <div className={styles.layerList}>
@@ -170,7 +258,6 @@ export function LeftSidebar() {
                       onDragEnd={handleDragEnd}
                     >
                       <div className={styles.layerLeft}>
-                        {/* Grip handle indicator */}
                         <div className={styles.gripHandle} title="Drag to reorder layer">
                           <GripVertical size={11} />
                         </div>
@@ -193,10 +280,41 @@ export function LeftSidebar() {
             )}
           </>
         ) : (
-          <div className={styles.emptyState}>
-            <FolderSync size={24} strokeWidth={1.5} />
-            <span className={styles.emptyTitle}>Shared Library</span>
-            <span className={styles.emptyDesc}>Publish components to access reusable assets and drag them here.</span>
+          // ─── Shapes Tab ────────────────────────────────────────────────────
+          <div className={styles.shapesPanel}>
+            {SHAPE_CATEGORIES.map(cat => {
+              const isOpen = expandedCategories.has(cat.label);
+              return (
+                <div key={cat.label} className={styles.shapeCategory}>
+                  <button
+                    className={styles.categoryHeader}
+                    onClick={() => toggleCategory(cat.label)}
+                  >
+                    {isOpen ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+                    <span>{cat.label}</span>
+                    <span className={styles.categoryCount}>{cat.shapes.length}</span>
+                  </button>
+                  {isOpen && (
+                    <div className={styles.shapeGrid}>
+                      {cat.shapes.map(shape => {
+                        const Icon = shape.icon;
+                        return (
+                          <button
+                            key={shape.type}
+                            className={styles.shapeBtn}
+                            title={`Insert ${shape.label}`}
+                            onClick={() => addShape(shape.type)}
+                          >
+                            <Icon size={16} className={styles.shapeBtnIcon} />
+                            <span className={styles.shapeBtnLabel}>{shape.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

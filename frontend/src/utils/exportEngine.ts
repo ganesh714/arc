@@ -144,11 +144,36 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `  <div style="position: absolute; left: ${node.position.x}px; top: ${node.position.y}px; width: ${node.dimensions.width}px; height: ${node.dimensions.height}px; z-index: 5;">\n`;
       html += `    <svg width="100%" height="100%" style="overflow: visible; display: block;">\n`;
       html += `      <defs>\n`;
-      html += `        <marker id="arrowhead-end-${node.id}" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">\n`;
-      html += `          <polygon points="0 0, 8 3, 0 6" fill="${color}" />\n`;
+      html += `        <marker id="arrowhead-end-${node.id}" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">\n`;
+      if (node.arrowHead === 'hollow') {
+        html += `          <polygon points="0 0, 6 2.5, 0 5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else if (node.arrowHead === 'open') {
+        html += `          <polyline points="0 0, 5 2.5, 0 5" fill="none" stroke="${color}" stroke-width="1.5" />\n`;
+      } else if (node.arrowHead === 'diamond-filled') {
+        html += `          <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill="${color}" />\n`;
+      } else if (node.arrowHead === 'diamond-hollow') {
+        html += `          <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else if (node.arrowHead === 'circle') {
+        html += `          <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else {
+        html += `          <polygon points="0 0, 6 2.5, 0 5" fill="${color}" />\n`;
+      }
       html += `        </marker>\n`;
-      html += `        <marker id="arrowhead-start-${node.id}" markerWidth="8" markerHeight="6" refX="2" refY="3" orient="auto">\n`;
-      html += `          <polygon points="8 0, 0 3, 8 6" fill="${color}" />\n`;
+
+      html += `        <marker id="arrowhead-start-${node.id}" markerWidth="6" markerHeight="5" refX="1" refY="2.5" orient="auto">\n`;
+      if (node.arrowTail === 'hollow') {
+        html += `          <polygon points="6 0, 0 2.5, 6 5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else if (node.arrowTail === 'open') {
+        html += `          <polyline points="6 0, 1 2.5, 6 5" fill="none" stroke="${color}" stroke-width="1.5" />\n`;
+      } else if (node.arrowTail === 'diamond-filled') {
+        html += `          <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill="${color}" />\n`;
+      } else if (node.arrowTail === 'diamond-hollow') {
+        html += `          <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else if (node.arrowTail === 'circle') {
+        html += `          <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke="${color}" stroke-width="1" />\n`;
+      } else {
+        html += `          <polygon points="6 0, 0 2.5, 6 5" fill="${color}" />\n`;
+      }
       html += `        </marker>\n`;
       html += `      </defs>\n`;
 

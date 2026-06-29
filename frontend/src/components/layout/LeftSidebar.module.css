@@ -197,3 +197,94 @@
   border-top-color: var(--accent-blue) !important;
   background-color: var(--bg-hover);
 }
+
+/* ─── Shapes Panel ─────────────────────────────────────────────────── */
+
+.shapesPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.shapeCategory {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.categoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  transition: background 0.12s ease, color 0.12s ease;
+  text-align: left;
+}
+
+.categoryHeader:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.categoryCount {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  border-radius: 8px;
+  padding: 1px 5px;
+}
+
+.shapeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 4px 8px 8px 8px;
+}
+
+.shapeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 8px 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.1s ease;
+}
+
+.shapeBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  transform: translateY(-1px);
+}
+
+.shapeBtn:active {
+  transform: translateY(0);
+}
+
+.shapeBtnIcon {
+  opacity: 0.85;
+}
+
+.shapeBtnLabel {
+  font-size: 9px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 72px;
+}

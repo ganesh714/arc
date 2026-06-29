@@ -16,6 +16,7 @@ export function AIChatSidebar() {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiPhase, setAiPhase] = useState<'idle' | 'planning' | 'styling' | 'editing'>('idle');
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [aiMode, setAiMode] = useState<'generate' | 'edit'>('generate');
@@ -85,6 +86,7 @@ export function AIChatSidebar() {
     const promptText = input.trim();
     setInput('');
     setIsGenerating(true);
+    setAiPhase(aiMode === 'generate' ? 'planning' : 'editing');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -122,6 +124,7 @@ export function AIChatSidebar() {
       const data = await response.json();
       
       if (aiMode === 'generate') {
+        setAiPhase('styling');
         const fileCount = projects.find(p => p.id === activeProjectId)?.files.length || 0;
         const fileName = "Untitled " + (fileCount + 1) + " (AI)";
         await addFile(activeProjectId, fileName);
@@ -175,6 +178,7 @@ export function AIChatSidebar() {
        alert("Failed to generate AI visual. Please try again.");
     } finally {
        setIsGenerating(false);
+       setAiPhase('idle');
     }
   };
 
@@ -252,9 +256,22 @@ export function AIChatSidebar() {
           </>
         )}
         {isGenerating && (
-          <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', gap: '8px', color: '#0c8ce9' }}>
-             <div style={{ width: '16px', height: '16px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-             Generating visual...
+          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#0c8ce9' }}>
+             <div style={{ width: '24px', height: '24px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+               <span style={{ fontSize: '14px', fontWeight: 600 }}>
+                 {aiPhase === 'planning' ? '🧠 Planning...' : aiPhase === 'styling' ? '🎨 Styling...' : aiPhase === 'editing' ? '✏️ Editing...' : 'Working...'}
+               </span>
+               <span style={{ fontSize: '11px', color: '#666', textAlign: 'center', lineHeight: 1.4, maxWidth: '160px' }}>
+                 {aiPhase === 'planning' ? 'AI is analyzing your request and building a semantic blueprint' : aiPhase === 'styling' ? 'Converting blueprint to styled diagram nodes' : aiPhase === 'editing' ? 'Applying your changes to the diagram' : ''}
+               </span>
+             </div>
+             {aiMode === 'generate' && (
+               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                 <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: aiPhase === 'planning' ? '#0c8ce9' : '#0c8ce9', transition: 'opacity 0.3s' }} />
+                 <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: aiPhase === 'styling' ? '#10b981' : '#333', transition: 'background 0.5s' }} />
+               </div>
+             )}
           </div>
         )}
       </div>
