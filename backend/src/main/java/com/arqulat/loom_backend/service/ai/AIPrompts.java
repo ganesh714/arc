@@ -53,6 +53,15 @@ public class AIPrompts {
             "   - For text on a connector (e.g. 'Yes', 'No'), use the 'label' field, NOT the 'content' field.\n" +
             "3. Set 'tag' for EVERY node. The tag determines its color (options: interface, abstract, class, enum, service, controller, repository, entity, database, queue, cache, gateway, client, server, start, end, decision, input, output).\n" +
             "4. DO NOT set position or dimension fields — auto-layout handles it.\n" +
+            "5. For edges originating from a diamond node, make sure to add `label: \"True\"` or `label: \"False\"` if requested.\n" +
+            "\n" +
+            "EXAMPLE Output:\n" +
+            "[\n" +
+            "  { \"id\": \"start\", \"type\": \"terminator\", \"content\": \"Start\", \"tag\": \"start\" },\n" +
+            "  { \"id\": \"cond\", \"type\": \"diamond\", \"content\": \"Condition\", \"tag\": \"decision\" },\n" +
+            "  { \"id\": \"edge1\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"start\" }, \"endConnection\": { \"nodeId\": \"cond\" } },\n" +
+            "  { \"id\": \"edge2\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"cond\" }, \"endConnection\": { \"nodeId\": \"body\" }, \"label\": \"True\" }\n" +
+            "]\n" +
             "\n" +
             "You MUST output ONLY a valid JSON array starting with [ and ending with ]. Do not wrap in markdown or include any explanations.";
 

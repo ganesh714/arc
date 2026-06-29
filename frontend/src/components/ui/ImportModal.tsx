@@ -3,6 +3,7 @@ import type { DragEvent, ChangeEvent } from 'react';
 import styles from './ImportModal.module.css';
 import { Button } from './button';
 import { useDiagram } from '@/context/DiagramContext';
+import { autoLayoutNodes } from '@/utils/layoutEngine';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -40,6 +41,8 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
         return null;
       }
 
+      let needsAutoLayout = false;
+
       // Basic structure validation for all nodes
       for (const node of parsedData) {
         if (!node || typeof node !== 'object') {
@@ -51,13 +54,14 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
           return null;
         }
         if (!node.position || typeof node.position.x !== 'number' || typeof node.position.y !== 'number') {
-          setErrorMsg('Invalid format: Each node must have a valid "position" with x and y coordinates.');
-          return null;
+          if (node.type !== 'arrow' && node.type !== 'line' && node.type !== 'custom-connector') {
+            needsAutoLayout = true;
+          }
         }
       }
 
       setErrorMsg('');
-      return parsedData;
+      return needsAutoLayout ? autoLayoutNodes(parsedData) : parsedData;
     } catch (err) {
       setErrorMsg('Failed to parse: Invalid JSON structure.');
       return null;
