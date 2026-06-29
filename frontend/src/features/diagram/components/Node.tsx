@@ -24,9 +24,10 @@ const parseCssString = (css: string) => {
 
 interface NodeProps {
   node: DiagramNode;
+  onWaypointDragStart?: (e: React.PointerEvent, nodeId: string, index: number) => void;
 }
 
-export function Node({ node }: NodeProps) {
+export function Node({ node, onWaypointDragStart }: NodeProps) {
   const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
@@ -800,16 +801,40 @@ export function Node({ node }: NodeProps) {
               const startY = node.startPoint!.y - node.position.y;
               const endX = node.endPoint!.x - node.position.x;
               const endY = node.endPoint!.y - node.position.y;
-              const midX = (startX + endX) / 2;
               
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
               const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
               const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
               const midY = (startY + endY) / 2;
-              const elbowPath = isVerticalElbow 
-                ? `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`
-                : `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+              const midX = (startX + endX) / 2;
+              
+              let elbowPath = '';
+              let generatedWaypoints: { x: number, y: number }[] = [];
+              if (node.waypoints && node.waypoints.length > 0) {
+                elbowPath = `M ${startX} ${startY}`;
+                for (const wp of node.waypoints) {
+                  elbowPath += ` L ${wp.x - node.position.x} ${wp.y - node.position.y}`;
+                }
+                elbowPath += ` L ${endX} ${endY}`;
+              } else {
+                elbowPath = isVerticalElbow 
+                  ? `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`
+                  : `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+                  
+                // Store generated midpoints so they can be grabbed
+                if (isVerticalElbow) {
+                  generatedWaypoints = [
+                    { x: startX + node.position.x, y: midY + node.position.y },
+                    { x: endX + node.position.x, y: midY + node.position.y }
+                  ];
+                } else {
+                  generatedWaypoints = [
+                    { x: midX + node.position.x, y: startY + node.position.y },
+                    { x: midX + node.position.x, y: endY + node.position.y }
+                  ];
+                }
+              }
 
               return (
                 <g style={{ cursor: 'move' }}>
@@ -828,6 +853,66 @@ export function Node({ node }: NodeProps) {
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
+                  
+                  {/* Faint midpoints to add new waypoints */}
+                  {isSelected && (() => {
+                    const currentWps = node.waypoints || generatedWaypoints;
+                    if (currentWps.length === 0) return null;
+                    
+                    const hints = [
+                      { x: (startX + node.position.x + currentWps[0].x) / 2, y: (startY + node.position.y + currentWps[0].y) / 2 },
+                      ...currentWps.slice(0, -1).map((wp, idx) => ({
+                        x: (wp.x + currentWps[idx+1].x) / 2,
+                        y: (wp.y + currentWps[idx+1].y) / 2
+                      })),
+                      { x: (currentWps[currentWps.length-1].x + endX + node.position.x) / 2, y: (currentWps[currentWps.length-1].y + endY + node.position.y) / 2 }
+                    ];
+                    
+                    return hints.map((hp, i) => (
+                      <g key={`hint-${i}`} style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          const newWaypoints = [...currentWps];
+                          newWaypoints.splice(i, 0, { x: hp.x, y: hp.y });
+                          updateNode({ ...node, waypoints: newWaypoints });
+                          setTimeout(() => {
+                             onWaypointDragStart?.(e, node.id, i);
+                          }, 0);
+                        }}
+                      >
+                        <circle cx={hp.x - node.position.x} cy={hp.y - node.position.y} r={4} fill="white" stroke="#0c8ce9" strokeWidth={1} opacity={0.6} />
+                        <text x={hp.x - node.position.x} y={hp.y - node.position.y} fill="#0c8ce9" fontSize="8" fontWeight="bold" textAnchor="middle" dominantBaseline="central" opacity={0.8}>+</text>
+                      </g>
+                    ));
+                  })()}
+                  
+                  {/* Draggable waypoints (bend points) */}
+                  {isSelected && (node.waypoints || generatedWaypoints).map((wp, i) => (
+                    <circle 
+                      key={i} 
+                      cx={wp.x - node.position.x} 
+                      cy={wp.y - node.position.y} 
+                      r={5}
+                      fill="white" 
+                      stroke="#0c8ce9" 
+                      strokeWidth={2}
+                      style={{ cursor: 'crosshair', pointerEvents: 'all' }}
+                      onPointerDown={(e) => {
+                        if (e.button === 2) return; // ignore right click
+                        e.stopPropagation();
+                        // If these are generated, the caller needs to know to initialize them first
+                        onWaypointDragStart?.(e, node.id, i);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (node.waypoints) {
+                          const newWaypoints = node.waypoints.filter((_, idx) => idx !== i);
+                          updateNode({ ...node, waypoints: newWaypoints.length ? newWaypoints : undefined });
+                        }
+                      }}
+                    />
+                  ))}
                 </g>
               );
             })() : node.lineCurve === 'curved' ? (() => {
@@ -912,7 +997,13 @@ export function Node({ node }: NodeProps) {
             let labelX = (startX + endX) / 2;
             let labelY = (startY + endY) / 2;
 
-            if (node.routing === 'elbow') {
+            if (node.waypoints && node.waypoints.length > 0) {
+              const midIndex = Math.floor((node.waypoints.length - 1) / 2);
+              const wp1 = midIndex >= 0 ? node.waypoints[midIndex] : { x: startX + node.position.x, y: startY + node.position.y };
+              const wp2 = midIndex + 1 < node.waypoints.length ? node.waypoints[midIndex + 1] : { x: endX + node.position.x, y: endY + node.position.y };
+              labelX = (wp1.x + wp2.x) / 2 - node.position.x;
+              labelY = (wp1.y + wp2.y) / 2 - node.position.y;
+            } else if (node.routing === 'elbow') {
               labelX = (startX + endX) / 2;
               labelY = startY;
             } else if (node.lineCurve === 'curved') {

@@ -57,6 +57,7 @@ export function Canvas() {
     addArrow,
     addCustomBlock,
     addCustomConnector,
+    updateWaypoint,
     zoom,
     setZoom,
     activeTool,
@@ -96,6 +97,11 @@ export function Canvas() {
 
   const drawingPreviewRef = useRef(drawingPreview);
   
+  const [_draggingWaypoint, setDraggingWaypoint] = useState<{
+    nodeId: string;
+    index: number;
+  } | null>(null);
+
   useEffect(() => {
     drawingPreviewRef.current = drawingPreview;
   }, [drawingPreview]);
@@ -912,7 +918,53 @@ export function Canvas() {
         }}>
           <div className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
-              <Node key={node.id} node={node} />
+              <Node 
+                key={node.id} 
+                node={node} 
+                onWaypointDragStart={(e, nodeId, index) => {
+                  e.stopPropagation();
+                  setDraggingWaypoint({ nodeId, index });
+                  
+                  // If this is a newly initialized waypoint (from the generated elbows),
+                  // we need to make sure the state is initialized in the context
+                  if (!node.waypoints || node.waypoints.length === 0) {
+                    const startX = node.startPoint!.x;
+                    const startY = node.startPoint!.y;
+                    const endX = node.endPoint!.x;
+                    const endY = node.endPoint!.y;
+                    const isVertical = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+                    
+                    let initialWaypoints = [];
+                    if (isVertical) {
+                      const midY = (startY + endY) / 2;
+                      initialWaypoints = [{ x: startX, y: midY }, { x: endX, y: midY }];
+                    } else {
+                      const midX = (startX + endX) / 2;
+                      initialWaypoints = [{ x: midX, y: startY }, { x: midX, y: endY }];
+                    }
+                    updateNode({ ...node, waypoints: initialWaypoints });
+                  }
+                  
+                  const handleMouseMove = (moveEvent: MouseEvent) => {
+                    const rect = canvasRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+                    const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+                    updateWaypoint(nodeId, index, { x: currentX, y: currentY });
+                  };
+                  
+                  const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    setDraggingWaypoint(null);
+                    // Force a history save
+                    updateNode(nodes.find(n => n.id === nodeId)!);
+                  };
+                  
+                  document.addEventListener('mousemove', handleMouseMove);
+                  document.addEventListener('mouseup', handleMouseUp);
+                }}
+              />
             ))}
             <RemoteCursors />
 

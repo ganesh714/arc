@@ -44,6 +44,7 @@ interface DiagramContextType {
   addCustomConnector: (position?: { x: number; y: number }) => void;
   addShape: (type: string, position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
+  updateWaypoint: (id: string, index: number, pos: { x: number; y: number }) => void;
   updateNode: (updatedNode: DiagramNode) => void;
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
@@ -852,6 +853,22 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const updateWaypoint = (id: string, index: number, pos: { x: number; y: number }) => {
+    setNodes((prev) => prev.map(node => {
+      if (node.id === id && node.waypoints) {
+        const newWaypoints = [...node.waypoints];
+        if (index >= 0 && index < newWaypoints.length) {
+          newWaypoints[index] = pos;
+          return {
+            ...node,
+            waypoints: newWaypoints
+          };
+        }
+      }
+      return node;
+    }));
+  };
+
   const updateNode = (updatedNode: DiagramNode) => {
     saveHistoryState(nodes);
     setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
@@ -916,6 +933,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           
           newNode.position = { x: minX, y: minY };
           newNode.dimensions = { width, height };
+          newNode.waypoints = undefined; // Reset custom path on node drag
           broadcast('NODE_UPDATED', newNode);
           return newNode;
         }
@@ -1001,6 +1019,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
               width: Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x)), 
               height: Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y)) 
             };
+            newNode.waypoints = undefined; // Reset custom path on node drag
             return newNode;
           }
         }
@@ -1394,7 +1413,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addCustomBlock,
       addCustomConnector,
       addShape,
-      updateLinePoints, 
+      updateLinePoints,
+      updateWaypoint, 
       updateNode, 
       updateMultipleNodes,
       moveNode, 

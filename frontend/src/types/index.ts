@@ -98,6 +98,7 @@ export interface DiagramNode {
   routing?: 'straight' | 'curved' | 'elbow';
   label?: string;
   labelPosition?: 'mid' | 'start' | 'end';
+  waypoints?: Point[];
 
   // UML / rich node enhancements
   stereotype?: string;

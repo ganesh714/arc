@@ -221,6 +221,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
       // Default fallback to prevent fatal crashes during render
       node.startPoint = node.startPoint || { x: 0, y: 0 };
       node.endPoint = node.endPoint || { x: 100, y: 100 };
+      node.waypoints = undefined; // clear waypoints on layout
 
       if (node.startConnection?.nodeId && node.endConnection?.nodeId) {
         const sourceNode = layoutedNodes.find(n => n.id === node.startConnection!.nodeId);
