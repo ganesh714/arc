@@ -28,17 +28,37 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
     });
   });
 
+  const outgoingEdges = new Map<string, DiagramNode[]>();
+  edges.forEach(edge => {
+    if (edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
+      const sourceId = edge.startConnection.nodeId;
+      if (!outgoingEdges.has(sourceId)) outgoingEdges.set(sourceId, []);
+      outgoingEdges.get(sourceId)!.push(edge);
+    }
+  });
+
   edges.forEach(edge => {
     if (edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
       let minlen = 1;
+      let weight = 1;
       const labelLower = (edge.label || '').toLowerCase();
       const sourceNode = nodes.find(n => n.id === edge.startConnection!.nodeId);
       
-      if (sourceNode?.type === 'diamond' && (labelLower === 'yes' || labelLower === 'true')) {
-        minlen = 0; // Force true/yes branch to lay out horizontally (same rank)
+      if (sourceNode?.type === 'diamond') {
+        const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
+        const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
+        const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+
+        if (isYes) {
+          minlen = 1;
+          weight = 1; // Horizontal branch (Yes/True) has low weight to be pushed aside
+        } else {
+          minlen = 1;
+          weight = 100; // Vertical branch (No/False) has extremely high weight to stay perfectly aligned
+        }
       }
       
-      g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId, { minlen });
+      g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId, { minlen, weight });
     }
   });
 
@@ -94,7 +114,11 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
           const labelLower = (node.label || '').toLowerCase();
           
           if (sourceNode.type === 'diamond') {
-            if (labelLower === 'yes' || labelLower === 'true') {
+            const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
+            const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === node.id;
+            const isYes = labelLower === 'yes' || labelLower === 'true' || isSecondEdge;
+            
+            if (isYes) {
               node.startConnection.anchor = 'right';
             } else {
               node.startConnection.anchor = 'bottom';

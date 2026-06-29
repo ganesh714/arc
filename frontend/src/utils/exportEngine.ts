@@ -152,7 +152,19 @@ export function generateExportCode(nodes: DiagramNode[]): string {
       html += `        </marker>\n`;
       html += `      </defs>\n`;
 
-      if (node.lineCurve === 'curved') {
+      if (node.routing === 'elbow') {
+        const midX = (startX + endX) / 2;
+        const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+        const midY = (startY + endY) / 2;
+        const elbowPath = isVerticalElbow 
+          ? `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`
+          : `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+          
+        const startMarkerStr = effectiveArrowType === 'double' ? ` marker-start="url(#arrowhead-start-${node.id})"` : '';
+        const endMarkerStr = (effectiveArrowType === 'single' || effectiveArrowType === 'double') ? ` marker-end="url(#arrowhead-end-${node.id})"` : '';
+
+        html += `      <path d="${elbowPath}" stroke="${color}" stroke-width="3" fill="none"${dashStr}${startMarkerStr}${endMarkerStr} />\n`;
+      } else if (node.lineCurve === 'curved') {
         const dx = endX - startX;
         const dy = endY - startY;
         const len = Math.sqrt(dx * dx + dy * dy);
