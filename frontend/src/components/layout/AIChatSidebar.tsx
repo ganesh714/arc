@@ -153,13 +153,24 @@ export function AIChatSidebar() {
         await addFile(activeProjectId, fileName);
       }
 
-      let parsedNodes = [];
+      let parsedNodes: any = [];
       let aiExplanation = '';
+      let isDiff = false;
+      let diffData: any = null;
+
       if (data.jsonTree) {
         try {
           const parsed = typeof data.jsonTree === 'string' ? JSON.parse(data.jsonTree) : data.jsonTree;
           if (parsed && typeof parsed === 'object') {
             if (parsed.explanation) aiExplanation = parsed.explanation;
+            if (aiMode === 'edit' && (parsed.updatedNodes || parsed.addedNodes || parsed.deletedNodeIds)) {
+              isDiff = true;
+              diffData = {
+                updatedNodes: Array.isArray(parsed.updatedNodes) ? parsed.updatedNodes : [],
+                addedNodes: Array.isArray(parsed.addedNodes) ? parsed.addedNodes : [],
+                deletedNodeIds: Array.isArray(parsed.deletedNodeIds) ? parsed.deletedNodeIds : []
+              };
+            }
           }
           parsedNodes = parsed;
         } catch (e) {
@@ -167,43 +178,69 @@ export function AIChatSidebar() {
         }
       }
       
-      // Extract nodes array if AI wrapped it in an object
-      if (parsedNodes && !Array.isArray(parsedNodes)) {
-        if (Array.isArray(parsedNodes.nodes)) {
-          parsedNodes = parsedNodes.nodes;
-        } else if (Array.isArray(parsedNodes.elements)) {
-          parsedNodes = parsedNodes.elements;
-        } else if (Array.isArray(parsedNodes.data)) {
-          parsedNodes = parsedNodes.data;
-        } else {
-          // Can't find an array, wrap it in an array if it looks like a single node, or throw
-          if (parsedNodes.id && parsedNodes.type) {
-            parsedNodes = [parsedNodes];
-          } else {
-            throw new Error("AI response could not be parsed into a node array");
+      if (isDiff && diffData) {
+        saveHistoryState(nodes);
+        
+        let nextNodes = nodes.filter(n => !diffData.deletedNodeIds.includes(n.id));
+        
+        const updatesById = Object.fromEntries(diffData.updatedNodes.map((u: any) => [u.id, u]));
+        nextNodes = nextNodes.map(n => {
+          if (updatesById[n.id]) {
+             // Deep merge style to preserve unedited styles
+             const updatedStyle = { ...n.style, ...(updatesById[n.id].style || {}) };
+             return { ...n, ...updatesById[n.id], style: updatedStyle };
           }
-        }
-      }
-
-      if (Array.isArray(parsedNodes)) {
-        parsedNodes = parsedNodes.map((n: any) => ({
+          return n;
+        });
+        
+        const additions = diffData.addedNodes.map((n: any) => ({
           ...n,
           position: n.position || { x: 0, y: 0 },
           dimensions: n.dimensions || { width: 220, height: 90 }
         }));
+        nextNodes = [...nextNodes, ...additions];
         
-        // Apply auto-layout if it's a generation task (not an edit that requires maintaining layout)
-        if (aiMode === 'generate') {
-          parsedNodes = autoLayoutNodes(parsedNodes);
-        }
+        setNodes(nextNodes);
         
-        saveHistoryState(nodes); // Save current state for undo
-        setNodes(parsedNodes);
-        
-        const successMsg = aiExplanation || (aiMode === 'generate' ? 'Generated diagram successfully!' : 'Diagram updated successfully!');
+        const successMsg = aiExplanation || 'Diagram updated successfully!';
         setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: successMsg }]);
       } else {
-        throw new Error("Parsed nodes is not an array");
+        // Extract nodes array if AI wrapped it in an object
+        if (parsedNodes && !Array.isArray(parsedNodes)) {
+          if (Array.isArray(parsedNodes.nodes)) {
+            parsedNodes = parsedNodes.nodes;
+          } else if (Array.isArray(parsedNodes.elements)) {
+            parsedNodes = parsedNodes.elements;
+          } else if (Array.isArray(parsedNodes.data)) {
+            parsedNodes = parsedNodes.data;
+          } else {
+            if (parsedNodes.id && parsedNodes.type) {
+              parsedNodes = [parsedNodes];
+            } else {
+              throw new Error("AI response could not be parsed into a node array");
+            }
+          }
+        }
+
+        if (Array.isArray(parsedNodes)) {
+          parsedNodes = parsedNodes.map((n: any) => ({
+            ...n,
+            position: n.position || { x: 0, y: 0 },
+            dimensions: n.dimensions || { width: 220, height: 90 }
+          }));
+          
+          if (aiMode === 'generate') {
+            parsedNodes = autoLayoutNodes(parsedNodes);
+          }
+          
+          saveHistoryState(nodes);
+          setNodes(parsedNodes);
+          
+          const successMsg = aiExplanation || (aiMode === 'generate' ? 'Generated diagram successfully!' : 'Diagram updated successfully!');
+          setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: successMsg }]);
+        } else {
+          throw new Error("Parsed nodes is not an array");
+        }
       }
     } catch (error: any) {
       console.error("Failed to generate AI visual", error);

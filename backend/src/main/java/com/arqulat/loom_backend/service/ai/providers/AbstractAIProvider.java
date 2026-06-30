@@ -36,6 +36,12 @@ public abstract class AbstractAIProvider implements AIProvider {
             if (root.isObject()) {
                 if (root.has("nodes") && root.get("nodes").isArray()) {
                     return clean;
+                } else if (root.has("updatedNodes") && root.get("updatedNodes").isArray()) {
+                    return clean;
+                } else if (root.has("addedNodes") && root.get("addedNodes").isArray()) {
+                    return clean;
+                } else if (root.has("deletedNodeIds") && root.get("deletedNodeIds").isArray()) {
+                    return clean;
                 } else if (root.has("elements") && root.get("elements").isArray()) {
                     return clean;
                 } else if (root.has("diagram") && root.get("diagram").isArray()) {
