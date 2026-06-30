@@ -5,8 +5,9 @@ import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
+import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Sparkles, Palette, Bot } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel, saveStatus } = useDiagram();
@@ -15,6 +16,7 @@ export function Header() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
+  const navigate = useNavigate();
 
   const handleExport = () => {
     const html = generateExportCode(nodes);
@@ -26,7 +28,7 @@ export function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.leftSection}>
-          <div className={styles.logoContainer}>
+          <div className={styles.logoContainer} onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className={styles.logoIcon}>L</div>
             <span className={styles.title}>Loom</span>
           </div>

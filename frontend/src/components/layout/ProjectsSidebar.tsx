@@ -4,11 +4,13 @@ import { useAuth } from '@/context/AuthContext';
 import { Folder, Plus, X, FolderKanban, LogIn } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
+import { useNavigate } from 'react-router-dom';
 import styles from './ProjectsSidebar.module.css';
 
-export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () => void }) {
-  const { projects, activeProjectId, activeFileId, switchFile, addFile, isSidebarOpen, toggleSidebar } = useDiagram();
+export function ProjectsSidebar() {
+  const { projects, activeProjectId, activeFileId, addFile, isSidebarOpen, toggleSidebar } = useDiagram();
   const { isGuest, user, login, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   const [isCreating, setIsCreating] = useState(false);
 
@@ -18,8 +20,6 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
       setIsCreating(false);
     }
   };
-
-  // (Removed inline popover outside-click listener since we use a modal)
 
   // Collapsed Sidebar view (simple icons)
   if (!isSidebarOpen) {
@@ -115,7 +115,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
             <button
               key={file.id}
               className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
-              onClick={() => switchFile(file.id)}
+              onClick={() => navigate(`/project/${activeProjectId}/file/${file.id}`)}
             >
               <Folder size={14} className={styles.itemIcon} />
               <span className={styles.projectName}>{file.name}</span>
@@ -193,7 +193,7 @@ export function ProjectsSidebar({ onBackToDashboard }: { onBackToDashboard?: () 
                 </button>
               ) : (
                 <button 
-                  onClick={onBackToDashboard}
+                  onClick={() => navigate('/dashboard')}
                   style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
                 >
                   Dashboard

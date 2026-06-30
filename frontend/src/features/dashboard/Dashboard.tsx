@@ -15,7 +15,6 @@ import {
   Users,
   Settings,
   Grid3X3,
-  X,
   Sun,
   Moon,
   LogOut
@@ -23,19 +22,17 @@ import {
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useNavigate } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 
-interface DashboardProps {
-  onEnterWorkspace: () => void;
-}
-
-export function Dashboard({ onEnterWorkspace }: DashboardProps) {
-  const { projects, addProject, switchProject, isLoadingProjects, theme, toggleTheme } = useDiagram();
+export function Dashboard() {
+  const { projects, addProject, isLoadingProjects, theme, toggleTheme } = useDiagram();
   const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -46,13 +43,17 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
   };
 
   const handleConfirmCreate = async (name: string, bgColor: string) => {
-    await addProject(name, 'Loom Diagrams', bgColor);
-    onEnterWorkspace();
+    const newProj = await addProject(name, 'Loom Diagrams', bgColor);
+    if (newProj && newProj.files.length > 0) {
+      navigate(`/project/${newProj.id}/file/${newProj.files[0].id}`);
+    }
   };
 
-  const handleProjectClick = async (id: string) => {
-    await switchProject(id);
-    onEnterWorkspace();
+  const handleProjectClick = (id: string) => {
+    const proj = projects.find(p => p.id === id);
+    if (proj && proj.files.length > 0) {
+      navigate(`/project/${id}/file/${proj.files[0].id}`);
+    }
   };
 
   const formatDate = (timestamp: number) => {
