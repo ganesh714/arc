@@ -33,7 +33,19 @@ public abstract class AbstractAIProvider implements AIProvider {
         // Validate that it is actually a JSON array (so hallucinations fail properly)
         try {
             JsonNode root = objectMapper.readTree(clean);
-            if (!root.isArray()) {
+            if (root.isObject()) {
+                if (root.has("nodes") && root.get("nodes").isArray()) {
+                    return objectMapper.writeValueAsString(root.get("nodes"));
+                } else if (root.has("elements") && root.get("elements").isArray()) {
+                    return objectMapper.writeValueAsString(root.get("elements"));
+                } else if (root.has("diagram") && root.get("diagram").isArray()) {
+                    return objectMapper.writeValueAsString(root.get("diagram"));
+                } else if (root.has("data") && root.get("data").isArray()) {
+                    return objectMapper.writeValueAsString(root.get("data"));
+                } else {
+                    throw new IllegalArgumentException("AI returned an object without a recognized array field.");
+                }
+            } else if (!root.isArray()) {
                 throw new IllegalArgumentException("AI returned valid JSON, but it is not a JSON Array.");
             }
             return clean;
