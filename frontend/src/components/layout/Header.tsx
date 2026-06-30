@@ -9,7 +9,7 @@ import styles from './Header.module.css';
 import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Sparkles, Palette } from 'lucide-react';
 
 export function Header() {
-  const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel } = useDiagram();
+  const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel, saveStatus } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -31,8 +31,28 @@ export function Header() {
             <span className={styles.title}>Loom</span>
           </div>
           <div className={styles.statusIndicator}>
-            <span className={styles.statusDot} style={{ backgroundColor: isGuest ? '#f59e0b' : '#10b981' }}></span>
-            <span>{isGuest ? 'Guest Mode (Not Saved)' : 'Cloud Connected'}</span>
+            {isGuest ? (
+              <>
+                <span className={styles.statusDot} style={{ backgroundColor: '#f59e0b' }}></span>
+                <span>Guest (Local)</span>
+              </>
+            ) : (
+              <>
+                <span className={styles.statusDot} style={{ 
+                  backgroundColor: 
+                    saveStatus === 'saved' ? '#10b981' : 
+                    saveStatus === 'error' ? '#ef4444' : 
+                    saveStatus === 'saving' ? '#3b82f6' : 
+                    '#f59e0b' 
+                }}></span>
+                <span>
+                  {saveStatus === 'saved' ? 'Saved to Cloud' : 
+                   saveStatus === 'saving' ? 'Saving...' : 
+                   saveStatus === 'unsaved' ? 'Unsaved' : 
+                   'Offline'}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
