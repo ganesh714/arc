@@ -6,7 +6,7 @@ import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Sparkles, Palette } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Sparkles, Palette, Bot } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel, saveStatus } = useDiagram();
@@ -75,7 +75,7 @@ export function Header() {
               justifyContent: 'center',
             }}
           >
-            <Sparkles size={14} style={{ color: '#0c8ce9' }} />
+            <Bot size={14} style={{ color: '#0c8ce9' }} />
           </button>
           <button 
             className={styles.btn} 

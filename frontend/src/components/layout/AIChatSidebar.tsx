@@ -11,6 +11,13 @@ const MODELS = [
 ];
 
 
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'ai';
+  content: string;
+  isError?: boolean;
+}
+
 export function AIChatSidebar() {
   const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects } = useDiagram();
   const [input, setInput] = useState('');
@@ -20,8 +27,9 @@ export function AIChatSidebar() {
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [aiMode, setAiMode] = useState<'generate' | 'edit'>('generate');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
-
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -87,6 +95,9 @@ export function AIChatSidebar() {
     setInput('');
     setIsGenerating(true);
     setAiPhase(aiMode === 'generate' ? 'planning' : 'editing');
+    
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: promptText }]);
+    
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -170,19 +181,23 @@ export function AIChatSidebar() {
         }
         
         setNodes(parsedNodes);
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: aiMode === 'generate' ? 'Generated diagram successfully!' : 'Diagram updated successfully!' }]);
       } else {
         throw new Error("Parsed nodes is not an array");
       }
     } catch (error) {
        console.error("Failed to generate AI visual", error);
-       alert("Failed to generate AI visual. Please try again.");
+       setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: 'Failed to process request. Please try again.', isError: true }]);
     } finally {
        setIsGenerating(false);
        setAiPhase('idle');
     }
   };
 
-  // Removed message history scroll
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isGenerating, aiPhase]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -237,24 +252,53 @@ export function AIChatSidebar() {
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
       {/* Main Content Area */}
-      <div className={styles.messageList} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', color: '#888' }}>
-        {aiMode === 'generate' ? (
-          <>
-            <Sparkles size={48} style={{ marginBottom: '16px', color: '#0c8ce9', opacity: 0.8 }} />
-            <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Generation</h3>
-            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
-              Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
-            </p>
-          </>
+      <div className={styles.messageList} style={{ display: 'flex', flexDirection: 'column', padding: '20px', color: '#888', overflowY: 'auto', flex: 1 }}>
+        {messages.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: '100%', marginTop: '40px' }}>
+            {aiMode === 'generate' ? (
+              <>
+                <Sparkles size={48} style={{ marginBottom: '16px', color: '#0c8ce9', opacity: 0.8 }} />
+                <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Generation</h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+                  Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
+                </p>
+              </>
+            ) : (
+              <>
+                <Edit3 size={48} style={{ marginBottom: '16px', color: '#10b981', opacity: 0.8 }} />
+                <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Iteration</h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+                  Ask the AI to modify the existing diagram. E.g., "Change all boxes to blue" or "Add a database node".
+                </p>
+              </>
+            )}
+          </div>
         ) : (
-          <>
-            <Edit3 size={48} style={{ marginBottom: '16px', color: '#10b981', opacity: 0.8 }} />
-            <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Iteration</h3>
-            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
-              Ask the AI to modify the existing diagram. E.g., "Change all boxes to blue" or "Add a database node".
-            </p>
-          </>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+            {messages.map(msg => (
+              <div 
+                key={msg.id} 
+                style={{ 
+                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor: msg.role === 'user' ? '#0c8ce9' : msg.isError ? '#3f1a1a' : '#1e212b',
+                  color: msg.role === 'user' ? '#fff' : msg.isError ? '#ef4444' : '#e3e3e3',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  borderBottomRightRadius: msg.role === 'user' ? '4px' : '12px',
+                  borderBottomLeftRadius: msg.role === 'ai' ? '4px' : '12px',
+                  maxWidth: '85%',
+                  fontSize: '14px',
+                  lineHeight: '1.4',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  border: msg.role === 'ai' && !msg.isError ? '1px solid #2a2e39' : msg.isError ? '1px solid #ef444450' : 'none'
+                }}
+              >
+                {msg.content}
+              </div>
+            ))}
+          </div>
         )}
+        
         {isGenerating && (
           <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', color: '#0c8ce9' }}>
              <div style={{ width: '24px', height: '24px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -271,9 +315,10 @@ export function AIChatSidebar() {
                  <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: aiPhase === 'planning' ? '#0c8ce9' : '#0c8ce9', transition: 'opacity 0.3s' }} />
                  <div style={{ width: '60px', height: '3px', borderRadius: '2px', background: aiPhase === 'styling' ? '#10b981' : '#333', transition: 'background 0.5s' }} />
                </div>
-             )}
-          </div>
+              )}
+           </div>
         )}
+        <div ref={messagesEndRef} style={{ height: 1 }} />
       </div>
 
       {/* Input Area */}
