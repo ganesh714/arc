@@ -129,7 +129,13 @@ export function AIChatSidebar() {
       }
 
       if (!response.ok) {
-        throw new Error(`AI ${aiMode} failed: ${response.statusText}`);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = response.statusText;
+        }
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
@@ -185,9 +191,14 @@ export function AIChatSidebar() {
       } else {
         throw new Error("Parsed nodes is not an array");
       }
-    } catch (error) {
-       console.error("Failed to generate AI visual", error);
-       setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: 'Failed to process request. Please try again.', isError: true }]);
+    } catch (error: any) {
+      console.error("Failed to generate AI visual", error);
+      setMessages(prev => [...prev, { 
+        id: Date.now().toString(), 
+        role: 'ai', 
+        content: `Error: ${error.message || 'Network error (CORS or Mixed Content)'}. Please check console.`, 
+        isError: true 
+      }]);
     } finally {
        setIsGenerating(false);
        setAiPhase('idle');
