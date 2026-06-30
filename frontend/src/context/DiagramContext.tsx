@@ -103,6 +103,9 @@ interface DiagramContextType {
   // Theme state
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  
+  // Save status
+  saveStatus: 'saved' | 'saving' | 'unsaved' | 'error';
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
@@ -302,8 +305,16 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const toggleAiChat = () => setIsAiChatOpen(prev => !prev);
 
   // Design Panel open/close state
-  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(true);
+  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(false);
   const toggleDesignPanel = () => setIsDesignPanelOpen(prev => !prev);
+
+  useEffect(() => {
+    if (selectedNodeIds.length > 0) {
+      setIsDesignPanelOpen(true);
+    } else {
+      setIsDesignPanelOpen(false);
+    }
+  }, [selectedNodeIds]);
 
   // Theme state initialization with persistence and system preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -312,6 +323,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
+
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
 
   const toggleTheme = () => {
     setTheme(prev => {
@@ -372,14 +385,17 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         // Ensure debouncedNodes has caught up to nodes
         // This prevents saving stale state from a previous file immediately after switching
         if (JSON.stringify(nodes) !== currentNodesStr) {
+          setSaveStatus('unsaved');
           return;
         }
 
         if (currentNodesStr === lastSavedNodesStr.current) {
           // No changes since last save/load, skip saving
+          setSaveStatus('saved');
           return;
         }
 
+        setSaveStatus('saving');
         const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
         const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
@@ -394,11 +410,14 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         
         if (!response.ok) {
           console.error('Auto-save failed:', response.statusText);
+          setSaveStatus('error');
         } else {
           lastSavedNodesStr.current = currentNodesStr;
+          setSaveStatus('saved');
         }
       } catch (error) {
         console.error('Failed to auto-save to backend:', error);
+        setSaveStatus('error');
       }
     };
 
@@ -1472,7 +1491,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
       // Theme
       theme,
-      toggleTheme
+      toggleTheme,
+
+      // Save status
+      saveStatus
     }}>
       {children}
     </DiagramContext.Provider>
