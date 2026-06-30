@@ -102,6 +102,42 @@ export function Canvas() {
     index: number;
   } | null>(null);
 
+  const findNodeAndAnchor = (x: number, y: number, excludeIds: string[]) => {
+    // Search in reverse to get topmost node
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const node = nodes[i];
+      if (excludeIds.includes(node.id) || ['line', 'arrow', 'path', 'custom-connector'].includes(node.type)) continue;
+      
+      const left = node.position.x;
+      const right = node.position.x + node.dimensions.width;
+      const top = node.position.y;
+      const bottom = node.position.y + node.dimensions.height;
+      
+      if (x >= left && x <= right && y >= top && y <= bottom) {
+        const cx = left + node.dimensions.width / 2;
+        const cy = top + node.dimensions.height / 2;
+        
+        const dx = x - cx;
+        const dy = y - cy;
+        let anchor = 'bottom';
+        if (Math.abs(dx) > Math.abs(dy)) {
+          anchor = dx > 0 ? 'right' : 'left';
+        } else {
+          anchor = dy > 0 ? 'bottom' : 'top';
+        }
+        
+        let anchorPt = { x: cx, y: cy };
+        if (anchor === 'top') anchorPt = { x: cx, y: top };
+        if (anchor === 'bottom') anchorPt = { x: cx, y: bottom };
+        if (anchor === 'left') anchorPt = { x: left, y: cy };
+        if (anchor === 'right') anchorPt = { x: right, y: cy };
+
+        return { nodeId: node.id, anchor, point: anchorPt };
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     drawingPreviewRef.current = drawingPreview;
   }, [drawingPreview]);
@@ -542,12 +578,25 @@ export function Canvas() {
             let newNode: any;
 
             if (isLineType) {
+              const startSnap = findNodeAndAnchor(sX, sY, []);
+              const endSnap = findNodeAndAnchor(cX, cY, []);
+
+              const finalStartX = startSnap ? startSnap.point.x : sX;
+              const finalStartY = startSnap ? startSnap.point.y : sY;
+              const finalEndX = endSnap ? endSnap.point.x : cX;
+              const finalEndY = endSnap ? endSnap.point.y : cY;
+
+              const minX = Math.min(finalStartX, finalEndX);
+              const minY = Math.min(finalStartY, finalEndY);
+              const w = Math.max(10, Math.abs(finalEndX - finalStartX));
+              const h = Math.max(10, Math.abs(finalEndY - finalStartY));
+
               if (activeTool === 'custom-connector') {
                 newNode = {
                   id,
                   type: 'custom-connector',
-                  position: { x: left, y: top },
-                  dimensions: { width, height },
+                  position: { x: minX, y: minY },
+                  dimensions: { width: w, height: h },
                   content: '',
                   style: {
                     borderColor: '#e74c3c',
@@ -555,8 +604,10 @@ export function Canvas() {
                     borderWidth: '2px',
                     opacity: '0.8'
                   },
-                  startPoint: { x: sX, y: sY },
-                  endPoint: { x: cX, y: cY },
+                  startPoint: { x: finalStartX, y: finalStartY },
+                  endPoint: { x: finalEndX, y: finalEndY },
+                  startConnection: startSnap ? { nodeId: startSnap.nodeId, anchor: startSnap.anchor } : undefined,
+                  endConnection: endSnap ? { nodeId: endSnap.nodeId, anchor: endSnap.anchor } : undefined,
                   customConnectorStyle: {
                     borderBottomColor: '#e74c3c',
                     borderWidth: '12px'
@@ -566,14 +617,16 @@ export function Canvas() {
                 newNode = {
                   id,
                   type: activeTool,
-                  position: { x: left, y: top },
-                  dimensions: { width, height },
+                  position: { x: minX, y: minY },
+                  dimensions: { width: w, height: h },
                   content: '',
                   style: {
                     borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
                   },
-                  startPoint: { x: sX, y: sY },
-                  endPoint: { x: cX, y: cY }
+                  startPoint: { x: finalStartX, y: finalStartY },
+                  endPoint: { x: finalEndX, y: finalEndY },
+                  startConnection: startSnap ? { nodeId: startSnap.nodeId, anchor: startSnap.anchor } : undefined,
+                  endConnection: endSnap ? { nodeId: endSnap.nodeId, anchor: endSnap.anchor } : undefined
                 };
               }
             } else if (activeTool === 'custom-block') {
@@ -960,13 +1013,44 @@ export function Canvas() {
                     document.removeEventListener('mouseup', handleMouseUp);
                     setDraggingWaypoint(null);
                     
-                    // Broadcast final position
                     setNodes(prev => {
-                      const finalNode = prev.find(n => n.id === nodeId);
+                      let nextNodes = [...prev];
+                      const lineNode = nextNodes.find(n => n.id === nodeId);
+                      if (lineNode) {
+                        const isStart = index === 0;
+                        const isEnd = (lineNode.waypoints && index === lineNode.waypoints.length - 1) || (!lineNode.waypoints && index === 1);
+                        
+                        if (isStart || isEnd) {
+                           const pt = isStart ? lineNode.startPoint! : lineNode.endPoint!;
+                           const snap = findNodeAndAnchor(pt.x, pt.y, [nodeId]);
+                           if (snap) {
+                             if (isStart) {
+                               lineNode.startPoint = snap.point;
+                               lineNode.startConnection = { nodeId: snap.nodeId, anchor: snap.anchor as any };
+                             } else {
+                               lineNode.endPoint = snap.point;
+                               lineNode.endConnection = { nodeId: snap.nodeId, anchor: snap.anchor as any };
+                             }
+                           } else {
+                             if (isStart) lineNode.startConnection = undefined;
+                             if (isEnd) lineNode.endConnection = undefined;
+                           }
+                           
+                           const minX = Math.min(lineNode.startPoint!.x, lineNode.endPoint!.x);
+                           const minY = Math.min(lineNode.startPoint!.y, lineNode.endPoint!.y);
+                           lineNode.position = { x: minX, y: minY };
+                           lineNode.dimensions = { 
+                             width: Math.max(15, Math.abs(lineNode.endPoint!.x - lineNode.startPoint!.x)),
+                             height: Math.max(15, Math.abs(lineNode.endPoint!.y - lineNode.startPoint!.y))
+                           };
+                        }
+                      }
+                      
+                      const finalNode = nextNodes.find(n => n.id === nodeId);
                       if (finalNode) {
                         setTimeout(() => broadcast('NODE_UPDATED', finalNode), 0);
                       }
-                      return prev;
+                      return nextNodes;
                     });
                   };
                   
