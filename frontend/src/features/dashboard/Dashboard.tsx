@@ -15,7 +15,10 @@ import {
   Users,
   Settings,
   Grid3X3,
-  X
+  X,
+  Sun,
+  Moon,
+  LogOut
 } from 'lucide-react';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
@@ -27,7 +30,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onEnterWorkspace }: DashboardProps) {
-  const { projects, addProject, switchProject, isLoadingProjects } = useDiagram();
+  const { projects, addProject, switchProject, isLoadingProjects, theme, toggleTheme } = useDiagram();
   const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
@@ -111,19 +114,31 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
           
           <div style={{ margin: '16px 12px', padding: '12px', background: '#12141a', borderRadius: '12px', border: '1px solid #1a1d26' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={16} color="#0c8ce9" />}
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={18} color="#0c8ce9" />}
               </div>
-              <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
-                <div style={{ fontSize: '10px', color: '#666' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
+                <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
               </div>
+              <button 
+                onClick={toggleTheme}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }}
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+                onMouseOver={(e) => { e.currentTarget.style.background = '#1a1d26'; e.currentTarget.style.color = '#fff'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#888'; }}
+              >
+                {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
             </div>
+            
             <button 
               onClick={logout}
-              style={{ width: '100%', background: '#1a1d26', border: 'none', color: '#888', padding: '6px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              style={{ width: '100%', background: '#1a1d26', border: 'none', color: '#999', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#222631'; e.currentTarget.style.color = '#fff'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = '#1a1d26'; e.currentTarget.style.color = '#999'; }}
             >
-              <X size={12} /> Sign out
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         </nav>
