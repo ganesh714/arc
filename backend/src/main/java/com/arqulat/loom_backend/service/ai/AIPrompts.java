@@ -56,14 +56,17 @@ public class AIPrompts {
             "5. For edges originating from a diamond node, make sure to add `label: \"True\"` or `label: \"False\"` if requested.\n" +
             "\n" +
             "EXAMPLE Output:\n" +
-            "[\n" +
-            "  { \"id\": \"start\", \"type\": \"terminator\", \"content\": \"Start\", \"tag\": \"start\" },\n" +
-            "  { \"id\": \"cond\", \"type\": \"diamond\", \"content\": \"Condition\", \"tag\": \"decision\" },\n" +
-            "  { \"id\": \"edge1\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"start\" }, \"endConnection\": { \"nodeId\": \"cond\" } },\n" +
-            "  { \"id\": \"edge2\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"cond\" }, \"endConnection\": { \"nodeId\": \"body\" }, \"label\": \"True\" }\n" +
-            "]\n" +
+            "{\n" +
+            "  \"explanation\": \"Generated a loop flowchart.\",\n" +
+            "  \"nodes\": [\n" +
+            "    { \"id\": \"start\", \"type\": \"terminator\", \"content\": \"Start\", \"tag\": \"start\" },\n" +
+            "    { \"id\": \"cond\", \"type\": \"diamond\", \"content\": \"Condition\", \"tag\": \"decision\" },\n" +
+            "    { \"id\": \"edge1\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"start\" }, \"endConnection\": { \"nodeId\": \"cond\" } },\n" +
+            "    { \"id\": \"edge2\", \"type\": \"arrow\", \"startConnection\": { \"nodeId\": \"cond\" }, \"endConnection\": { \"nodeId\": \"body\" }, \"label\": \"True\" }\n" +
+            "  ]\n" +
+            "}\n" +
             "\n" +
-            "You MUST output ONLY a valid JSON array starting with [ and ending with ]. Do not wrap in markdown or include any explanations.";
+            "YOU MUST RETURN A SINGLE JSON OBJECT EXACTLY matching this schema: { \"explanation\": \"A short 1-2 sentence explanation of your design decisions\", \"nodes\": [ ... your array of nodes ... ] }. DO NOT return just the array.";
 
     public static final String EDIT_SYSTEM_PROMPT = "You are Loom AI, an expert software architecture and diagram editor.\n"
             +
@@ -77,5 +80,5 @@ public class AIPrompts {
             "3. To add a node, append it to the array. Make sure you connect it properly using startPoint/endPoint or lines if requested.\n" +
             "4. The user may have selected certain nodes on the canvas. These are marked with 'isSelected: true'. If the user says 'this node', 'these nodes', or 'the selected nodes', they are referring to the ones with isSelected set to true.\n" +
             "5. NO MANUAL LAYOUT REQUIRED: Just ensure 'startConnection.nodeId' and 'endConnection.nodeId' are accurate for new connections. Layout is auto-calculated.\n" +
-            "6. ONLY RETURN RAW JSON ARRAY. No explanations, no markdown block wrappers. Just the valid JSON array starting with [ and ending with ].";
+            "6. YOU MUST RETURN A SINGLE JSON OBJECT EXACTLY matching this schema: { \"explanation\": \"A short 1-2 sentence explanation of your edits\", \"nodes\": [ ... your modified array of nodes ... ] }. DO NOT return just the array.";
 }

@@ -99,6 +99,7 @@ interface DiagramContextType {
   pasteSelected: () => void;
   cutSelected: () => void;
   deleteSelected: () => void;
+  saveHistoryState: (customNodes: DiagramNode[]) => void;
   
   // Theme state
   theme: 'light' | 'dark';

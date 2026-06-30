@@ -19,7 +19,7 @@ interface ChatMessage {
 }
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -105,13 +105,16 @@ export function AIChatSidebar() {
     
     try {
       const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      let response;
+      // Build chat context
+      const chatContextStr = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\\n");
+      const fullPrompt = messages.length > 0 ? `PREVIOUS CHAT HISTORY:\\n${chatContextStr}\\n\\nCURRENT REQUEST:\\n${promptText}` : promptText;
+      
       if (aiMode === 'generate') {
         response = await fetch(`${loomApiUrl}/api/ai/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ prompt: promptText }),
+          body: JSON.stringify({ prompt: fullPrompt }),
         });
       } else {
         // Prepare context
@@ -127,7 +130,7 @@ export function AIChatSidebar() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ prompt: promptText, contextNodes: contextPayload }),
+          body: JSON.stringify({ prompt: fullPrompt, contextNodes: contextPayload }),
         });
       }
 
@@ -151,9 +154,14 @@ export function AIChatSidebar() {
       }
 
       let parsedNodes = [];
+      let aiExplanation = '';
       if (data.jsonTree) {
         try {
-          parsedNodes = typeof data.jsonTree === 'string' ? JSON.parse(data.jsonTree) : data.jsonTree;
+          const parsed = typeof data.jsonTree === 'string' ? JSON.parse(data.jsonTree) : data.jsonTree;
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.explanation) aiExplanation = parsed.explanation;
+          }
+          parsedNodes = parsed;
         } catch (e) {
           console.error("Failed to parse JSON tree from AI response", e);
         }
@@ -189,8 +197,11 @@ export function AIChatSidebar() {
           parsedNodes = autoLayoutNodes(parsedNodes);
         }
         
+        saveHistoryState(nodes); // Save current state for undo
         setNodes(parsedNodes);
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: aiMode === 'generate' ? 'Generated diagram successfully!' : 'Diagram updated successfully!' }]);
+        
+        const successMsg = aiExplanation || (aiMode === 'generate' ? 'Generated diagram successfully!' : 'Diagram updated successfully!');
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: successMsg }]);
       } else {
         throw new Error("Parsed nodes is not an array");
       }

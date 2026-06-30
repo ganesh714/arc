@@ -35,13 +35,13 @@ public abstract class AbstractAIProvider implements AIProvider {
             JsonNode root = objectMapper.readTree(clean);
             if (root.isObject()) {
                 if (root.has("nodes") && root.get("nodes").isArray()) {
-                    return objectMapper.writeValueAsString(root.get("nodes"));
+                    return clean;
                 } else if (root.has("elements") && root.get("elements").isArray()) {
-                    return objectMapper.writeValueAsString(root.get("elements"));
+                    return clean;
                 } else if (root.has("diagram") && root.get("diagram").isArray()) {
-                    return objectMapper.writeValueAsString(root.get("diagram"));
+                    return clean;
                 } else if (root.has("data") && root.get("data").isArray()) {
-                    return objectMapper.writeValueAsString(root.get("data"));
+                    return clean;
                 } else {
                     throw new IllegalArgumentException("AI returned an object without a recognized array field.");
                 }
