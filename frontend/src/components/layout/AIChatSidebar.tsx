@@ -19,7 +19,7 @@ interface ChatMessage {
 }
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -117,7 +117,10 @@ export function AIChatSidebar() {
         // Prepare context
         const contextPayload = nodes.map(n => {
           const { customConnectorStyle, ...safeNode } = n;
-          return safeNode;
+          return {
+            ...safeNode,
+            isSelected: selectedNodeIds.includes(n.id)
+          };
         });
         
         response = await fetch(`${loomApiUrl}/api/ai/edit`, {

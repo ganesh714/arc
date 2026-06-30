@@ -74,9 +74,8 @@ public class AIPrompts {
             "CRITICAL RULES:\n" +
             "1. DO NOT change the 'id' of any existing nodes unless you are replacing them entirely.\n" +
             "2. To remove a node, simply omit it from the array.\n" +
-            "3. To add a node, append it to the array. Make sure you connect it properly using startPoint/endPoint or lines if requested.\n"
-            +
-            "5. NO MANUAL LAYOUT REQUIRED: Just ensure 'startConnection.nodeId' and 'endConnection.nodeId' are accurate for new connections. Layout is auto-calculated.\n"
-            +
+            "3. To add a node, append it to the array. Make sure you connect it properly using startPoint/endPoint or lines if requested.\n" +
+            "4. The user may have selected certain nodes on the canvas. These are marked with 'isSelected: true'. If the user says 'this node', 'these nodes', or 'the selected nodes', they are referring to the ones with isSelected set to true.\n" +
+            "5. NO MANUAL LAYOUT REQUIRED: Just ensure 'startConnection.nodeId' and 'endConnection.nodeId' are accurate for new connections. Layout is auto-calculated.\n" +
             "6. ONLY RETURN RAW JSON ARRAY. No explanations, no markdown block wrappers. Just the valid JSON array starting with [ and ending with ].";
 }
