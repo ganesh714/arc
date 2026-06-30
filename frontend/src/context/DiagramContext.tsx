@@ -67,9 +67,9 @@ interface DiagramContextType {
   projects: WorkspaceProject[];
   activeProjectId: string;
   activeFileId: string;
-  switchProject: (id: string) => void;
-  addProject: (name: string, category?: string, backgroundColor?: string) => void;
-  switchFile: (id: string) => void;
+  switchProject: (id: string, fileId?: string) => void;
+  addProject: (name: string, category?: string, backgroundColor?: string) => Promise<WorkspaceProject | null | void>;
+  switchFile: (id: string, projectId?: string) => void;
   addFile: (projectId: string, name: string, backgroundColor?: string) => void;
   updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
   isLoadingProjects: boolean;
@@ -1253,7 +1253,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       setActiveFileId(newFileId);
       setPast([]);
       setFuture([]);
-      return;
+      return newProj;
     }
 
     try {
@@ -1284,10 +1284,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         } else {
            await switchFile(newProj.files[0].id, newProj.id);
         }
+        return newProj;
       }
     } catch (error) {
       console.error('Failed to create project', error);
     }
+    return null;
   };
 
   const switchFile = async (fileId: string, projectId: string = activeProjectId) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
@@ -13,38 +14,17 @@ import { Dashboard } from '@/features/dashboard/Dashboard';
 import { useAuth } from '@/context/AuthContext';
 import { Loader } from '@/components/ui/Loader';
 
-type AppView = 'landing' | 'dashboard' | 'workspace';
-
-function MainAppContent() {
-  const [view, setView] = useState<AppView>('landing');
+function WorkspaceRoute() {
+  const { projectId, fileId } = useParams();
+  const { switchProject, activeProjectId, activeFileId, isSidebarOpen, isAiChatOpen, isDesignPanelOpen } = useDiagram();
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
-  const { isSidebarOpen, isAiChatOpen, isDesignPanelOpen } = useDiagram();
-  const { isAuthenticated, isGuest, isLoading } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated || isGuest) {
-      setView('dashboard');
-    } else {
-      setView('landing');
+    if (projectId && fileId && (projectId !== activeProjectId || fileId !== activeFileId)) {
+      switchProject(projectId, fileId);
     }
-  }, [isAuthenticated, isGuest]);
-
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#08090d]">
-        <Loader size="lg" text="Authenticating..." />
-      </div>
-    );
-  }
-
-  if (view === 'landing') {
-    return <LandingPage />;
-  }
-
-  if (view === 'dashboard') {
-    return <Dashboard onEnterWorkspace={() => setView('workspace')} />;
-  }
+  }, [projectId, fileId, switchProject, activeProjectId, activeFileId]);
 
   const startLeftResize = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,7 +66,6 @@ function MainAppContent() {
 
   return (
     <div className="flex h-screen w-full bg-[var(--bg-canvas)] overflow-hidden relative">
-      {/* Projects Sidebar wrapper (collapsible leftmost column - full height like Gemini/ChatGPT) */}
       <div 
         style={{ 
           width: isSidebarOpen ? '200px' : '60px', 
@@ -98,21 +77,17 @@ function MainAppContent() {
           flexShrink: 0
         }}
       >
-        <ProjectsSidebar onBackToDashboard={() => setView('dashboard')} />
+        <ProjectsSidebar />
       </div>
 
-      {/* Main Content Area (Header + Workspace) */}
       <div className="flex flex-col flex-1 h-full relative overflow-hidden">
         <Header />
         
-        {/* Workspace Area */}
         <div className="flex flex-1 relative overflow-hidden">
-          {/* Left Sidebar wrapper */}
           <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
             <LeftSidebar />
           </div>
 
-          {/* Left Resize Divider */}
           <div
             onMouseDown={startLeftResize}
             style={{
@@ -131,19 +106,16 @@ function MainAppContent() {
             <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
           </div>
 
-          {/* Main Canvas */}
           <div className="flex-1 h-full relative overflow-hidden">
             <Canvas />
           </div>
 
-          {/* AI Chat Sidebar */}
           {isAiChatOpen && (
             <div style={{ width: '320px', minWidth: '320px', height: '100%', position: 'relative' }}>
               <AIChatSidebar />
             </div>
           )}
 
-          {/* Right Resize Divider */}
           {isDesignPanelOpen && (
             <div
               onMouseDown={startRightResize}
@@ -164,7 +136,6 @@ function MainAppContent() {
             </div>
           )}
 
-          {/* Right Sidebar wrapper */}
           {isDesignPanelOpen && (
             <div style={{ width: `${rightWidth}px`, minWidth: `${rightWidth}px`, height: '100%', position: 'relative' }}>
               <SidePanel />
@@ -176,15 +147,38 @@ function MainAppContent() {
   );
 }
 
+function MainAppContent() {
+  const { isAuthenticated, isGuest, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-[#08090d]">
+        <Loader size="lg" text="Authenticating..." />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={isAuthenticated || isGuest ? <Navigate to="/dashboard" /> : <LandingPage />} />
+      <Route path="/dashboard" element={isAuthenticated || isGuest ? <Dashboard /> : <Navigate to="/" />} />
+      <Route path="/project/:projectId/file/:fileId" element={isAuthenticated || isGuest ? <WorkspaceRoute /> : <Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
+}
+
 export function App() {
   return (
-    <AuthProvider>
-      <CollaborationProvider>
-        <DiagramProvider>
-          <MainAppContent />
-        </DiagramProvider>
-      </CollaborationProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <CollaborationProvider>
+          <DiagramProvider>
+            <MainAppContent />
+          </DiagramProvider>
+        </CollaborationProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
