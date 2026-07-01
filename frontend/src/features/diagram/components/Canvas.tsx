@@ -29,7 +29,9 @@ import {
   StickyNote,
   Sparkles,
   Link,
-  Undo2
+  Undo2,
+  CornerDownRight,
+  Activity
 } from 'lucide-react';
 
 export function Canvas() {
@@ -825,6 +827,21 @@ export function Canvas() {
     });
   };
 
+  const handleUpdateNodeProperty = (key: string, value: any) => {
+    if (!selectedNode) return;
+    saveHistoryState(nodes);
+    const updates: any = { [key]: value };
+    
+    if (key === 'routing' && value === 'elbow') updates['lineCurve'] = undefined;
+    if (key === 'lineCurve' && value === 'curved') updates['routing'] = undefined;
+    if (key === 'routing' && value === 'straight') {
+      updates['routing'] = undefined;
+      updates['lineCurve'] = undefined;
+    }
+    
+    updateNode({ ...selectedNode, ...updates });
+  };
+
   const handleDeleteNode = (id: string) => {
     saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
@@ -1120,6 +1137,34 @@ export function Canvas() {
                   )}
 
                   <div className={styles.divider} style={{ height: '12px' }} />
+
+                  {/* Line Style Controls (Only if line) */}
+                  {isLine && (
+                    <>
+                      <button 
+                        className={`${styles.contextBtn} ${selectedNode.routing !== 'elbow' && selectedNode.lineCurve !== 'curved' ? styles.contextBtnActive : ''}`}
+                        onClick={() => handleUpdateNodeProperty('routing', 'straight')}
+                        title="Straight Line"
+                      >
+                        <Minus size={11} />
+                      </button>
+                      <button 
+                        className={`${styles.contextBtn} ${selectedNode.routing === 'elbow' ? styles.contextBtnActive : ''}`}
+                        onClick={() => handleUpdateNodeProperty('routing', 'elbow')}
+                        title="Elbow Line"
+                      >
+                        <CornerDownRight size={11} />
+                      </button>
+                      <button 
+                        className={`${styles.contextBtn} ${selectedNode.lineCurve === 'curved' ? styles.contextBtnActive : ''}`}
+                        onClick={() => handleUpdateNodeProperty('lineCurve', 'curved')}
+                        title="Curved Line"
+                      >
+                        <Activity size={11} />
+                      </button>
+                      <div className={styles.divider} style={{ height: '12px' }} />
+                    </>
+                  )}
 
                   {/* Delete Element */}
                   <button 
