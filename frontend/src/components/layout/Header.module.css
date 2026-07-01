@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  height: 40px; /* Slimmer header like Figma */
+  height: 48px; /* Modern app standard */
   padding: 0 12px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-section);
