@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class AIEditRequest {
     private String prompt;
+    private String imageBase64;
     private List<Map<String, Object>> contextNodes;
     private Map<String, Object> viewport;
 
@@ -30,5 +31,13 @@ public class AIEditRequest {
 
     public void setViewport(Map<String, Object> viewport) {
         this.viewport = viewport;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 }
