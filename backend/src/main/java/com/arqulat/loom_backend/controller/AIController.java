@@ -28,7 +28,7 @@ public class AIController {
                 return ResponseEntity.badRequest().body("Prompt cannot be empty");
             }
             
-            String jsonTree = aiService.generateDiagramNodes(request.getPrompt());
+            String jsonTree = aiService.generateDiagramNodes(request.getPrompt(), request.getImageBase64());
             
             AIGenerateResponse response = new AIGenerateResponse(jsonTree, "Fallback-Ring-Resolved");
             return ResponseEntity.ok(response);
@@ -50,7 +50,7 @@ public class AIController {
             }
             
             String contextNodesJson = objectMapper.writeValueAsString(request.getContextNodes());
-            String jsonTree = aiService.editDiagramNodes(request.getPrompt(), contextNodesJson);
+            String jsonTree = aiService.editDiagramNodes(request.getPrompt(), contextNodesJson, request.getImageBase64());
             
             AIGenerateResponse response = new AIGenerateResponse(jsonTree, "Fallback-Ring-Resolved");
             return ResponseEntity.ok(response);
