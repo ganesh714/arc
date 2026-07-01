@@ -14,7 +14,10 @@ import {
   ChevronUp, 
   Play, 
   Cpu, 
-  MessageSquare
+  MessageSquare,
+  History,
+  Keyboard,
+  Share2
 } from 'lucide-react';
 
 const CODE_TEMPLATES = [
@@ -67,14 +70,14 @@ export function LandingPage() {
       const timeout = setTimeout(() => {
         setTypedCode(prev => prev + fullText[charIndex]);
         setCharIndex(prev => prev + 1);
-      }, 25);
+      }, 20);
       return () => clearTimeout(timeout);
     } else {
       const timeout = setTimeout(() => {
         setTypedCode('');
         setCharIndex(0);
         setTemplateIndex(prev => (prev + 1) % CODE_TEMPLATES.length);
-      }, 3000);
+      }, 2500);
       return () => clearTimeout(timeout);
     }
   }, [charIndex, templateIndex]);
@@ -152,6 +155,7 @@ export function LandingPage() {
 
         {/* Mockup Preview / Visuals */}
         <div className={styles.heroVisual}>
+          <div className={styles.visualGlow}></div>
           <div className={styles.previewContainer}>
             <div className={styles.previewHeader}>
               <div className={styles.dots}>
@@ -245,39 +249,94 @@ export function LandingPage() {
         </div>
       </div>
 
-      {/* Storyline Timeline: Section 2 - Multiplayer / Collaboration */}
+      {/* Storyline Timeline: Section 2 - Collaborative Multiplayer (REVERSED COLUMNS) */}
       <div id="collaboration" className={styles.timelineSection}>
         <div className={styles.timelineConnector}>
           <div className={styles.timelineDot}><Users size={16} /></div>
           <div className={styles.timelineLine}></div>
         </div>
         <div className={styles.timelineContent}>
-          <div className={styles.collabCard}>
-            <div className={styles.sectionHeader} style={{ textAlign: 'center' }}>
-              <span className={styles.sectionTag}>Multiplayer Workflow</span>
-              <h2 className={styles.sectionTitle}>Built for teams. Real-time collaboration.</h2>
-              <p style={{ color: '#8b949e', marginTop: '12px', fontSize: '16px' }}>
-                Co-edit models, link services, and plan backend databases with your team synchronously using high-performance WebSocket signaling.
-              </p>
+          <div className={`${styles.splitGrid} ${styles.reverseSplit}`}>
+            {/* Visual on the Left */}
+            <div className={styles.collabCard}>
+              <div className={styles.multiplayerDemo}>
+                <div className={`${styles.cursor} ${styles.cursor1}`}>
+                  <MessageSquare size={12} /> Sarah (UX Architect)
+                </div>
+                <div className={`${styles.cursor} ${styles.cursor2}`}>
+                  <Code size={12} /> Ganesh (Backend Dev)
+                </div>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#21262d', fontSize: '18px', fontWeight: 700, pointerEvents: 'none' }}>
+                  Real-Time Sync active
+                </div>
+              </div>
             </div>
-
-            {/* Multiplayer Cursor Simulation Box */}
-            <div className={styles.multiplayerDemo}>
-              <div className={`${styles.cursor} ${styles.cursor1}`}>
-                <MessageSquare size={12} /> Sarah (UX Architect)
+            {/* Content on the Right */}
+            <div>
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionTag}>Multiplayer Workflow</span>
+                <h2 className={styles.sectionTitle}>Built for teams. Real-time collaboration.</h2>
               </div>
-              <div className={`${styles.cursor} ${styles.cursor2}`}>
-                <Code size={12} /> Ganesh (Backend Dev)
-              </div>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#30363d', fontSize: '18px', fontWeight: 700, pointerEvents: 'none' }}>
-                Real-Time Sync active
+              <div className={styles.featuresList}>
+                <div className={styles.featurePoint}>
+                  <div className={styles.featurePointIcon}><Users size={20} /></div>
+                  <div>
+                    <h4>Multiplayer Synchronization</h4>
+                    <p>Co-edit models, link services, and plan backend databases with your team synchronously using high-performance WebSocket signaling.</p>
+                  </div>
+                </div>
+                <div className={styles.featurePoint}>
+                  <div className={styles.featurePointIcon}><Globe size={20} /></div>
+                  <div>
+                    <h4>Global Deployment</h4>
+                    <p>Save diagrams instantly. Accessible on any client machine anywhere, keeping the entire product team perfectly in sync.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* FAQ Accordion Section */}
+      {/* Bento Grid Features Section */}
+      <section id="features" className={styles.bentoSection}>
+        <div className={styles.sectionHeader} style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <span className={styles.sectionTag}>Productivity Kit</span>
+          <h2 className={styles.sectionTitle}>Engineered for Modern Teams</h2>
+        </div>
+        <div className={styles.bentoGrid}>
+          {/* Card 1 (Large) */}
+          <div className={`${styles.bentoCard} ${styles.bentoLarge}`}>
+            <div className={styles.bentoGlow}></div>
+            <div className={styles.bentoCardIcon}><History size={24} /></div>
+            <h3>Historical Reversions</h3>
+            <p>Full undo/redo stack allows developers to rewind through layout variations and canvas edits safely, ensuring you never lose code changes.</p>
+          </div>
+          {/* Card 2 */}
+          <div className={styles.bentoCard}>
+            <div className={styles.bentoGlow}></div>
+            <div className={styles.bentoCardIcon}><Keyboard size={24} /></div>
+            <h3>Keyboard Hotkeys</h3>
+            <p>Speed up layout modeling with custom keyboard shortcuts for shapes, lines, grouping, and layer order.</p>
+          </div>
+          {/* Card 3 */}
+          <div className={styles.bentoCard}>
+            <div className={styles.bentoGlow}></div>
+            <div className={styles.bentoCardIcon}><Layers size={24} /></div>
+            <h3>Infinite Canvas</h3>
+            <p>Model complex architectures with nested schemas, modular frames, and sub-systems on a smooth zooming grid.</p>
+          </div>
+          {/* Card 4 (Large) */}
+          <div className={`${styles.bentoCard} ${styles.bentoLarge}`}>
+            <div className={styles.bentoGlow}></div>
+            <div className={styles.bentoCardIcon}><Share2 size={24} /></div>
+            <h3>Multi-framework Exports</h3>
+            <p>One-click code compile outputs clean, typed modules for React, Next.js routes, or raw DDL SQL code schemas natively.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Accordion Section (New styled Cards) */}
       <section id="faq" className={styles.faqSection}>
         <h2 className={styles.faqTitle}>Frequently Asked Questions</h2>
         <div className={styles.faqList}>
