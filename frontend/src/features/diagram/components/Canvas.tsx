@@ -29,6 +29,7 @@ import {
   StickyNote,
   Sparkles,
   Link,
+  Unlink,
   Undo2,
   CornerDownRight,
   Activity
@@ -104,7 +105,31 @@ export function Canvas() {
     index: number;
   } | null>(null);
 
-  const findNodeAndAnchor = (x: number, y: number, excludeIds: string[]) => {
+  const findNodeAndAnchor = (x: number, y: number, excludeIds: string[], targetElement?: EventTarget | null) => {
+    // Explicit fixed anchor drop
+    if (targetElement && (targetElement as HTMLElement).hasAttribute && (targetElement as HTMLElement).hasAttribute('data-anchor')) {
+      const el = targetElement as HTMLElement;
+      const anchor = el.getAttribute('data-anchor') as 'top' | 'bottom' | 'left' | 'right';
+      const nodeId = el.getAttribute('data-node-id') as string;
+      
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        const left = node.position.x;
+        const right = node.position.x + node.dimensions.width;
+        const top = node.position.y;
+        const bottom = node.position.y + node.dimensions.height;
+        const cx = left + node.dimensions.width / 2;
+        const cy = top + node.dimensions.height / 2;
+        
+        let anchorPt = { x: cx, y: cy };
+        if (anchor === 'top') anchorPt = { x: cx, y: top };
+        if (anchor === 'bottom') anchorPt = { x: cx, y: bottom };
+        if (anchor === 'left') anchorPt = { x: left, y: cy };
+        if (anchor === 'right') anchorPt = { x: right, y: cy };
+        return { nodeId, anchor, point: anchorPt };
+      }
+    }
+
     // Search in reverse to get topmost node
     for (let i = nodes.length - 1; i >= 0; i--) {
       const node = nodes[i];
@@ -211,6 +236,17 @@ export function Canvas() {
       if ((e.ctrlKey || e.metaKey) && key === 'x') {
         e.preventDefault();
         cutSelected();
+        return;
+      }
+
+      // Group / Ungroup
+      if ((e.ctrlKey || e.metaKey) && key === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          ungroupSelected();
+        } else {
+          groupSelected();
+        }
         return;
       }
 
@@ -557,7 +593,7 @@ export function Canvas() {
         setDrawingPreview(prev => prev ? { ...prev, currentX, currentY } : null);
       };
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent: MouseEvent) => {
         console.log('handleMouseUp triggered');
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -581,7 +617,7 @@ export function Canvas() {
 
             if (isLineType) {
               const startSnap = findNodeAndAnchor(sX, sY, []);
-              const endSnap = findNodeAndAnchor(cX, cY, []);
+              const endSnap = findNodeAndAnchor(cX, cY, [], upEvent.target);
 
               const finalStartX = startSnap ? startSnap.point.x : sX;
               const finalStartY = startSnap ? startSnap.point.y : sY;
@@ -1025,7 +1061,7 @@ export function Canvas() {
                     updateWaypoint(nodeId, index, { x: currentX, y: currentY });
                   };
                   
-                  const handleMouseUp = () => {
+                  const handleMouseUp = (upEvent: MouseEvent) => {
                     document.removeEventListener('mousemove', handleMouseMove);
                     document.removeEventListener('mouseup', handleMouseUp);
                     setDraggingWaypoint(null);
@@ -1039,7 +1075,7 @@ export function Canvas() {
                         
                         if (isStart || isEnd) {
                            const pt = isStart ? lineNode.startPoint! : lineNode.endPoint!;
-                           const snap = findNodeAndAnchor(pt.x, pt.y, [nodeId]);
+                           const snap = findNodeAndAnchor(pt.x, pt.y, [nodeId], upEvent.target);
                            if (snap) {
                              if (isStart) {
                                lineNode.startPoint = snap.point;
@@ -1166,11 +1202,67 @@ export function Canvas() {
                     </>
                   )}
 
+                  <div className={styles.divider} style={{ height: '12px' }} />
+
+                  {/* Group / Ungroup (Single Node in Group) */}
+                  {selectedNode.groupId && (
+                    <>
+                      <button 
+                        className={styles.contextBtn} 
+                        onClick={ungroupSelected} 
+                        title="Ungroup"
+                      >
+                        <Unlink size={11} />
+                      </button>
+                      <div className={styles.divider} style={{ height: '12px' }} />
+                    </>
+                  )}
+
                   {/* Delete Element */}
                   <button 
                     className={styles.contextBtn} 
                     onClick={() => handleDeleteNode(selectedNode.id)} 
                     title="Delete element"
+                    style={{ color: '#f04438' }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Multi-Select Floating Contextual Menu */}
+            {selectedNodeIds.length > 1 && (() => {
+              const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+              if (selectedNodes.length === 0) return null;
+              
+              const minX = Math.min(...selectedNodes.map(n => n.position.x));
+              const minY = Math.min(...selectedNodes.map(n => n.position.y));
+              const maxX = Math.max(...selectedNodes.map(n => n.position.x + n.dimensions.width));
+              const maxY = Math.max(...selectedNodes.map(n => n.position.y + n.dimensions.height));
+              
+              const menuTop = minY < 50 ? maxY + 8 : minY - 40;
+              const menuLeft = Math.max(10, minX + ((maxX - minX) / 2) - 40);
+
+              const allGrouped = selectedNodes.every(n => n.groupId) && new Set(selectedNodes.map(n => n.groupId)).size === 1;
+
+              return (
+                <div 
+                  className={styles.contextMenu}
+                  style={{ top: `${menuTop}px`, left: `${menuLeft}px` }}
+                >
+                  <button 
+                    className={styles.contextBtn}
+                    onClick={allGrouped ? ungroupSelected : groupSelected}
+                    title={allGrouped ? "Ungroup" : "Group (Ctrl+G)"}
+                  >
+                    {allGrouped ? <Unlink size={11} /> : <Link size={11} />}
+                  </button>
+                  <div className={styles.divider} style={{ height: '12px' }} />
+                  <button 
+                    className={styles.contextBtn} 
+                    onClick={deleteSelected} 
+                    title="Delete selection"
                     style={{ color: '#f04438' }}
                   >
                     <Trash2 size={11} />

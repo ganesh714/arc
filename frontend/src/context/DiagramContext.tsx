@@ -1445,6 +1445,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       selectNode, 
       setSelectedNodeIds,
       setNodes,
+      groupSelected,
+      ungroupSelected,
       bringToFront,
       sendToBack,
       alignSelected,

@@ -1223,6 +1223,41 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         </div>
       )}
 
+      {/* Anchor Dots (When drawing or selecting a line) */}
+      {!isLine && (activeTool === 'arrow' || activeTool === 'line' || (selectedNodeIds.length === 1 && (nodes.find(n => n.id === selectedNodeIds[0])?.type === 'line' || nodes.find(n => n.id === selectedNodeIds[0])?.type === 'arrow'))) && (
+        <>
+          {['top', 'bottom', 'left', 'right'].map((anchor) => {
+            let left = '50%';
+            let top = '50%';
+            if (anchor === 'top') top = '0%';
+            if (anchor === 'bottom') top = '100%';
+            if (anchor === 'left') left = '0%';
+            if (anchor === 'right') left = '100%';
+            return (
+              <div
+                key={anchor}
+                data-anchor={anchor}
+                data-node-id={node.id}
+                style={{
+                  position: 'absolute',
+                  left,
+                  top,
+                  width: `${8 / zoom}px`,
+                  height: `${8 / zoom}px`,
+                  backgroundColor: '#0c8ce9',
+                  border: `${1.5 / zoom}px solid white`,
+                  borderRadius: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'auto',
+                  zIndex: 20,
+                  opacity: 0.8
+                }}
+              />
+            );
+          })}
+        </>
+      )}
+
       {isSelected && isLine && (
         <>
           {/* Start Point Handle */}
