@@ -28,7 +28,20 @@ interface NodeProps {
 }
 
 export function Node({ node, onWaypointDragStart }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
+  const { 
+    selectedNodeIds, 
+    selectNode, 
+    moveNode, 
+    moveSelectedNodes, 
+    resizeNode, 
+    zoom, 
+    activeTool, 
+    selectToolMode, 
+    nodes, 
+    updateNode, 
+    saveHistoryState,
+    setActiveSnapLines 
+  } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
@@ -259,7 +272,57 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
+      onDrag={(_e, d) => {
+        // Smart Guides Logic
+        if (activeTool !== 'select' || selectToolMode !== 'move') return;
+        
+        const SNAP_THRESHOLD = 5;
+        const currentLeft = d.x;
+        const currentRight = d.x + node.dimensions.width;
+        const currentCenterX = d.x + node.dimensions.width / 2;
+        const currentTop = d.y;
+        const currentBottom = d.y + node.dimensions.height;
+        const currentCenterY = d.y + node.dimensions.height / 2;
+
+        const newSnapLines: { axis: 'x' | 'y', position: number }[] = [];
+
+        nodes.forEach(otherNode => {
+          // Skip self and lines/arrows
+          if (otherNode.id === node.id || otherNode.type === 'line' || otherNode.type === 'arrow') return;
+          // Skip other selected nodes if we are dragging a multi-selection group
+          if (selectedNodeIds.includes(otherNode.id)) return;
+
+          const otherLeft = otherNode.position.x;
+          const otherRight = otherNode.position.x + otherNode.dimensions.width;
+          const otherCenterX = otherNode.position.x + otherNode.dimensions.width / 2;
+          const otherTop = otherNode.position.y;
+          const otherBottom = otherNode.position.y + otherNode.dimensions.height;
+          const otherCenterY = otherNode.position.y + otherNode.dimensions.height / 2;
+
+          // X-Axis alignments
+          if (Math.abs(currentLeft - otherLeft) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherLeft });
+          else if (Math.abs(currentRight - otherRight) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherRight });
+          else if (Math.abs(currentCenterX - otherCenterX) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherCenterX });
+          else if (Math.abs(currentLeft - otherRight) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherRight });
+          else if (Math.abs(currentRight - otherLeft) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherLeft });
+
+          // Y-Axis alignments
+          if (Math.abs(currentTop - otherTop) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherTop });
+          else if (Math.abs(currentBottom - otherBottom) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherBottom });
+          else if (Math.abs(currentCenterY - otherCenterY) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherCenterY });
+          else if (Math.abs(currentTop - otherBottom) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherBottom });
+          else if (Math.abs(currentBottom - otherTop) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherTop });
+        });
+
+        // Deduplicate lines
+        const uniqueLines = newSnapLines.filter((line, index, self) => 
+          index === self.findIndex((t) => t.axis === line.axis && t.position === line.position)
+        );
+
+        setActiveSnapLines(uniqueLines);
+      }}
       onDragStop={(_e, d) => {
+        setActiveSnapLines([]);
         if (selectedNodeIds.includes(node.id)) {
           moveSelectedNodes(node.id, { x: d.x, y: d.y });
         } else {

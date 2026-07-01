@@ -78,6 +78,9 @@ export function Canvas() {
     setSelectToolMode,
     bringToFront,
     sendToBack,
+    bringForward,
+    sendBackward,
+    activeSnapLines,
     alignSelected,
     undo,
     redo,
@@ -264,6 +267,26 @@ export function Canvas() {
           ungroupSelected();
         } else {
           groupSelected();
+        }
+        return;
+      }
+
+      // Layer Arrangement Shortcuts
+      if ((e.ctrlKey || e.metaKey) && key === ']') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          bringToFront(selectedNodeIds);
+        } else {
+          bringForward(selectedNodeIds);
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === '[') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          sendToBack(selectedNodeIds);
+        } else {
+          sendBackward(selectedNodeIds);
         }
         return;
       }
@@ -1567,6 +1590,39 @@ export function Canvas() {
                 </div>
               );
             })()}
+
+            {/* Smart Guides (Snap Lines) */}
+            {activeSnapLines.map((line, i) => {
+              if (line.axis === 'x') {
+                return (
+                  <div key={`snap-x-${i}`} style={{
+                    position: 'absolute',
+                    left: `${line.position}px`,
+                    top: 0,
+                    bottom: 0,
+                    width: '1px',
+                    backgroundColor: '#ff007f', // Pink/red guide
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    opacity: 0.7
+                  }} />
+                );
+              } else {
+                return (
+                  <div key={`snap-y-${i}`} style={{
+                    position: 'absolute',
+                    top: `${line.position}px`,
+                    left: 0,
+                    right: 0,
+                    height: '1px',
+                    backgroundColor: '#ff007f',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    opacity: 0.7
+                  }} />
+                );
+              }
+            })}
 
             {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
             {marquee && isDragSelecting && (() => {

@@ -33,6 +33,10 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
       { key: 'Ctrl + Y', label: 'Redo' },
       { key: 'Ctrl + G', label: 'Group' },
       { key: 'Ctrl + ⇧ + G', label: 'Ungroup' },
+      { key: 'Ctrl + ]', label: 'Bring Forward' },
+      { key: 'Ctrl + [', label: 'Send Backward' },
+      { key: 'Ctrl + ⇧ + ]', label: 'Bring to Front' },
+      { key: 'Ctrl + ⇧ + [', label: 'Send to Back' },
       { key: 'Delete', label: 'Delete Selected' },
     ]}
   ];

@@ -25,6 +25,11 @@ export interface WorkspaceProject {
   updatedAt: number;
 }
 
+export interface SnapLine {
+  axis: 'x' | 'y';
+  position: number;
+}
+
 interface DiagramContextType {
   nodes: DiagramNode[];
   selectedNodeIds: string[];
@@ -55,6 +60,10 @@ interface DiagramContextType {
   setNodes: (nodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => void;
   bringToFront: (ids: string[]) => void;
   sendToBack: (ids: string[]) => void;
+  bringForward: (ids: string[]) => void;
+  sendBackward: (ids: string[]) => void;
+  activeSnapLines: SnapLine[];
+  setActiveSnapLines: (lines: SnapLine[]) => void;
   alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   zoom: number;
   setZoom: (zoom: number) => void;
@@ -203,6 +212,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     console.log('nodes state updated to:', nodes);
   }, [nodes]);
   const [zoom, setZoom] = useState<number>(1.0);
+  const [activeSnapLines, setActiveSnapLines] = useState<SnapLine[]>([]);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
@@ -1136,6 +1146,41 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const bringForward = (ids: string[]) => {
+    saveHistoryState(nodes);
+    setNodes((prev) => {
+      const result = [...prev];
+      // We want to move selected items one position up, 
+      // but if multiple are selected, we should preserve their relative order
+      // and move the group up past the first non-selected element after them.
+      for (let i = result.length - 2; i >= 0; i--) {
+        if (ids.includes(result[i].id) && !ids.includes(result[i + 1].id)) {
+          // Swap with the element above
+          const temp = result[i];
+          result[i] = result[i + 1];
+          result[i + 1] = temp;
+        }
+      }
+      return result;
+    });
+  };
+
+  const sendBackward = (ids: string[]) => {
+    saveHistoryState(nodes);
+    setNodes((prev) => {
+      const result = [...prev];
+      for (let i = 1; i < result.length; i++) {
+        if (ids.includes(result[i].id) && !ids.includes(result[i - 1].id)) {
+          // Swap with the element below
+          const temp = result[i];
+          result[i] = result[i - 1];
+          result[i - 1] = temp;
+        }
+      }
+      return result;
+    });
+  };
+
   const alignSelected = (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     if (selectedNodeIds.length === 0) return;
 
@@ -1545,6 +1590,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       ungroupSelected,
       bringToFront,
       sendToBack,
+      bringForward,
+      sendBackward,
+      activeSnapLines,
+      setActiveSnapLines,
       alignSelected,
       groupSelected,
       ungroupSelected,
