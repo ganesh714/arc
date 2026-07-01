@@ -48,7 +48,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
-  const FigmaHandle = ({ position }: { position: string }) => {
+  const renderFigmaHandle = (position: string) => {
     const handleSize = 6 / zoom;
     const borderSize = 1.5 / zoom;
     const offsetPos = -3 / zoom;
@@ -235,14 +235,14 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   };
 
   const activeHandles = isSelected ? {
-    topLeft: <FigmaHandle position="topLeft" />,
-    topRight: <FigmaHandle position="topRight" />,
-    bottomLeft: <FigmaHandle position="bottomLeft" />,
-    bottomRight: <FigmaHandle position="bottomRight" />,
-    top: <FigmaHandle position="top" />,
-    bottom: <FigmaHandle position="bottom" />,
-    left: <FigmaHandle position="left" />,
-    right: <FigmaHandle position="right" />,
+    topLeft: renderFigmaHandle("topLeft"),
+    topRight: renderFigmaHandle("topRight"),
+    bottomLeft: renderFigmaHandle("bottomLeft"),
+    bottomRight: renderFigmaHandle("bottomRight"),
+    top: renderFigmaHandle("top"),
+    bottom: renderFigmaHandle("bottom"),
+    left: renderFigmaHandle("left"),
+    right: renderFigmaHandle("right"),
   } : undefined;
 
   const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
