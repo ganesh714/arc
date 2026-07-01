@@ -32,7 +32,16 @@ import {
   Unlink,
   Undo2,
   CornerDownRight,
-  Activity
+  Activity,
+  BringToFront,
+  SendToBack,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignTop,
+  AlignVerticalSpaceAround,
+  AlignBottom,
+  Focus
 } from 'lucide-react';
 
 export function Canvas() {
@@ -67,6 +76,9 @@ export function Canvas() {
     setActiveTool,
     selectToolMode,
     setSelectToolMode,
+    bringToFront,
+    sendToBack,
+    alignSelected,
     undo,
     redo,
     canUndo,
@@ -1218,6 +1230,23 @@ export function Canvas() {
                     </>
                   )}
 
+                  {/* Z-Index Controls */}
+                  <button 
+                    className={styles.contextBtn} 
+                    onClick={() => bringToFront([selectedNode.id])} 
+                    title="Bring to Front"
+                  >
+                    <BringToFront size={11} />
+                  </button>
+                  <button 
+                    className={styles.contextBtn} 
+                    onClick={() => sendToBack([selectedNode.id])} 
+                    title="Send to Back"
+                  >
+                    <SendToBack size={11} />
+                  </button>
+                  <div className={styles.divider} style={{ height: '12px' }} />
+
                   {/* Delete Element */}
                   <button 
                     className={styles.contextBtn} 
@@ -1259,6 +1288,37 @@ export function Canvas() {
                     {allGrouped ? <Unlink size={11} /> : <Link size={11} />}
                   </button>
                   <div className={styles.divider} style={{ height: '12px' }} />
+
+                  {/* Alignment Controls */}
+                  <button className={styles.contextBtn} onClick={() => alignSelected('left')} title="Align Left">
+                    <AlignLeft size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => alignSelected('center')} title="Align Center">
+                    <AlignCenter size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => alignSelected('right')} title="Align Right">
+                    <AlignRight size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => alignSelected('top')} title="Align Top">
+                    <AlignTop size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => alignSelected('middle')} title="Align Middle">
+                    <AlignVerticalSpaceAround size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => alignSelected('bottom')} title="Align Bottom">
+                    <AlignBottom size={11} />
+                  </button>
+                  <div className={styles.divider} style={{ height: '12px' }} />
+
+                  {/* Z-Index Controls */}
+                  <button className={styles.contextBtn} onClick={() => bringToFront(selectedNodeIds)} title="Bring to Front">
+                    <BringToFront size={11} />
+                  </button>
+                  <button className={styles.contextBtn} onClick={() => sendToBack(selectedNodeIds)} title="Send to Back">
+                    <SendToBack size={11} />
+                  </button>
+                  <div className={styles.divider} style={{ height: '12px' }} />
+
                   <button 
                     className={styles.contextBtn} 
                     onClick={deleteSelected} 
