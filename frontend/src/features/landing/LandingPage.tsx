@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './LandingPage.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -17,70 +17,214 @@ import {
   MessageSquare,
   History,
   Keyboard,
-  Share2
+  Share2,
+  Database,
+  Server
 } from 'lucide-react';
 
-const CODE_TEMPLATES = [
-  `// React Flow Component
+interface CodeFile {
+  name: string;
+  lang: string;
+  code: string;
+}
+
+const FILES_TEMPLATES: CodeFile[] = [
+  {
+    name: 'AuthGateway.tsx',
+    lang: 'typescript',
+    code: `// React Flow Component
 import React from 'react';
-import { AuthContext } from './Auth';
+import { useAuth } from './AuthContext';
 
 export const AuthNode = () => {
   const { login } = useAuth();
   return (
-    <div className="p-4 border-2 border-purple-500 rounded-lg bg-gray-900">
+    <div className="p-4 border border-purple-500 rounded-lg bg-gray-900">
       <h3>OAuth Node</h3>
-      <button onClick={login}>Trigger flow</button>
+      <button onClick={login}>Trigger OAuth</button>
     </div>
   );
-};`,
-  `// PostgreSQL Connection Pool
-const { Pool } = require('pg');
+};`
+  },
+  {
+    name: 'schema.sql',
+    lang: 'sql',
+    code: `-- Postgres DB Table Schemas
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  user_id UUID NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-module.exports = {
-  query: (text, params) => pool.query(text, params),
-};`,
-  `// Next.js Route Handler
+CREATE TABLE files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL
+);`
+  },
+  {
+    name: 'api.ts',
+    lang: 'typescript',
+    code: `// Next.js Route Handler
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const data = await req.json();
-  // Process visual logic mapping
-  return NextResponse.json({ status: 'success' });
+  const payload = await req.json();
+  // Weave visual logic into DB schema
+  const dbResult = await db.save(payload);
+  return NextResponse.json({ status: 'compiled', dbResult });
 }`
+  }
 ];
 
 export function LandingPage() {
   const { login, enterGuestMode } = useAuth();
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
   
-  // Interactive typing code simulation
+  // Interactive Code Playground State
+  const [activeTab, setActiveTab] = useState(0);
   const [typedCode, setTypedCode] = useState('');
-  const [templateIndex, setTemplateIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
+  
+  // Canvas Ref for particle background
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // HTML5 Particle System Animation
   useEffect(() => {
-    const fullText = CODE_TEMPLATES[templateIndex];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const particles: Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      radius: number;
+    }> = [];
+
+    // Initialize particles
+    const particleCount = Math.min(Math.floor(width / 20), 80);
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.5 + 1
+      });
+    }
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Render & Connect Particles
+      particles.forEach((p, idx) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap around bounds
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.2)';
+        ctx.fill();
+
+        // Connect nearby particles
+        for (let j = idx + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(139, 92, 246, ${0.1 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+
+        // Draw connection to mouse cursor
+        const mouseDist = Math.hypot(p.x - mouseX, p.y - mouseY);
+        if (mouseDist < 180) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(mouseX, mouseY);
+          ctx.strokeStyle = `rgba(12, 140, 233, ${0.15 * (1 - mouseDist / 180)})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Code Typing Simulation
+  useEffect(() => {
+    const fullText = FILES_TEMPLATES[activeTab].code;
     if (charIndex < fullText.length) {
       const timeout = setTimeout(() => {
         setTypedCode(prev => prev + fullText[charIndex]);
         setCharIndex(prev => prev + 1);
-      }, 20);
-      return () => clearTimeout(timeout);
-    } else {
-      const timeout = setTimeout(() => {
-        setTypedCode('');
-        setCharIndex(0);
-        setTemplateIndex(prev => (prev + 1) % CODE_TEMPLATES.length);
-      }, 2500);
+      }, 15);
       return () => clearTimeout(timeout);
     }
-  }, [charIndex, templateIndex]);
+  }, [charIndex, activeTab]);
+
+  const selectTab = (index: number) => {
+    setActiveTab(index);
+    setTypedCode('');
+    setCharIndex(0);
+  };
+
+  // Autocycle files when idle
+  useEffect(() => {
+    const fullText = FILES_TEMPLATES[activeTab].code;
+    if (charIndex >= fullText.length) {
+      const timer = setTimeout(() => {
+        const nextIndex = (activeTab + 1) % FILES_TEMPLATES.length;
+        selectTab(nextIndex);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [charIndex, activeTab]);
 
   const toggleFaq = (index: number) => {
     setFaqOpenIndex(faqOpenIndex === index ? null : index);
@@ -107,10 +251,10 @@ export function LandingPage() {
 
   return (
     <div className={styles.container}>
-      {/* Animated Background */}
-      <div className={styles.background}>
+      {/* Dynamic Interactive Background */}
+      <div className={styles.canvasContainer}>
+        <canvas ref={canvasRef} className={styles.canvas} />
         <div className={styles.glow}></div>
-        <div className={styles.grid}></div>
       </div>
 
       {/* Navigation */}
@@ -153,7 +297,7 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* Mockup Preview / Visuals */}
+        {/* High-Fidelity Active Diagram Mockup Visual */}
         <div className={styles.heroVisual}>
           <div className={styles.visualGlow}></div>
           <div className={styles.previewContainer}>
@@ -166,15 +310,60 @@ export function LandingPage() {
             <div className={styles.previewContent}>
               <div className={styles.previewSidebar}></div>
               <div className={styles.previewCanvas}>
-                <div className={styles.nodeMockup}>
-                  <div style={{ padding: '8px 12px', color: '#c9d1d9', fontSize: '10px', fontWeight: 600 }}>Authentication</div>
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid #30363d', color: '#8b949e', fontSize: '9px' }}>OAuth 2.0 Flow</div>
+                {/* SVG Connecting Path Layer */}
+                <svg className={styles.svgLayer}>
+                  <path 
+                    d="M 180,85 C 240,85 240,215 320,215" 
+                    fill="none" 
+                    stroke="rgba(139, 92, 246, 0.4)" 
+                    strokeWidth="2" 
+                  />
+                  <path 
+                    d="M 180,85 C 240,85 240,215 320,215" 
+                    fill="none" 
+                    stroke="#a78bfa" 
+                    strokeWidth="2" 
+                    className={styles.connectionLine}
+                  />
+                </svg>
+
+                {/* Node Card 1 */}
+                <div className={`${styles.nodeCard} ${styles.nodeCardActive} ${styles.nodeCard1}`}>
+                  <div className={styles.nodeHeader}>
+                    <Server size={14} className={styles.nodeIcon} />
+                    <span className={styles.nodeTitle}>AuthGateway</span>
+                  </div>
+                  <div className={styles.nodeBody}>
+                    <div className={styles.nodeRow}>
+                      <span>Provider</span>
+                      <span style={{ color: '#a78bfa' }}>OAuth 2.0</span>
+                    </div>
+                    <div className={styles.nodeRow}>
+                      <span>Type</span>
+                      <span>Security</span>
+                    </div>
+                  </div>
+                  <div className={`${styles.nodePin} ${styles.nodePinRight}`}></div>
                 </div>
-                <div className={styles.nodeMockup2}>
-                  <div style={{ padding: '8px 12px', color: '#c9d1d9', fontSize: '10px', fontWeight: 600 }}>User Database</div>
-                  <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(139, 92, 246, 0.3)', color: '#a78bfa', fontSize: '9px' }}>PostgreSQL Cluster</div>
+
+                {/* Node Card 2 */}
+                <div className={`${styles.nodeCard} ${styles.nodeCard2}`}>
+                  <div className={styles.nodeHeader}>
+                    <Database size={14} className={styles.nodeIcon} style={{ color: '#38bdf8' }} />
+                    <span className={styles.nodeTitle}>UserDatabase</span>
+                  </div>
+                  <div className={styles.nodeBody}>
+                    <div className={styles.nodeRow}>
+                      <span>Postgres</span>
+                      <span style={{ color: '#38bdf8' }}>v16.2</span>
+                    </div>
+                    <div className={styles.nodeRow}>
+                      <span>Status</span>
+                      <span style={{ color: '#10b981' }}>Healthy</span>
+                    </div>
+                  </div>
+                  <div className={`${styles.nodePin} ${styles.nodePinLeft}`}></div>
                 </div>
-                <div className={styles.arrowMockup}></div>
               </div>
             </div>
           </div>
@@ -190,14 +379,14 @@ export function LandingPage() {
             <div className={styles.marqueeItem}><Layers size={18} /> Next.js App Router</div>
             <div className={styles.marqueeItem}><Code size={18} /> TypeScript</div>
             <div className={styles.marqueeItem}><Globe size={18} /> Spring Boot API</div>
-            <div className={styles.marqueeItem}><Zap size={18} /> PostgreSQL</div>
+            <div className={styles.marqueeItem}><Database size={18} /> PostgreSQL</div>
             <div className={styles.marqueeItem}><Shield size={18} /> OAuth 2.0</div>
             {/* Duplicate for infinite loop effect */}
             <div className={styles.marqueeItem}><Cpu size={18} /> React Framework</div>
             <div className={styles.marqueeItem}><Layers size={18} /> Next.js App Router</div>
             <div className={styles.marqueeItem}><Code size={18} /> TypeScript</div>
             <div className={styles.marqueeItem}><Globe size={18} /> Spring Boot API</div>
-            <div className={styles.marqueeItem}><Zap size={18} /> PostgreSQL</div>
+            <div className={styles.marqueeItem}><Database size={18} /> PostgreSQL</div>
             <div className={styles.marqueeItem}><Shield size={18} /> OAuth 2.0</div>
           </div>
         </div>
@@ -233,13 +422,24 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-            {/* Live Typing Code Box mockup */}
+            {/* Live Typing Code Box mockup with Tab Files */}
             <div className={styles.editorMockup}>
               <div className={styles.editorHeader}>
-                <div className={styles.dots}>
+                <div className={styles.editorTabs}>
+                  {FILES_TEMPLATES.map((file, idx) => (
+                    <button 
+                      key={idx} 
+                      className={`${styles.tab} ${activeTab === idx ? styles.tabActive : ''}`}
+                      onClick={() => selectTab(idx)}
+                    >
+                      <Code size={10} />
+                      {file.name}
+                    </button>
+                  ))}
+                </div>
+                <div className={styles.dots} style={{ marginRight: '8px' }}>
                   <span></span><span></span><span></span>
                 </div>
-                <span className={styles.editorTitle}>visual-compiler.tsx</span>
               </div>
               <pre className={styles.editorBody}>
                 <code>{typedCode}</code>
