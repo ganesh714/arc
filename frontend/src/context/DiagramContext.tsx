@@ -71,6 +71,10 @@ interface DiagramContextType {
   addProject: (name: string, category?: string, backgroundColor?: string) => Promise<WorkspaceProject | null | void>;
   switchFile: (id: string, projectId?: string) => void;
   addFile: (projectId: string, name: string, backgroundColor?: string) => void;
+  updateProject: (id: string, name: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  updateFile: (id: string, name: string) => Promise<void>;
+  deleteFile: (id: string) => Promise<void>;
   updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
   isLoadingProjects: boolean;
   isFileLoading: boolean;
@@ -1404,6 +1408,98 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProject = async (id: string, name: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+      return;
+    }
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+      }
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.filter(p => p.id !== id));
+      return;
+    }
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/projects/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  };
+
+  const updateFile = async (id: string, name: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => ({
+        ...p,
+        files: p.files.map(f => f.id === id ? { ...f, name } : f)
+      })));
+      return;
+    }
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => ({
+          ...p,
+          files: p.files.map(f => f.id === id ? { ...f, name } : f)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to update file:', error);
+    }
+  };
+
+  const deleteFile = async (id: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => ({
+        ...p,
+        files: p.files.filter(f => f.id !== id)
+      })));
+      return;
+    }
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => ({
+          ...p,
+          files: p.files.filter(f => f.id !== id)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+    }
+  };
+
   const updateCanvasConfig = (fileId: string, config: Partial<CanvasConfig>) => {
     setProjects(prev => prev.map(p => {
       if (p.id === activeProjectId) {
@@ -1465,6 +1561,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addProject,
       switchFile,
       addFile,
+      updateProject,
+      deleteProject,
+      updateFile,
+      deleteFile,
       updateCanvasConfig,
       isLoadingProjects,
       isFileLoading,
