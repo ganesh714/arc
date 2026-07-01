@@ -29,7 +29,7 @@ public class OpenRouterProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String generate(String prompt, String systemPrompt) throws Exception {
+    public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("OpenRouter API key is not configured.");
         }
@@ -76,7 +76,7 @@ public class OpenRouterProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String edit(String prompt, String contextNodes) throws Exception {
+    public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
