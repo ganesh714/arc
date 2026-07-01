@@ -1159,211 +1159,6 @@ export function Canvas() {
             ))}
             <RemoteCursors />
 
-            {/* Floating Contextual Menu directly above the selected shape */}
-            {selectedNode && (() => {
-              const isLine = selectedNode.type === 'line' || selectedNode.type === 'arrow';
-              
-              // Menu layout dimensions logic
-              const menuTop = selectedNode.position.y < 50 
-                ? (selectedNode.position.y + selectedNode.dimensions.height + 8) 
-                : (selectedNode.position.y - 40);
-                
-              const menuLeft = Math.max(10, selectedNode.position.x + (selectedNode.dimensions.width / 2) - 80);
-
-              return (
-                <div 
-                  className={styles.contextMenu}
-                  style={{
-                    top: `${menuTop}px`,
-                    left: `${menuLeft}px`
-                  }}
-                >
-                  <div className={styles.toolIcon}>
-                    {(nodeIcons as Record<string, React.ReactNode>)[currentShapeType as string] || nodeIcons['box']}
-                  </div>
-                  {/* Fill Color Picker (Only if shape) */}
-                  {!isLine && (
-                    <div className={styles.contextColorWrapper} title="Fill Color">
-                      <input 
-                        type="color" 
-                        className={styles.contextColorPicker}
-                        value={selectedNode.style?.backgroundColor || '#2c2c2c'}
-                        onChange={(e) => handleQuickChange('backgroundColor', e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Border / Line Color Picker */}
-                  <div className={styles.contextColorWrapper} title={isLine ? "Line Color" : "Stroke Color"}>
-                    <input 
-                      type="color" 
-                      className={styles.contextColorPicker}
-                      value={selectedNode.style?.borderColor || (isLine ? '#888888' : '#555555')}
-                      onChange={(e) => handleQuickChange('borderColor', e.target.value)}
-                    />
-                  </div>
-
-                  {/* Text Bold Toggle (Only if shape) */}
-                  {!isLine && (
-                    <>
-                      <div className={styles.divider} style={{ height: '12px' }} />
-                      <button 
-                        className={`${styles.contextBtn} ${selectedNode.style?.fontWeight === 'bold' ? styles.contextBtnActive : ''}`}
-                        onClick={() => handleQuickChange('fontWeight', selectedNode.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
-                        title="Toggle Bold Text"
-                      >
-                        <Bold size={11} />
-                      </button>
-                    </>
-                  )}
-
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Line Style Controls (Only if line) */}
-                  {isLine && (
-                    <>
-                      <button 
-                        className={`${styles.contextBtn} ${selectedNode.routing !== 'elbow' && selectedNode.lineCurve !== 'curved' ? styles.contextBtnActive : ''}`}
-                        onClick={() => handleUpdateNodeProperty('routing', 'straight')}
-                        title="Straight Line"
-                      >
-                        <Minus size={11} />
-                      </button>
-                      <button 
-                        className={`${styles.contextBtn} ${selectedNode.routing === 'elbow' ? styles.contextBtnActive : ''}`}
-                        onClick={() => handleUpdateNodeProperty('routing', 'elbow')}
-                        title="Elbow Line"
-                      >
-                        <CornerDownRight size={11} />
-                      </button>
-                      <button 
-                        className={`${styles.contextBtn} ${selectedNode.lineCurve === 'curved' ? styles.contextBtnActive : ''}`}
-                        onClick={() => handleUpdateNodeProperty('lineCurve', 'curved')}
-                        title="Curved Line"
-                      >
-                        <Activity size={11} />
-                      </button>
-                      <div className={styles.divider} style={{ height: '12px' }} />
-                    </>
-                  )}
-
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Group / Ungroup (Single Node in Group) */}
-                  {selectedNode.groupId && (
-                    <>
-                      <button 
-                        className={styles.contextBtn} 
-                        onClick={ungroupSelected} 
-                        title="Ungroup"
-                      >
-                        <Unlink size={11} />
-                      </button>
-                      <div className={styles.divider} style={{ height: '12px' }} />
-                    </>
-                  )}
-
-                  {/* Z-Index Controls */}
-                  <button 
-                    className={styles.contextBtn} 
-                    onClick={() => bringToFront([selectedNode.id])} 
-                    title="Bring to Front"
-                  >
-                    <BringToFront size={11} />
-                  </button>
-                  <button 
-                    className={styles.contextBtn} 
-                    onClick={() => sendToBack([selectedNode.id])} 
-                    title="Send to Back"
-                  >
-                    <SendToBack size={11} />
-                  </button>
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Delete Element */}
-                  <button 
-                    className={styles.contextBtn} 
-                    onClick={() => handleDeleteNode(selectedNode.id)} 
-                    title="Delete element"
-                    style={{ color: '#f04438' }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              );
-            })()}
-
-            {/* Multi-Select Floating Contextual Menu */}
-            {selectedNodeIds.length > 1 && (() => {
-              const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
-              if (selectedNodes.length === 0) return null;
-              
-              const minX = Math.min(...selectedNodes.map(n => n.position.x));
-              const minY = Math.min(...selectedNodes.map(n => n.position.y));
-              const maxX = Math.max(...selectedNodes.map(n => n.position.x + n.dimensions.width));
-              const maxY = Math.max(...selectedNodes.map(n => n.position.y + n.dimensions.height));
-              
-              const menuTop = minY < 50 ? maxY + 8 : minY - 40;
-              const menuLeft = Math.max(10, minX + ((maxX - minX) / 2) - 40);
-
-              const allGrouped = selectedNodes.every(n => n.groupId) && new Set(selectedNodes.map(n => n.groupId)).size === 1;
-
-              return (
-                <div 
-                  className={styles.contextMenu}
-                  style={{ top: `${menuTop}px`, left: `${menuLeft}px` }}
-                >
-                  <button 
-                    className={styles.contextBtn}
-                    onClick={allGrouped ? ungroupSelected : groupSelected}
-                    title={allGrouped ? "Ungroup" : "Group (Ctrl+G)"}
-                  >
-                    {allGrouped ? <Unlink size={11} /> : <Link size={11} />}
-                  </button>
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Alignment Controls */}
-                  <button className={styles.contextBtn} onClick={() => alignSelected('left')} title="Align Left">
-                    <AlignLeft size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => alignSelected('center')} title="Align Center">
-                    <AlignCenter size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => alignSelected('right')} title="Align Right">
-                    <AlignRight size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => alignSelected('top')} title="Align Top">
-                    <AlignStartVertical size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => alignSelected('middle')} title="Align Middle">
-                    <AlignVerticalSpaceAround size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => alignSelected('bottom')} title="Align Bottom">
-                    <AlignEndVertical size={11} />
-                  </button>
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Z-Index Controls */}
-                  <button className={styles.contextBtn} onClick={() => bringToFront(selectedNodeIds)} title="Bring to Front">
-                    <BringToFront size={11} />
-                  </button>
-                  <button className={styles.contextBtn} onClick={() => sendToBack(selectedNodeIds)} title="Send to Back">
-                    <SendToBack size={11} />
-                  </button>
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  <button 
-                    className={styles.contextBtn} 
-                    onClick={deleteSelected} 
-                    title="Delete selection"
-                    style={{ color: '#f04438' }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              );
-            })()}
-
             {/* Live Drawing Preview */}
             {drawingPreview && (() => {
               const { type, startX, startY, currentX, currentY } = drawingPreview;
@@ -1647,6 +1442,201 @@ export function Canvas() {
           </div>
         </div>
       </div>
+
+      {/* Floating Contextual Menu directly above the selected shape */}
+      {selectedNode && (() => {
+        const isLine = selectedNode.type === 'line' || selectedNode.type === 'arrow';
+
+        return (
+          <div className={styles.contextMenu}>
+            <div className={styles.toolIcon}>
+              {(nodeIcons as Record<string, React.ReactNode>)[currentShapeType as string] || nodeIcons['box']}
+            </div>
+            {/* Fill Color Picker (Only if shape) */}
+            {!isLine && (
+              <div className={styles.contextColorWrapper} title="Fill Color">
+                <input 
+                  type="color" 
+                  className={styles.contextColorPicker}
+                  value={selectedNode.style?.backgroundColor || '#2c2c2c'}
+                  onChange={(e) => handleQuickChange('backgroundColor', e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Border / Line Color Picker */}
+            <div className={styles.contextColorWrapper} title={isLine ? "Line Color" : "Stroke Color"}>
+              <input 
+                type="color" 
+                className={styles.contextColorPicker}
+                value={selectedNode.style?.borderColor || (isLine ? '#888888' : '#555555')}
+                onChange={(e) => handleQuickChange('borderColor', e.target.value)}
+              />
+            </div>
+
+            {/* Text Bold Toggle (Only if shape) */}
+            {!isLine && (
+              <>
+                <div className={styles.divider} style={{ height: '12px' }} />
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.style?.fontWeight === 'bold' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleQuickChange('fontWeight', selectedNode.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
+                  title="Toggle Bold Text"
+                >
+                  <Bold size={11} />
+                </button>
+              </>
+            )}
+
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Line Style Controls (Only if line) */}
+            {isLine && (
+              <>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.routing !== 'elbow' && selectedNode.lineCurve !== 'curved' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('routing', 'straight')}
+                  title="Straight Line"
+                >
+                  <Minus size={11} />
+                </button>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.routing === 'elbow' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('routing', 'elbow')}
+                  title="Elbow Line"
+                >
+                  <CornerDownRight size={11} />
+                </button>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.lineCurve === 'curved' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('lineCurve', 'curved')}
+                  title="Curved Line"
+                >
+                  <Activity size={11} />
+                </button>
+                <div className={styles.divider} style={{ height: '12px' }} />
+              </>
+            )}
+
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Group / Ungroup (Single Node in Group) */}
+            {selectedNode.groupId && (
+              <>
+                <button 
+                  className={styles.contextBtn} 
+                  onClick={ungroupSelected} 
+                  title="Ungroup"
+                >
+                  <Unlink size={11} />
+                </button>
+                <div className={styles.divider} style={{ height: '12px' }} />
+              </>
+            )}
+
+            {/* Z-Index Controls */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => bringToFront([selectedNode.id])} 
+              title="Bring to Front"
+            >
+              <BringToFront size={11} />
+            </button>
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => sendToBack([selectedNode.id])} 
+              title="Send to Back"
+            >
+              <SendToBack size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Delete Element */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => handleDeleteNode(selectedNode.id)} 
+              title="Delete element"
+              style={{ color: '#f04438' }}
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Multi-Select Floating Contextual Menu */}
+      {selectedNodeIds.length > 1 && (() => {
+        const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+        if (selectedNodes.length === 0) return null;
+        
+        const allGrouped = selectedNodes.every(n => n.groupId) && new Set(selectedNodes.map(n => n.groupId)).size === 1;
+
+        return (
+          <div className={styles.contextMenu}>
+            <div className={styles.toolIcon}>
+              <Layers size={14} />
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '0 4px' }}>
+              {selectedNodes.length}
+            </span>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Alignment Controls */}
+            <button className={styles.contextBtn} onClick={() => alignSelected('left')} title="Align Left">
+              <AlignLeft size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('center')} title="Align Center">
+              <AlignCenter size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('right')} title="Align Right">
+              <AlignRight size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('top')} title="Align Top">
+              <AlignStartVertical size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('middle')} title="Align Middle">
+              <AlignVerticalSpaceAround size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('bottom')} title="Align Bottom">
+              <AlignEndVertical size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Z-Index Controls */}
+            <button className={styles.contextBtn} onClick={() => bringToFront(selectedNodeIds)} title="Bring to Front">
+              <BringToFront size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => sendToBack(selectedNodeIds)} title="Send to Back">
+              <SendToBack size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Grouping */}
+            {allGrouped ? (
+              <button className={styles.contextBtn} onClick={ungroupSelected} title="Ungroup">
+                <Unlink size={11} />
+              </button>
+            ) : (
+              <button className={styles.contextBtn} onClick={groupSelected} title="Group">
+                <Link size={11} />
+              </button>
+            )}
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Delete All Selected */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => {
+                selectedNodes.forEach(n => handleDeleteNode(n.id));
+              }} 
+              title="Delete elements"
+              style={{ color: '#f04438' }}
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Floating History Toolbar - Top Center */}
       <div className={styles.historyToolbar}>

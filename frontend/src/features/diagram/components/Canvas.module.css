@@ -90,8 +90,7 @@
 .historyToolbar {
   position: absolute;
   top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 16px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -190,6 +189,9 @@
 /* Floating Contextual Menu (Directly above selected shapes) */
 .contextMenu {
   position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 4px;
