@@ -250,6 +250,12 @@ export function Canvas() {
         cutSelected();
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && key === 'd') {
+        e.preventDefault();
+        copySelected();
+        setTimeout(() => pasteSelected(), 50);
+        return;
+      }
 
       // Group / Ungroup
       if ((e.ctrlKey || e.metaKey) && key === 'g') {
@@ -290,13 +296,16 @@ export function Canvas() {
       } else if (key === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('erase');
       } else if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('circle');
+        setCurrentShapeType('circle');
+      } else if (key === 'm' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('comment');
       } else if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('box');
         setCurrentShapeType('box');
-      } else if (key === 'o' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-        setActiveTool('circle');
-        setCurrentShapeType('circle');
+      } else if (key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('note');
+        setCurrentShapeType('note');
       } else if (key === 'l' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.shiftKey) {
           setActiveTool('arrow');

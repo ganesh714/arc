@@ -5,9 +5,10 @@ import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
+import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
 import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel, saveStatus } = useDiagram();
@@ -15,6 +16,7 @@ export function Header() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
   const navigate = useNavigate();
 
@@ -95,6 +97,20 @@ export function Header() {
           </button>
           <button 
             className={styles.btn} 
+            onClick={() => setIsShortcutsOpen(true)} 
+            title="Keyboard Shortcuts"
+            style={{
+              padding: '6px 8px',
+              minWidth: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Keyboard size={14} />
+          </button>
+          <button 
+            className={styles.btn} 
             onClick={() => setIsSettingsOpen(true)} 
             title="Canvas Settings"
           >
@@ -166,6 +182,10 @@ export function Header() {
       <CanvasSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+      <ShortcutsModal 
+        isOpen={isShortcutsOpen} 
+        onClose={() => setIsShortcutsOpen(false)} 
       />
     </>
   );
