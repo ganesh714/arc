@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -17,7 +17,9 @@ import {
   Grid3X3,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
@@ -32,7 +34,35 @@ export function Dashboard() {
   const [activeNav, setActiveNav] = useState('recent');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  const { updateProject, deleteProject } = useDiagram();
+
+
+  useEffect(() => {
+    if (!activeMenuId) return;
+    const handleOutsideClick = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, [activeMenuId]);
+
+  const handleRename = (e: React.MouseEvent, id: string, currentName: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    const newName = prompt('Enter new project name:', currentName);
+    if (newName && newName.trim() !== '' && newName !== currentName) {
+      updateProject(id, newName.trim());
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    if (confirm('Are you sure you want to delete this project?')) {
+      deleteProject(id);
+    }
+  };
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -217,9 +247,49 @@ export function Dashboard() {
                 <div className={styles.info}>
                   <div className={styles.projectHeader}>
                     <span className={styles.projectName}>{project.name}</span>
-                    <button style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }} onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical size={16} />
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', padding: '4px' }} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === project.id ? null : project.id);
+                        }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      
+                      {activeMenuId === project.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: '0',
+                          backgroundColor: '#161922',
+                          border: '1px solid #222631',
+                          borderRadius: '6px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          zIndex: 50,
+                          minWidth: '120px',
+                          overflow: 'hidden'
+                        }}>
+                          <button 
+                            onClick={(e) => handleRename(e, project.id, project.name)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid #222631', color: '#fff', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#222631'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Edit size={12} /> Rename
+                          </button>
+                          <button 
+                            onClick={(e) => handleDelete(e, project.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ef444420'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className={styles.projectMeta}>
