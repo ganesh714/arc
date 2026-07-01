@@ -30,20 +30,20 @@ public class GeminiProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String generate(String prompt, String systemPrompt) throws Exception {
+    public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("Gemini API key is not configured.");
         }
 
         try {
-            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro");
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro", imageBase64);
         } catch (Exception e) {
             System.err.println("Gemini 2.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Flash...");
-            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-flash");
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-flash", imageBase64);
         }
     }
 
-    private String callGeminiApi(String prompt, String systemPrompt, String model) throws Exception {
+    private String callGeminiApi(String prompt, String systemPrompt, String model, String imageBase64) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key="
                 + apiKey;
 
@@ -61,8 +61,22 @@ public class GeminiProvider extends AbstractAIProvider {
         Map<String, Object> part = new HashMap<>();
         part.put("text", prompt);
         Map<String, Object> content = new HashMap<>();
-        content.put("parts", List.of(part));
+        if (imageBase64 != null && !imageBase64.isEmpty()) {
+            Map<String, Object> imagePart = new HashMap<>();
+            Map<String, String> inlineData = new HashMap<>();
+            inlineData.put("mimeType", "image/png"); // Defaulting to PNG, browsers typically send png or jpeg base64, we can strip prefix
+            String base64Data = imageBase64.contains(",") ? imageBase64.split(",")[1] : imageBase64;
+            inlineData.put("data", base64Data);
+            imagePart.put("inlineData", inlineData);
+            content.put("parts", List.of(part, imagePart));
+        } else {
+            content.put("parts", List.of(part));
+        }
         requestBody.put("contents", List.of(content));
+
+        if (systemPrompt.contains("JSON")) {
+            requestBody.put("generationConfig", Map.of("responseMimeType", "application/json"));
+        }
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
@@ -87,7 +101,7 @@ public class GeminiProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String edit(String prompt, String contextNodes) throws Exception {
+    public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -105,8 +119,20 @@ public class GeminiProvider extends AbstractAIProvider {
         part2.put("text", "USER REQUEST:\n" + prompt);
 
         Map<String, Object> content = new HashMap<>();
-        content.put("parts", List.of(part1, part2));
+        if (imageBase64 != null && !imageBase64.isEmpty()) {
+            Map<String, Object> imagePart = new HashMap<>();
+            Map<String, String> inlineData = new HashMap<>();
+            inlineData.put("mimeType", "image/png");
+            String base64Data = imageBase64.contains(",") ? imageBase64.split(",")[1] : imageBase64;
+            inlineData.put("data", base64Data);
+            imagePart.put("inlineData", inlineData);
+            content.put("parts", List.of(part1, part2, imagePart));
+        } else {
+            content.put("parts", List.of(part1, part2));
+        }
         requestBody.put("contents", List.of(content));
+        
+        requestBody.put("generationConfig", Map.of("responseMimeType", "application/json"));
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
