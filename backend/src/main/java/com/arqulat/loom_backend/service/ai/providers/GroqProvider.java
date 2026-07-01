@@ -29,7 +29,7 @@ public class GroqProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String generate(String prompt, String systemPrompt) throws Exception {
+    public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("Groq API key is not configured.");
         }
@@ -52,6 +52,9 @@ public class GroqProvider extends AbstractAIProvider {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
         requestBody.put("messages", List.of(systemMessage, userMessage));
+        if (expectsJson) {
+            requestBody.put("response_format", Map.of("type", "json_object"));
+        }
         requestBody.put("temperature", 0.7);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -74,7 +77,7 @@ public class GroqProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String edit(String prompt, String contextNodes) throws Exception {
+    public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
@@ -90,6 +93,7 @@ public class GroqProvider extends AbstractAIProvider {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
         requestBody.put("messages", List.of(systemMessage, userMessage));
+        requestBody.put("response_format", Map.of("type", "json_object"));
         requestBody.put("temperature", 0.7);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
