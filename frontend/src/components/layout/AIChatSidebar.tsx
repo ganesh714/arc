@@ -19,7 +19,7 @@ interface ChatMessage {
 }
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState, zoom, panOffset } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -127,11 +127,22 @@ export function AIChatSidebar() {
           };
         });
         
+        const viewportContext = {
+          zoom,
+          panOffset,
+          visibleBounds: {
+            width: window.innerWidth / zoom,
+            height: window.innerHeight / zoom,
+            centerX: (window.innerWidth / 2) / zoom - panOffset.x,
+            centerY: (window.innerHeight / 2) / zoom - panOffset.y
+          }
+        };
+        
         response = await fetch(`${loomApiUrl}/api/ai/edit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ prompt: fullPrompt, contextNodes: contextPayload }),
+          body: JSON.stringify({ prompt: fullPrompt, contextNodes: contextPayload, viewport: viewportContext }),
         });
       }
 
@@ -194,11 +205,18 @@ export function AIChatSidebar() {
           return n;
         });
         
-        const additions = diffData.addedNodes.map((n: any) => ({
-          ...n,
-          position: n.position || { x: 0, y: 0 },
-          dimensions: n.dimensions || { width: 220, height: 90 }
-        }));
+        const centerX = (window.innerWidth / 2) / zoom - panOffset.x;
+        const centerY = (window.innerHeight / 2) / zoom - panOffset.y;
+        
+        const additions = diffData.addedNodes.map((n: any, index: number) => {
+          // Add a slight offset for each new node so they don't stack exactly on top of each other
+          const offset = index * 40;
+          return {
+            ...n,
+            position: n.position || { x: centerX - 110 + offset, y: centerY - 45 + offset },
+            dimensions: n.dimensions || { width: 220, height: 90 }
+          };
+        });
         nextNodes = [...nextNodes, ...additions];
         
         setNodes(nextNodes);

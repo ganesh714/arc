@@ -67,6 +67,8 @@ interface DiagramContextType {
   alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   zoom: number;
   setZoom: (zoom: number) => void;
+  panOffset: { x: number; y: number };
+  setPanOffset: (offset: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
   activeTool: string;
   setActiveTool: (tool: string) => void;
   selectToolMode: 'move' | 'scale';
@@ -211,6 +213,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     console.log('nodes state updated to:', nodes);
   }, [nodes]);
   const [zoom, setZoom] = useState<number>(1.0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [activeSnapLines, setActiveSnapLines] = useState<SnapLine[]>([]);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
@@ -1596,6 +1599,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       alignSelected,
       zoom,
       setZoom,
+      panOffset,
+      setPanOffset,
       activeTool,
       setActiveTool,
       selectToolMode,

@@ -6,6 +6,7 @@ import java.util.Map;
 public class AIEditRequest {
     private String prompt;
     private List<Map<String, Object>> contextNodes;
+    private Map<String, Object> viewport;
 
     public String getPrompt() {
         return prompt;
@@ -21,5 +22,13 @@ public class AIEditRequest {
 
     public void setContextNodes(List<Map<String, Object>> contextNodes) {
         this.contextNodes = contextNodes;
+    }
+
+    public Map<String, Object> getViewport() {
+        return viewport;
+    }
+
+    public void setViewport(Map<String, Object> viewport) {
+        this.viewport = viewport;
     }
 }

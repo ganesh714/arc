@@ -92,7 +92,9 @@ export function Canvas() {
     cutSelected,
     deleteSelected,
     groupSelected,
-    ungroupSelected
+    ungroupSelected,
+    panOffset,
+    setPanOffset
   } = useDiagram();
   const { broadcast } = useCollaboration();
 
@@ -100,7 +102,6 @@ export function Canvas() {
   const activeFile = activeProject?.files.find(f => f.id === activeFileId);
   const canvasBgColor = activeFile?.canvasConfig?.backgroundColor || 'var(--bg-canvas)';
 
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
