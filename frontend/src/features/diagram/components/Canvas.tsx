@@ -38,10 +38,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  AlignTop,
+  AlignStartVertical,
   AlignVerticalSpaceAround,
-  AlignBottom,
-  Focus
+  AlignEndVertical
 } from 'lucide-react';
 
 export function Canvas() {
@@ -90,7 +89,9 @@ export function Canvas() {
     copySelected,
     pasteSelected,
     cutSelected,
-    deleteSelected
+    deleteSelected,
+    groupSelected,
+    ungroupSelected
   } = useDiagram();
   const { broadcast } = useCollaboration();
 
@@ -1332,13 +1333,13 @@ export function Canvas() {
                     <AlignRight size={11} />
                   </button>
                   <button className={styles.contextBtn} onClick={() => alignSelected('top')} title="Align Top">
-                    <AlignTop size={11} />
+                    <AlignStartVertical size={11} />
                   </button>
                   <button className={styles.contextBtn} onClick={() => alignSelected('middle')} title="Align Middle">
                     <AlignVerticalSpaceAround size={11} />
                   </button>
                   <button className={styles.contextBtn} onClick={() => alignSelected('bottom')} title="Align Bottom">
-                    <AlignBottom size={11} />
+                    <AlignEndVertical size={11} />
                   </button>
                   <div className={styles.divider} style={{ height: '12px' }} />
 

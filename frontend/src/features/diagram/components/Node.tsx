@@ -40,7 +40,8 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
     nodes, 
     updateNode, 
     saveHistoryState,
-    setActiveSnapLines 
+    setActiveSnapLines,
+    setNodes
   } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');

@@ -112,7 +112,6 @@ interface DiagramContextType {
   pasteSelected: () => void;
   cutSelected: () => void;
   deleteSelected: () => void;
-  saveHistoryState: (customNodes: DiagramNode[]) => void;
   
   // Theme state
   theme: 'light' | 'dark';
@@ -1595,8 +1594,6 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       activeSnapLines,
       setActiveSnapLines,
       alignSelected,
-      groupSelected,
-      ungroupSelected,
       zoom,
       setZoom,
       activeTool,

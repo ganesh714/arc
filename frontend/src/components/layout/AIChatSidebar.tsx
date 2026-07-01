@@ -109,6 +109,7 @@ export function AIChatSidebar() {
       const chatContextStr = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\\n");
       const fullPrompt = messages.length > 0 ? `PREVIOUS CHAT HISTORY:\\n${chatContextStr}\\n\\nCURRENT REQUEST:\\n${promptText}` : promptText;
       
+      let response: Response;
       if (aiMode === 'generate') {
         response = await fetch(`${loomApiUrl}/api/ai/generate`, {
           method: 'POST',
