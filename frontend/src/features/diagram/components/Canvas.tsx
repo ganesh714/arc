@@ -40,7 +40,8 @@ import {
   AlignRight,
   AlignStartVertical,
   AlignVerticalSpaceAround,
-  AlignEndVertical
+  AlignEndVertical,
+  Layers
 } from 'lucide-react';
 
 export function Canvas() {

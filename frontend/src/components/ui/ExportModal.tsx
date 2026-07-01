@@ -75,7 +75,7 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
       const width = maxX - minX;
       const height = maxY - minY;
 
-      const filter = (node: HTMLElement) => {
+      const filter = () => {
         return true;
       };
 
@@ -181,17 +181,19 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
           )}
 
           {activeTab === 'html' && (
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[var(--text-primary)] font-medium">HTML with Inline CSS</h3>
-              <Button variant="outline" size="sm" onClick={handleCopyHtml} className="flex items-center gap-2">
-                {copiedHtml ? <Check size={14} /> : <Copy size={14} />}
-                {copiedHtml ? 'Copied!' : 'Copy Code'}
-              </Button>
-            </div>
-            <div className="bg-[#1e293b] p-4 rounded-lg overflow-x-auto">
-              <pre className="text-[#f8fafc] text-sm font-mono leading-relaxed">
-                <code>{htmlCode}</code>
-              </pre>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[var(--text-primary)] font-medium">HTML with Inline CSS</h3>
+                <Button variant="outline" size="sm" onClick={handleCopyHtml} className="flex items-center gap-2">
+                  {copiedHtml ? <Check size={14} /> : <Copy size={14} />}
+                  {copiedHtml ? 'Copied!' : 'Copy Code'}
+                </Button>
+              </div>
+              <div className="bg-[#1e293b] p-4 rounded-lg overflow-x-auto">
+                <pre className="text-[#f8fafc] text-sm font-mono leading-relaxed">
+                  <code>{htmlCode}</code>
+                </pre>
+              </div>
             </div>
           )}
 
