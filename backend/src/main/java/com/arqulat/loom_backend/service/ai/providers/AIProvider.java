@@ -8,16 +8,17 @@ public interface AIProvider {
      * @return The JSON string of nodes or raw text.
      * @throws Exception if this provider fails to generate or returns invalid data.
      */
-    String generate(String prompt, String systemPrompt) throws Exception;
+    String generate(String prompt, String systemPrompt, String imageBase64) throws Exception;
 
     /**
-     * Attempts to edit the existing nodes based on the prompt.
-     * @param prompt The user's edit instructions.
-     * @param contextNodes The existing JSON nodes to be edited.
-     * @return The updated JSON string of nodes.
-     * @throws Exception if this provider fails to generate or returns invalid data.
+     * Edits an existing JSON structure based on a prompt.
+     * @param prompt The edit request.
+     * @param contextNodes The existing JSON elements.
+     * @param imageBase64 Optional base64 encoded image to provide as context.
+     * @return The updated JSON string.
+     * @throws Exception if generation fails.
      */
-    String edit(String prompt, String contextNodes) throws Exception;
+    String edit(String prompt, String contextNodes, String imageBase64) throws Exception;
 
     /**
      * @return The name of this provider for logging/response tracking.
