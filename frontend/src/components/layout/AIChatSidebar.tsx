@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3 } from 'lucide-react';
+import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3, ImagePlus } from 'lucide-react';
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
@@ -28,8 +28,10 @@ export function AIChatSidebar() {
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [aiMode, setAiMode] = useState<'generate' | 'edit'>('generate');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -115,7 +117,7 @@ export function AIChatSidebar() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ prompt: fullPrompt }),
+          body: JSON.stringify({ prompt: fullPrompt, imageBase64: selectedImage }),
         });
       } else {
         // Prepare context
@@ -142,7 +144,7 @@ export function AIChatSidebar() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ prompt: fullPrompt, contextNodes: contextPayload, viewport: viewportContext }),
+          body: JSON.stringify({ prompt: fullPrompt, contextNodes: contextPayload, viewport: viewportContext, imageBase64: selectedImage }),
         });
       }
 
@@ -271,6 +273,7 @@ export function AIChatSidebar() {
       }]);
     } finally {
        setIsGenerating(false);
+       setSelectedImage(null);
        setAiPhase('idle');
     }
   };
@@ -279,6 +282,17 @@ export function AIChatSidebar() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isGenerating, aiPhase]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Auto-resize textarea
   useEffect(() => {
@@ -442,6 +456,20 @@ export function AIChatSidebar() {
           />
           <div className={styles.inputActions}>
             <button 
+              className={styles.micBtn} 
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach an image"
+            >
+              <ImagePlus size={14} />
+            </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+            />
+            <button 
               className={`${styles.micBtn} ${isListening ? styles.micBtnActive : ''}`} 
               onClick={toggleListen}
               title={isListening ? "Stop listening" : "Dictate with voice"}
@@ -452,12 +480,23 @@ export function AIChatSidebar() {
               className={`${styles.sendBtn} ${input.trim() ? styles.sendBtnReady : ''}`} 
               onClick={handleSend}
               title="Send prompt"
-              disabled={(!input.trim() && !isListening) || isGenerating}
+              disabled={(!input.trim() && !isListening && !selectedImage) || isGenerating}
             >
               <Send size={14} />
             </button>
           </div>
         </div>
+        {selectedImage && (
+          <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', background: 'var(--bg-elevated)', borderRadius: '6px' }}>
+            <img src={selectedImage} alt="Preview" style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px' }} />
+            <button 
+              onClick={() => setSelectedImage(null)}
+              style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+            >
+              Remove Image
+            </button>
+          </div>
+        )}
         <div className={styles.footerNote}>
           Shift + Enter for new line
         </div>
