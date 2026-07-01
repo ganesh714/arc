@@ -25,15 +25,20 @@ public class AIFallbackRingManager implements AIService {
     }
 
     @Override
-    public String generateDiagramNodes(String prompt) throws Exception {
+    public String generateDiagramNodes(String prompt, String imageBase64) throws Exception {
         for (AIProvider provider : fallbackRing) {
             try {
+                if (imageBase64 != null && !imageBase64.isEmpty() && !(provider instanceof GeminiProvider)) {
+                    logger.info("Skipping provider {} because it does not support Vision. Routing to Gemini.", provider.getProviderName());
+                    continue;
+                }
+                
                 logger.info("Attempting AI generation (Pass 1 - SLD) using provider: {}", provider.getProviderName());
-                String sld = provider.generate(prompt, AIPrompts.PASS1_SLD_PROMPT);
+                String sld = provider.generate(prompt, AIPrompts.PASS1_SLD_PROMPT, imageBase64);
                 
                 logger.info("Successfully generated SLD using {}. Now attempting Pass 2 (JSON)...", provider.getProviderName());
                 String pass2Prompt = "SLD Blueprint:\n" + sld + "\n\nOriginal Request Context:\n" + prompt;
-                String jsonResult = provider.generate(pass2Prompt, AIPrompts.PASS2_STYLE_PROMPT);
+                String jsonResult = provider.generate(pass2Prompt, AIPrompts.PASS2_STYLE_PROMPT, null);
                 
                 logger.info("Successfully completed two-pass diagram generation using {}", provider.getProviderName());
                 return jsonResult;
@@ -48,11 +53,16 @@ public class AIFallbackRingManager implements AIService {
     }
 
     @Override
-    public String editDiagramNodes(String prompt, String contextNodes) throws Exception {
+    public String editDiagramNodes(String prompt, String contextNodes, String imageBase64) throws Exception {
         for (AIProvider provider : fallbackRing) {
             try {
+                if (imageBase64 != null && !imageBase64.isEmpty() && !(provider instanceof GeminiProvider)) {
+                    logger.info("Skipping provider {} because it does not support Vision. Routing to Gemini.", provider.getProviderName());
+                    continue;
+                }
+                
                 logger.info("Attempting AI edit using provider: {}", provider.getProviderName());
-                String result = provider.edit(prompt, contextNodes);
+                String result = provider.edit(prompt, contextNodes, imageBase64);
                 
                 logger.info("Successfully edited diagram nodes using {}", provider.getProviderName());
                 return result;
