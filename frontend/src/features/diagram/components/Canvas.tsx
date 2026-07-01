@@ -1067,7 +1067,7 @@ export function Canvas() {
           left: 0,
           pointerEvents: 'none'
         }}>
-          <div className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+          <div id="loom-export-area" className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
               <Node 
                 key={node.id} 
