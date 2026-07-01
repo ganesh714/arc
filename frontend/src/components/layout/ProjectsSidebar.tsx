@@ -1,18 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
-import { Folder, Plus, X, FolderKanban, LogIn } from 'lucide-react';
+import { Folder, Plus, X, FolderKanban, LogIn, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import { useNavigate } from 'react-router-dom';
 import styles from './ProjectsSidebar.module.css';
 
 export function ProjectsSidebar() {
-  const { projects, activeProjectId, activeFileId, addFile, isSidebarOpen, toggleSidebar } = useDiagram();
+  const { projects, activeProjectId, activeFileId, addFile, updateFile, deleteFile, isSidebarOpen, toggleSidebar } = useDiagram();
   const { isGuest, user, login, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   const [isCreating, setIsCreating] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeMenuId) return;
+    const handleOutsideClick = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, [activeMenuId]);
+
+  const handleRename = (e: React.MouseEvent, id: string, currentName: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    const newName = prompt('Enter new file name:', currentName);
+    if (newName && newName.trim() !== '' && newName !== currentName) {
+      updateFile(id, newName.trim());
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    if (confirm('Are you sure you want to delete this file?')) {
+      deleteFile(id);
+      if (activeFileId === id) {
+        const proj = projects.find(p => p.id === activeProjectId);
+        const remainingFiles = proj?.files.filter(f => f.id !== id) || [];
+        if (remainingFiles.length > 0) {
+          navigate(`/project/${activeProjectId}/file/${remainingFiles[0].id}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }
+    }
+  };
 
   const handleConfirmCreate = async (name: string, bgColor: string) => {
     if (name.trim()) {
@@ -112,15 +146,59 @@ export function ProjectsSidebar() {
         {projects.find(p => p.id === activeProjectId)?.files.map((file) => {
           const isActive = file.id === activeFileId;
           return (
-            <button
-              key={file.id}
-              className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
-              onClick={() => navigate(`/project/${activeProjectId}/file/${file.id}`)}
-            >
-              <Folder size={14} className={styles.itemIcon} />
-              <span className={styles.projectName}>{file.name}</span>
-              <span className={styles.itemCount}>{file.nodes.length}</span>
-            </button>
+            <div key={file.id} style={{ position: 'relative' }}>
+              <button
+                className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
+                onClick={() => navigate(`/project/${activeProjectId}/file/${file.id}`)}
+                style={{ paddingRight: '28px' }}
+              >
+                <Folder size={14} className={styles.itemIcon} />
+                <span className={styles.projectName}>{file.name}</span>
+                <span className={styles.itemCount}>{file.nodes.length}</span>
+              </button>
+              
+              <button 
+                style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenuId(activeMenuId === file.id ? null : file.id);
+                }}
+              >
+                <MoreVertical size={14} />
+              </button>
+
+              {activeMenuId === file.id && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '0',
+                  backgroundColor: 'var(--bg-panel)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                  zIndex: 50,
+                  minWidth: '120px',
+                  overflow: 'hidden'
+                }}>
+                  <button 
+                    onClick={(e) => handleRename(e, file.id, file.name)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Edit size={12} /> Rename
+                  </button>
+                  <button 
+                    onClick={(e) => handleDelete(e, file.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ef444420'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
