@@ -9,8 +9,6 @@ import {
   Shield, 
   Layers, 
   Users, 
-  ChevronDown, 
-  ChevronUp, 
   Play, 
   Cpu, 
   MessageSquare,
@@ -139,7 +137,6 @@ const FILES_TEMPLATES: CodeFile[] = [
 
 export function LandingPage() {
   const { login, enterGuestMode } = useAuth();
-  const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
   
   // Code Editor typing states
   const [activeTab, setActiveTab] = useState(0);
@@ -165,29 +162,6 @@ export function LandingPage() {
   });
   const [simLineVisible, setSimLineVisible] = useState(false);
   const [simPulseVisible, setSimPulseVisible] = useState(false);
-
-  const faqItems = [
-    {
-      q: "How does the Diagram-to-Code compiler work?",
-      a: "Loom parses the connections, variables, and shapes on the visual canvas, then uses our advanced semantic code parser alongside Gemini/Groq LLMs to construct clean React component syntax or robust SQL schemas in seconds."
-    },
-    {
-      q: "Is Postgres required to use Loom?",
-      a: "No! Loom supports a complete local storage Guest Mode. If you want persistent workspaces and database backups, you can link your Postgres database (e.g. Supabase, Render) by creating an account."
-    },
-    {
-      q: "Can I self-host Loom's backend?",
-      a: "Yes. Loom's API backend is built with Spring Boot and standard JPA models, making it extremely easy to dockerize and run on Render, AWS, or local Kubernetes clusters."
-    },
-    {
-      q: "Which LLM models are supported?",
-      a: "We natively routing vision and logic requests to Gemini 1.5 Pro, Gemini 1.5 Flash, and Groq's high-speed models using our built-in failover-ring manager."
-    }
-  ];
-
-  const toggleFaq = (index: number) => {
-    setFaqOpenIndex(faqOpenIndex === index ? null : index);
-  };
 
   // Intersection Observer for scroll reveal
   useEffect(() => {
@@ -327,13 +301,13 @@ export function LandingPage() {
       name: "Jonah Dubois",
       handle: "@jonahships_",
       avatar: "J",
-      text: "Setup @loom yesterday. All I have to say is, wow. I mapped my DB model visually and Loom generated the migration schemas and React flow routes in seconds. The future is already here."
+      text: "Setup @loom yesterday. All I have to say is, wow. I mapped my DB model visually and Loom generated the migration schemas and React flow routes in seconds."
     },
     {
       name: "Aryeh Dubois",
       handle: "@AryehDubois",
       avatar: "A",
-      text: "Tried Loom. I tried to build my own visual mockups and compilers before, and I am very impressed how many hard things Loom gets right. Persistent memory, heartbeats, visual connections. AWESOME."
+      text: "Tried Loom. I tried to build my own visual mockups and compilers before, and I am very impressed how many hard things Loom gets right. Visual connections are awesome."
     },
     {
       name: "Mark Jaquith",
@@ -345,19 +319,19 @@ export function LandingPage() {
       name: "Dan Peguine",
       handle: "@danpeguine",
       avatar: "D",
-      text: "Why @loom is nuts: your context and code layout designs live on YOUR computer, not a walled garden. Growing community building custom blocks. Memory is amazing, context persists 24/7."
+      text: "Why @loom is nuts: your context and code layout designs live on YOUR computer, not a walled garden. Growing community building custom blocks. Context persists 24/7."
     },
     {
       name: "Nate Eliason",
       handle: "@nateliason",
       avatar: "N",
-      text: "Yeah this was 1,000% worth it. Separate Claude/Gemini model + Loom, managing visual canvas components I can compile anywhere, autonomously running tests on my app and resolving SQL routes."
+      text: "Yeah this was 1,000% worth it. Separate Claude/Gemini model + Loom, managing visual canvas components I can compile anywhere, autonomously resolving SQL routes."
     },
     {
       name: "Nathan Clark",
       handle: "@nathanclark_",
       avatar: "N",
-      text: "A smart compiler with eyes and hands. You message it like a coworker and it draws diagram connections and spins up SQL backends. That's what you have now."
+      text: "A smart compiler with eyes and hands. You message it like a coworker and it draws diagram connections and spins up SQL backends."
     }
   ];
 
@@ -378,7 +352,6 @@ export function LandingPage() {
           <a href="#features">Features</a>
           <a href="#code-generation">AI Compiler</a>
           <a href="#collaboration">Multiplayer</a>
-          <a href="#faq">FAQ</a>
           <button className={styles.loginBtn} onClick={login}>Sign In</button>
           <button className={styles.getStartedBtn} onClick={enterGuestMode}>Get Started Free</button>
         </div>
@@ -391,10 +364,10 @@ export function LandingPage() {
           <span>AI-Driven Visual Development</span>
         </div>
         <h1 className={styles.heroTitle}>
-          The visual compiler that <span className={styles.gradientText}>actually does things.</span>
+          Diagram to code. <span className={styles.gradientText}>Instantly.</span>
         </h1>
         <p className={styles.heroSubtitle}>
-          Weave complex node charts directly into responsive React components and production SQL tables. All visually, from an infinite canvas.
+          Weave complex charts directly into React & SQL. Free, fast, and local-first.
         </p>
         <div className={styles.heroActions}>
           <button className={styles.primaryBtn} onClick={enterGuestMode}>
@@ -445,7 +418,7 @@ export function LandingPage() {
             <div>
               <div className={styles.sectionHeader}>
                 <span className={styles.sectionTag}>Visual Compiler</span>
-                <h2 className={styles.sectionTitle}>Visual flow maps instantly weave clean modules.</h2>
+                <h2 className={styles.sectionTitle}>Design to Code</h2>
               </div>
               
               {/* High Fidelity SVG Diagram showing compiler flow */}
@@ -553,13 +526,13 @@ export function LandingPage() {
                   className={`${styles.cursor} ${styles.cursor1}`} 
                   style={{ left: `${simCursors.sarah.x}px`, top: `${simCursors.sarah.y}px` }}
                 >
-                  <MessageSquare size={12} /> Sarah (UX Architect)
+                  <MessageSquare size={12} /> Sarah
                 </div>
                 <div 
                   className={`${styles.cursor} ${styles.cursor2}`} 
                   style={{ left: `${simCursors.ganesh.x}px`, top: `${simCursors.ganesh.y}px` }}
                 >
-                  <Code size={12} /> Ganesh (Backend Dev)
+                  <Code size={12} /> Ganesh
                 </div>
 
                 {/* Client Node */}
@@ -583,8 +556,8 @@ export function LandingPage() {
             {/* Content on the Right */}
             <div>
               <div className={styles.sectionHeader}>
-                <span className={styles.sectionTag}>Multiplayer Workflow</span>
-                <h2 className={styles.sectionTitle}>WebSocket sync links layouts across clients.</h2>
+                <span className={styles.sectionTag}>Multiplayer</span>
+                <h2 className={styles.sectionTitle}>Realtime Sync</h2>
               </div>
               
               {/* High Fidelity SVG Diagram showing websocket client synchronization */}
@@ -616,7 +589,7 @@ export function LandingPage() {
 
       {/* OpenClaw-Style Testimonials Wall */}
       <section className={`${styles.testimonialsSection} ${styles.reveal}`}>
-        <h2 className={styles.testimonialsTitle}>What developers are building</h2>
+        <h2 className={styles.testimonialsTitle}>Loved by Devs</h2>
         <div className={styles.testimonialsGrid}>
           {testimonials.map((t, idx) => (
             <div key={idx} className={styles.testimonialCard}>
@@ -636,8 +609,8 @@ export function LandingPage() {
       {/* Bento Grid Features Section */}
       <section id="features" className={`${styles.bentoSection} ${styles.reveal}`}>
         <div className={styles.sectionHeader} style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <span className={styles.sectionTag}>Productivity Kit</span>
-          <h2 className={styles.sectionTitle}>Engineered for Modern Teams</h2>
+          <span className={styles.sectionTag}>Engineered for Teams</span>
+          <h2 className={styles.sectionTitle}>Productivity Kit</h2>
         </div>
         <div className={styles.bentoGrid}>
           {/* Card 1 (Large) */}
@@ -649,8 +622,8 @@ export function LandingPage() {
             <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><History size={24} /></div>
-            <h3>Historical Reversions</h3>
-            <p>Rewind layout changes and diagram modifications safely.</p>
+            <h3>Rewind</h3>
+            <p>Rewind changes instantly.</p>
           </div>
           {/* Card 2 */}
           <div 
@@ -661,8 +634,8 @@ export function LandingPage() {
             <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Keyboard size={24} /></div>
-            <h3>Keyboard Hotkeys</h3>
-            <p>Accelerate modeling using key combinations.</p>
+            <h3>Hotkeys</h3>
+            <p>Accelerate your workspace.</p>
           </div>
           {/* Card 3 */}
           <div 
@@ -673,8 +646,8 @@ export function LandingPage() {
             <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Layers size={24} /></div>
-            <h3>Infinite Canvas</h3>
-            <p>Map massive systems with modular nested schemas.</p>
+            <h3>Infinite Spaces</h3>
+            <p>Map massive nested schemas.</p>
           </div>
           {/* Card 4 (Large) */}
           <div 
@@ -685,30 +658,9 @@ export function LandingPage() {
             <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Share2 size={24} /></div>
-            <h3>Multi-framework Exports</h3>
-            <p>Compile visual components directly into React, Angular, or raw SQL.</p>
+            <h3>Universal Export</h3>
+            <p>Deploy React & SQL.</p>
           </div>
-        </div>
-      </section>
-
-      {/* FAQ Accordion Section (New styled Cards) */}
-      <section id="faq" className={`${styles.faqSection} ${styles.reveal}`}>
-        <h2 className={styles.faqTitle}>Frequently Asked Questions</h2>
-        <div className={styles.faqList}>
-          {faqItems.map((item, index) => (
-            <div 
-              key={index} 
-              className={`${styles.faqItem} ${faqOpenIndex === index ? styles.faqItemActive : ''}`}
-            >
-              <div className={styles.faqQuestion} onClick={() => toggleFaq(index)}>
-                <span>{item.q}</span>
-                {faqOpenIndex === index ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </div>
-              <div className={styles.faqAnswer}>
-                <p>{item.a}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -716,9 +668,9 @@ export function LandingPage() {
       <section className={`${styles.ctaSection} ${styles.reveal}`}>
         <div className={styles.ctaCard}>
           <div className={styles.logoIcon} style={{ width: '48px', height: '48px', fontSize: '24px' }}>L</div>
-          <h2>Ready to weave code?</h2>
+          <h2>Ready?</h2>
           <p>
-            Start mapping node models to code in seconds. Sign in with Github or continue in offline Guest Mode.
+            Weave node models to code. Free Guest Mode.
           </p>
           <div className={styles.heroActions}>
             <button className={styles.primaryBtn} onClick={enterGuestMode}>
