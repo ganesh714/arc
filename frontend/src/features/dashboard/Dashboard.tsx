@@ -143,7 +143,7 @@ export function Dashboard() {
             <span>Settings</span>
           </div>
           
-          <div style={{ margin: '16px 12px', padding: '12px', background: '#12141a', borderRadius: '12px', border: '1px solid #1a1d26' }}>
+          <div style={{ margin: '16px 12px', padding: '12px', background: '#040508', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                 {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={18} color="#0c8ce9" />}
@@ -156,7 +156,7 @@ export function Dashboard() {
                 onClick={toggleTheme}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }}
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-                onMouseOver={(e) => { e.currentTarget.style.background = '#1a1d26'; e.currentTarget.style.color = '#fff'; }}
+                onMouseOver={(e) => { e.currentTarget.style.background = '#0c8ce920'; e.currentTarget.style.color = '#fff'; }}
                 onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#888'; }}
               >
                 {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
@@ -165,9 +165,9 @@ export function Dashboard() {
             
             <button 
               onClick={logout}
-              style={{ width: '100%', background: '#1a1d26', border: 'none', color: '#999', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = '#222631'; e.currentTarget.style.color = '#fff'; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = '#1a1d26'; e.currentTarget.style.color = '#999'; }}
+              style={{ width: '100%', background: '#07090e', border: '1px solid rgba(255, 255, 255, 0.04)', color: '#999', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#0c8ce915'; e.currentTarget.style.color = '#fff'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = '#07090e'; e.currentTarget.style.color = '#999'; }}
             >
               <LogOut size={14} /> Sign out
             </button>
