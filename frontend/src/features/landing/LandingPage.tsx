@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   ArrowRight, 
   Code, 
-  Zap, 
   Globe, 
   Sparkles, 
   Shield, 
@@ -54,7 +53,7 @@ const FILES_TEMPLATES: CodeFile[] = [
       { text: '();\n  return (\n    <', type: 'plain' },
       { text: 'div ', type: 'kw' },
       { text: 'className=', type: 'plain' },
-      { text: '"border border-purple-500 bg-gray-900"', type: 'str' },
+      { text: '"border border-blue-500 bg-gray-900"', type: 'str' },
       { text: '>\n      <', type: 'plain' },
       { text: 'h3', type: 'kw' },
       { text: '>OAuth Node</', type: 'plain' },
@@ -143,9 +142,6 @@ export function LandingPage() {
   // Code Editor typing states
   const [activeTab, setActiveTab] = useState(0);
   const [typedCharsCount, setTypedCharsCount] = useState(0);
-  
-  // HTML5 Canvas Ref
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Bento Cards Spotlights
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -164,6 +160,7 @@ export function LandingPage() {
   });
   const [simLineVisible, setSimLineVisible] = useState(false);
   const [simPulseVisible, setSimPulseVisible] = useState(false);
+
   const faqItems = [
     {
       q: "How does the Diagram-to-Code compiler work?",
@@ -205,128 +202,6 @@ export function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
-  // HTML5 Premium Particle/Galaxy Background Canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    const particles: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      radius: number;
-      alpha: number;
-      pulseSpeed: number;
-    }> = [];
-
-    // Initialize particles (stars)
-    const particleCount = Math.min(Math.floor(width / 16), 110);
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.18,
-        vy: (Math.random() - 0.5) * 0.18,
-        radius: Math.random() * 2 + 0.8,
-        alpha: Math.random() * 0.5 + 0.2,
-        pulseSpeed: Math.random() * 0.02 + 0.005
-      });
-    }
-
-    let mouseX = 0;
-    let mouseY = 0;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    };
-
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-
-    const draw = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      particles.forEach((p, idx) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Wrap around bounds
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-        // Gently pulse alpha
-        p.alpha += p.pulseSpeed;
-        if (p.alpha > 0.8 || p.alpha < 0.2) {
-          p.pulseSpeed = -p.pulseSpeed;
-        }
-
-        // Draw glowing particle
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139, 92, 246, ${p.alpha * 0.45})`;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#8b5cf6';
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow
-
-        // Connect nearby particles with glowing filaments
-        for (let j = idx + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 130) {
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(139, 92, 246, ${0.12 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-          }
-        }
-
-        // Draw connections to mouse cursor with gravitation effect
-        const mouseDist = Math.hypot(p.x - mouseX, p.y - mouseY);
-        if (mouseDist < 200) {
-          // Subtle gravitational attraction
-          p.x += (mouseX - p.x) * 0.003;
-          p.y += (mouseY - p.y) * 0.003;
-
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouseX, mouseY);
-          ctx.strokeStyle = `rgba(56, 189, 248, ${0.22 * (1 - mouseDist / 200)})`;
-          ctx.lineWidth = 0.9;
-          ctx.stroke();
-        }
-      });
-
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
   // Code Typing Simulation Character Counter Loop
   useEffect(() => {
     const totalChars = FILES_TEMPLATES[activeTab].tokens.reduce((acc, t) => acc + t.text.length, 0);
@@ -362,7 +237,6 @@ export function LandingPage() {
 
       const remainingChars = typedCharsCount - charAccumulator;
       if (remainingChars >= t.text.length) {
-        // Fully typed token
         renderedSpans.push(
           <span key={i} className={styles[t.type] || ''}>
             {t.text}
@@ -370,7 +244,6 @@ export function LandingPage() {
         );
         charAccumulator += t.text.length;
       } else {
-        // Partially typed token
         renderedSpans.push(
           <span key={i} className={styles[t.type] || ''}>
             {t.text.substring(0, remainingChars)}
@@ -407,49 +280,40 @@ export function LandingPage() {
   useEffect(() => {
     switch (simStep) {
       case 0:
-        // Reset
         setSimCursors({ sarah: { x: 30, y: 160 }, ganesh: { x: 260, y: 180 } });
         setSimNodes({ client: false, database: false, clientActive: false, databaseActive: false });
         setSimLineVisible(false);
         setSimPulseVisible(false);
         break;
       case 1:
-        // Sarah moves to click/spawn client node
         setSimCursors(prev => ({ ...prev, sarah: { x: 60, y: 60 } }));
         break;
       case 2:
-        // Client node appears, Sarah moves away
         setSimNodes(prev => ({ ...prev, client: true, clientActive: true }));
         setSimCursors(prev => ({ ...prev, sarah: { x: 180, y: 80 } }));
         break;
       case 3:
-        // Ganesh moves to click/spawn db node
         setSimCursors(prev => ({ ...prev, ganesh: { x: 230, y: 150 } }));
         break;
       case 4:
-        // Database node appears
         setSimNodes(prev => ({ ...prev, database: true, databaseActive: true }));
         setSimCursors(prev => ({ ...prev, ganesh: { x: 280, y: 80 } }));
         break;
       case 5:
-        // Connecting line draws between client and db node
         setSimLineVisible(true);
         break;
       case 6:
-        // Pulse signal fires down the path
         setSimPulseVisible(true);
         break;
       case 7:
-        // Idle showing finished layout
         break;
     }
   }, [simStep]);
 
   return (
     <div className={styles.container}>
-      {/* Dynamic Interactive Background */}
-      <div className={styles.canvasContainer}>
-        <canvas ref={canvasRef} className={styles.canvas} />
+      {/* Dynamic Blue-Theme Mesh Grid Background */}
+      <div className={styles.background}>
         <div className={styles.glow}></div>
       </div>
 
@@ -481,7 +345,7 @@ export function LandingPage() {
             Compile to <span className={styles.gradientText}>Code</span> instantly.
           </h1>
           <p className={styles.heroSubtitle}>
-            The professional developer-first modeling canvas that weaves diagrams and architecture maps directly into production React, Angular, and SQL code. 
+            Weave complex node charts directly into responsive React components and production SQL tables.
           </p>
           <div className={styles.heroActions}>
             <button className={styles.primaryBtn} onClick={enterGuestMode}>
@@ -511,13 +375,13 @@ export function LandingPage() {
                   <path 
                     d="M 180,85 C 240,85 240,215 320,215" 
                     fill="none" 
-                    stroke="rgba(139, 92, 246, 0.4)" 
+                    stroke="rgba(12, 140, 233, 0.4)" 
                     strokeWidth="2" 
                   />
                   <path 
                     d="M 180,85 C 240,85 240,215 320,215" 
                     fill="none" 
-                    stroke="#a78bfa" 
+                    stroke="#0c8ce9" 
                     strokeWidth="2" 
                     className={styles.connectionLine}
                   />
@@ -532,7 +396,7 @@ export function LandingPage() {
                   <div className={styles.nodeBody}>
                     <div className={styles.nodeRow}>
                       <span>Provider</span>
-                      <span style={{ color: '#a78bfa' }}>OAuth 2.0</span>
+                      <span style={{ color: '#0c8ce9' }}>OAuth 2.0</span>
                     </div>
                     <div className={styles.nodeRow}>
                       <span>Type</span>
@@ -599,23 +463,43 @@ export function LandingPage() {
             <div>
               <div className={styles.sectionHeader}>
                 <span className={styles.sectionTag}>Visual Compiler</span>
-                <h2 className={styles.sectionTitle}>Engineered for pure speed. Powered by AI.</h2>
+                <h2 className={styles.sectionTitle}>Visual flow maps instantly weave clean modules.</h2>
               </div>
-              <div className={styles.featuresList}>
-                <div className={styles.featurePoint}>
-                  <div className={styles.featurePointIcon}><Zap size={20} /></div>
-                  <div>
-                    <h4>Interactive Live Previews</h4>
-                    <p>Build, connect, and customize architecture schemas, UI blocks, or microservices maps, and watch code update in real-time.</p>
-                  </div>
-                </div>
-                <div className={styles.featurePoint}>
-                  <div className={styles.featurePointIcon}><Cpu size={20} /></div>
-                  <div>
-                    <h4>Gemini & Groq Fallbacks</h4>
-                    <p>Our intelligent middleware routes complex code layout problems to Gemini for rich context analysis, falling back to Groq for light speed compilation.</p>
-                  </div>
-                </div>
+              
+              {/* High Fidelity SVG Diagram showing compiler flow */}
+              <div className={styles.svgVisualContainer}>
+                <svg className={styles.svgDiagram} viewBox="0 0 400 250">
+                  <defs>
+                    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#0c8ce9" />
+                      <stop offset="100%" stopColor="#2563eb" />
+                    </linearGradient>
+                  </defs>
+                  
+                  {/* Flow Lines */}
+                  <path d="M 60,120 L 170,120" stroke="#38bdf8" strokeWidth="2" strokeDasharray="5 5" />
+                  <path d="M 230,120 L 320,120" stroke="#0c8ce9" strokeWidth="2" />
+                  
+                  {/* Glowing pulses */}
+                  <circle cx="115" cy="120" r="4" className={styles.pulsePoint}>
+                    <animate attributeName="cx" values="60;170" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="275" cy="120" r="4" className={styles.pulsePoint} style={{ fill: '#38bdf8' }}>
+                    <animate attributeName="cx" values="230;320" dur="1.5s" repeatCount="indefinite" />
+                  </circle>
+
+                  {/* Flow Nodes */}
+                  <rect x="20" y="95" width="50" height="50" rx="8" fill="#121620" stroke="rgba(255,255,255,0.08)" />
+                  <Cpu x="33" y="108" size="24" color="#38bdf8" />
+
+                  {/* Compiler Engine Node */}
+                  <circle cx="200" cy="120" r="30" fill="url(#blueGrad)" className={styles.glowRect} />
+                  <Sparkles x="188" y="108" size="24" color="#fff" />
+
+                  {/* Output Node */}
+                  <rect x="320" y="95" width="50" height="50" rx="8" fill="#121620" stroke="rgba(255,255,255,0.08)" />
+                  <Code x="333" y="108" size="24" color="#10b981" />
+                </svg>
               </div>
             </div>
             {/* Live Typing Code Box mockup with Tab Files */}
@@ -645,7 +529,7 @@ export function LandingPage() {
         </div>
       </div>
 
-      {/* Storyline Timeline: Section 2 - Collaborative Multiplayer (REVERSED COLUMNS) */}
+      {/* Storyline Timeline: Section 2 - Collaborative Multiplayer */}
       <div id="collaboration" className={`${styles.timelineSection} ${styles.reveal}`}>
         <div className={styles.timelineConnector}>
           <div className={styles.timelineDot}><Users size={16} /></div>
@@ -663,20 +547,20 @@ export function LandingPage() {
                       <path 
                         d="M 130,70 L 220,130" 
                         fill="none" 
-                        stroke="rgba(16, 185, 129, 0.4)" 
+                        stroke="rgba(12, 140, 233, 0.4)" 
                         strokeWidth="2" 
                       />
                       <path 
                         d="M 130,70 L 220,130" 
                         fill="none" 
-                        stroke="#10b981" 
+                        stroke="#0c8ce9" 
                         strokeWidth="2" 
                         className={styles.connectionLine}
                       />
                     </>
                   )}
                   {simPulseVisible && (
-                    <circle cx="175" cy="100" r="5" fill="#10b981" style={{ filter: 'drop-shadow(0 0 8px #10b981)' }}>
+                    <circle cx="175" cy="100" r="5" fill="#0c8ce9" style={{ filter: 'drop-shadow(0 0 8px #0c8ce9)' }}>
                       <animateMotion dur="1.2s" repeatCount="indefinite" path="M 130,70 L 220,130" />
                     </circle>
                   )}
@@ -701,7 +585,7 @@ export function LandingPage() {
                   className={`${styles.simNode} ${simNodes.client ? styles.simNodeActive : ''} ${simNodes.clientActive ? styles.simNodeHighlight : ''}`}
                   style={{ left: '30px', top: '40px' }}
                 >
-                  <Server size={12} color="#f43f5e" /> Client.ts
+                  <Server size={12} color="#0c8ce9" /> Client.ts
                 </div>
 
                 {/* DB Node */}
@@ -718,23 +602,30 @@ export function LandingPage() {
             <div>
               <div className={styles.sectionHeader}>
                 <span className={styles.sectionTag}>Multiplayer Workflow</span>
-                <h2 className={styles.sectionTitle}>Built for teams. Real-time collaboration.</h2>
+                <h2 className={styles.sectionTitle}>WebSocket sync links layouts across clients.</h2>
               </div>
-              <div className={styles.featuresList}>
-                <div className={styles.featurePoint}>
-                  <div className={styles.featurePointIcon}><Users size={20} /></div>
-                  <div>
-                    <h4>Multiplayer Synchronization</h4>
-                    <p>Co-edit models, link services, and plan backend databases with your team synchronously using high-performance WebSocket signaling.</p>
-                  </div>
-                </div>
-                <div className={styles.featurePoint}>
-                  <div className={styles.featurePointIcon}><Globe size={20} /></div>
-                  <div>
-                    <h4>Global Deployment</h4>
-                    <p>Save diagrams instantly. Accessible on any client machine anywhere, keeping the entire product team perfectly in sync.</p>
-                  </div>
-                </div>
+              
+              {/* High Fidelity SVG Diagram showing websocket client synchronization */}
+              <div className={styles.svgVisualContainer}>
+                <svg className={styles.svgDiagram} viewBox="0 0 400 250">
+                  {/* Central WS Sync Gateway */}
+                  <circle cx="200" cy="120" r="35" fill="none" stroke="#0c8ce9" strokeWidth="2" className={styles.glowRect} />
+                  <Globe x="186" y="106" size="28" color="#38bdf8" />
+                  
+                  {/* Left Client */}
+                  <rect x="30" y="90" width="70" height="60" rx="8" fill="#121620" stroke="rgba(255,255,255,0.06)" />
+                  <Cpu x="53" y="105" size="24" color="#8b949e" />
+                  <text x="65" y="142" fill="#8b949e" fontSize="8" textAnchor="middle">Client A</text>
+                  
+                  {/* Right Client */}
+                  <rect x="300" y="90" width="70" height="60" rx="8" fill="#121620" stroke="rgba(255,255,255,0.06)" />
+                  <Cpu x="323" y="105" size="24" color="#8b949e" />
+                  <text x="335" y="142" fill="#8b949e" fontSize="8" textAnchor="middle">Client B</text>
+
+                  {/* Sync Arrows */}
+                  <path d="M 100,120 L 165,120" stroke="#0c8ce9" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <path d="M 235,120 L 300,120" stroke="#0c8ce9" strokeWidth="1.5" strokeDasharray="4 4" />
+                </svg>
               </div>
             </div>
           </div>
@@ -758,7 +649,7 @@ export function LandingPage() {
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><History size={24} /></div>
             <h3>Historical Reversions</h3>
-            <p>Full undo/redo stack allows developers to rewind through layout variations and canvas edits safely, ensuring you never lose code changes.</p>
+            <p>Rewind layout changes and diagram modifications safely.</p>
           </div>
           {/* Card 2 */}
           <div 
@@ -770,7 +661,7 @@ export function LandingPage() {
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Keyboard size={24} /></div>
             <h3>Keyboard Hotkeys</h3>
-            <p>Speed up layout modeling with custom keyboard shortcuts for shapes, lines, grouping, and layer order.</p>
+            <p>Accelerate modeling using key combinations.</p>
           </div>
           {/* Card 3 */}
           <div 
@@ -782,7 +673,7 @@ export function LandingPage() {
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Layers size={24} /></div>
             <h3>Infinite Canvas</h3>
-            <p>Model complex architectures with nested schemas, modular frames, and sub-systems on a smooth zooming grid.</p>
+            <p>Map massive systems with modular nested schemas.</p>
           </div>
           {/* Card 4 (Large) */}
           <div 
@@ -794,7 +685,7 @@ export function LandingPage() {
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Share2 size={24} /></div>
             <h3>Multi-framework Exports</h3>
-            <p>One-click code compile outputs clean, typed modules for React, Next.js routes, or raw DDL SQL code schemas natively.</p>
+            <p>Compile visual components directly into React, Angular, or raw SQL.</p>
           </div>
         </div>
       </section>
