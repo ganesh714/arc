@@ -18,7 +18,9 @@ import {
   Keyboard,
   Share2,
   Database,
-  Server
+  Server,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface CodeToken {
@@ -146,6 +148,9 @@ export function LandingPage() {
   // Bento Cards Spotlights
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
 
+  // Copy Cli states
+  const [copied, setCopied] = useState(false);
+
   // Multiplayer Live Simulation State Machine
   const [simStep, setSimStep] = useState(0);
   const [simCursors, setSimCursors] = useState({
@@ -268,6 +273,13 @@ export function LandingPage() {
     card.style.setProperty('--mouse-y', `${y}px`);
   };
 
+  // Copy command code
+  const handleCopyCommand = () => {
+    navigator.clipboard.writeText('npx create-loom-app@latest workspace');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   // Multiplayer Diagram Workspace Simulation State Machine Loop
   useEffect(() => {
     const interval = setInterval(() => {
@@ -310,6 +322,45 @@ export function LandingPage() {
     }
   }, [simStep]);
 
+  const testimonials = [
+    {
+      name: "Jonah Dubois",
+      handle: "@jonahships_",
+      avatar: "J",
+      text: "Setup @loom yesterday. All I have to say is, wow. I mapped my DB model visually and Loom generated the migration schemas and React flow routes in seconds. The future is already here."
+    },
+    {
+      name: "Aryeh Dubois",
+      handle: "@AryehDubois",
+      avatar: "A",
+      text: "Tried Loom. I tried to build my own visual mockups and compilers before, and I am very impressed how many hard things Loom gets right. Persistent memory, heartbeats, visual connections. AWESOME."
+    },
+    {
+      name: "Mark Jaquith",
+      handle: "@markjaquith",
+      avatar: "M",
+      text: "I've been saying for like six months that even if LLMs suddenly stopped improving, we could spend years discovering new uses. @loom feels like that kind of 'just had to glue all the parts together' leap."
+    },
+    {
+      name: "Dan Peguine",
+      handle: "@danpeguine",
+      avatar: "D",
+      text: "Why @loom is nuts: your context and code layout designs live on YOUR computer, not a walled garden. Growing community building custom blocks. Memory is amazing, context persists 24/7."
+    },
+    {
+      name: "Nate Eliason",
+      handle: "@nateliason",
+      avatar: "N",
+      text: "Yeah this was 1,000% worth it. Separate Claude/Gemini model + Loom, managing visual canvas components I can compile anywhere, autonomously running tests on my app and resolving SQL routes."
+    },
+    {
+      name: "Nathan Clark",
+      handle: "@nathanclark_",
+      avatar: "N",
+      text: "A smart compiler with eyes and hands. You message it like a coworker and it draws diagram connections and spins up SQL backends. That's what you have now."
+    }
+  ];
+
   return (
     <div className={styles.container}>
       {/* Dynamic Blue-Theme Mesh Grid Background */}
@@ -333,100 +384,31 @@ export function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* OpenClaw-style Centered Hero Section */}
       <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <div className={styles.badge}>
-            <Sparkles size={14} />
-            <span>AI-Driven Visual Development</span>
-          </div>
-          <h1 className={styles.heroTitle}>
-            Diagram visually.<br />
-            Compile to <span className={styles.gradientText}>Code</span> instantly.
-          </h1>
-          <p className={styles.heroSubtitle}>
-            Weave complex node charts directly into responsive React components and production SQL tables.
-          </p>
-          <div className={styles.heroActions}>
-            <button className={styles.primaryBtn} onClick={enterGuestMode}>
-              Start Building Now <ArrowRight size={18} />
-            </button>
-            <button className={styles.secondaryBtn} onClick={login}>
-              <Play size={18} /> Sign In
-            </button>
-          </div>
+        <div className={styles.badge}>
+          <Sparkles size={14} />
+          <span>AI-Driven Visual Development</span>
         </div>
-
-        {/* High-Fidelity Active Diagram Mockup Visual */}
-        <div className={styles.heroVisual}>
-          <div className={styles.visualGlow}></div>
-          <div className={styles.previewContainer}>
-            <div className={styles.previewHeader}>
-              <div className={styles.dots}>
-                <span></span><span></span><span></span>
-              </div>
-              <div className={styles.addressBar}>loom.neuarc.in/workspace/interactive-diagram</div>
-            </div>
-            <div className={styles.previewContent}>
-              <div className={styles.previewSidebar}></div>
-              <div className={styles.previewCanvas}>
-                {/* SVG Connecting Path Layer */}
-                <svg className={styles.svgLayer}>
-                  <path 
-                    d="M 180,85 C 240,85 240,215 320,215" 
-                    fill="none" 
-                    stroke="rgba(12, 140, 233, 0.4)" 
-                    strokeWidth="2" 
-                  />
-                  <path 
-                    d="M 180,85 C 240,85 240,215 320,215" 
-                    fill="none" 
-                    stroke="#0c8ce9" 
-                    strokeWidth="2" 
-                    className={styles.connectionLine}
-                  />
-                </svg>
-
-                {/* Node Card 1 */}
-                <div className={`${styles.nodeCard} ${styles.nodeCardActive} ${styles.nodeCard1}`}>
-                  <div className={styles.nodeHeader}>
-                    <Server size={14} className={styles.nodeIcon} />
-                    <span className={styles.nodeTitle}>AuthGateway</span>
-                  </div>
-                  <div className={styles.nodeBody}>
-                    <div className={styles.nodeRow}>
-                      <span>Provider</span>
-                      <span style={{ color: '#0c8ce9' }}>OAuth 2.0</span>
-                    </div>
-                    <div className={styles.nodeRow}>
-                      <span>Type</span>
-                      <span>Security</span>
-                    </div>
-                  </div>
-                  <div className={`${styles.nodePin} ${styles.nodePinRight}`}></div>
-                </div>
-
-                {/* Node Card 2 */}
-                <div className={`${styles.nodeCard} ${styles.nodeCard2}`}>
-                  <div className={styles.nodeHeader}>
-                    <Database size={14} className={styles.nodeIcon} style={{ color: '#38bdf8' }} />
-                    <span className={styles.nodeTitle}>UserDatabase</span>
-                  </div>
-                  <div className={styles.nodeBody}>
-                    <div className={styles.nodeRow}>
-                      <span>Postgres</span>
-                      <span style={{ color: '#38bdf8' }}>v16.2</span>
-                    </div>
-                    <div className={styles.nodeRow}>
-                      <span>Status</span>
-                      <span style={{ color: '#10b981' }}>Healthy</span>
-                    </div>
-                  </div>
-                  <div className={`${styles.nodePin} ${styles.nodePinLeft}`}></div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <h1 className={styles.heroTitle}>
+          The visual compiler that <span className={styles.gradientText}>actually does things.</span>
+        </h1>
+        <p className={styles.heroSubtitle}>
+          Weave complex node charts directly into responsive React components and production SQL tables. All visually, from an infinite canvas.
+        </p>
+        <div className={styles.heroActions}>
+          <button className={styles.primaryBtn} onClick={enterGuestMode}>
+            Start Weaving Code <ArrowRight size={18} />
+          </button>
+          <button className={styles.secondaryBtn} onClick={login}>
+            <Play size={18} /> Sign In
+          </button>
+        </div>
+        
+        {/* OpenClaw-Style Installation Code Snippet */}
+        <div className={styles.bashCommand} onClick={handleCopyCommand}>
+          <code>npx create-loom-app@latest workspace</code>
+          {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
         </div>
       </section>
 
@@ -631,6 +613,25 @@ export function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* OpenClaw-Style Testimonials Wall */}
+      <section className={`${styles.testimonialsSection} ${styles.reveal}`}>
+        <h2 className={styles.testimonialsTitle}>What developers are building</h2>
+        <div className={styles.testimonialsGrid}>
+          {testimonials.map((t, idx) => (
+            <div key={idx} className={styles.testimonialCard}>
+              <div className={styles.tweetHeader}>
+                <div className={styles.avatar}>{t.avatar}</div>
+                <div className={styles.tweetUser}>
+                  <span className={styles.userName}>{t.name}</span>
+                  <span className={styles.userHandle}>{t.handle}</span>
+                </div>
+              </div>
+              <p className={styles.tweetBody}>{t.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Bento Grid Features Section */}
       <section id="features" className={`${styles.bentoSection} ${styles.reveal}`}>
