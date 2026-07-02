@@ -2,11 +2,11 @@
 
 .container {
   min-height: 100vh;
-  background-color: #000000; /* Pure black background */
+  background-color: #000000;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(12, 140, 233, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
+    radial-gradient(circle at 10% 20%, rgba(12, 140, 233, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(12, 140, 233, 0.02) 0%, transparent 50%);
   color: #c9d1d9;
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
@@ -24,22 +24,10 @@
   z-index: 0;
   pointer-events: none;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.008) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.008) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.006) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.006) 1px, transparent 1px);
   background-size: 60px 60px;
   background-position: center top;
-}
-
-.glow {
-  position: absolute;
-  top: -20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100vw;
-  height: 80vh;
-  background: radial-gradient(circle at top, rgba(12, 140, 233, 0.2) 0%, rgba(37, 99, 235, 0.1) 40%, transparent 70%);
-  pointer-events: none;
-  z-index: 1;
 }
 
 .nav {
@@ -48,11 +36,11 @@
   align-items: center;
   padding: 16px 80px;
   backdrop-filter: blur(24px);
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.8);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .logo {
@@ -113,7 +101,7 @@
 
 .getStartedBtn {
   background: #fff;
-  color: #030611;
+  color: #000000;
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
@@ -130,46 +118,27 @@
   box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
 }
 
-/* Hero Section */
+/* OpenClaw-Style Hero Section */
 .hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 160px 80px 100px;
-  max-width: 1400px;
+  padding: 140px 40px 80px;
+  max-width: 1000px;
   margin: 0 auto;
+  text-align: center;
   position: relative;
   z-index: 10;
-  gap: 60px;
-}
-
-.heroContent {
-  flex: 1.1;
-  max-width: 650px;
-}
-
-.badge {
-  background: rgba(12, 140, 233, 0.08);
-  border: 1px solid rgba(12, 140, 233, 0.25);
-  padding: 6px 16px;
-  border-radius: 100px;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #38bdf8;
-  margin-bottom: 28px;
-  box-shadow: 0 0 20px rgba(12, 140, 233, 0.1);
+  gap: 32px;
 }
 
 .heroTitle {
-  font-size: 76px;
+  font-size: 80px;
   line-height: 1.05;
   font-weight: 800;
   letter-spacing: -3px;
   color: #fff;
-  margin-bottom: 24px;
+  max-width: 800px;
 }
 
 .gradientText {
@@ -177,29 +146,30 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
-  text-shadow: 0 0 45px rgba(12, 140, 233, 0.35);
+  text-shadow: 0 0 45px rgba(12, 140, 233, 0.3);
 }
 
 .heroSubtitle {
-  font-size: 21px;
-  line-height: 1.65;
+  font-size: 20px;
+  line-height: 1.6;
   color: #8b949e;
-  margin-bottom: 44px;
+  max-width: 700px;
   font-weight: 400;
 }
 
 .heroActions {
   display: flex;
   gap: 16px;
+  justify-content: center;
 }
 
 .primaryBtn {
   background: linear-gradient(135deg, #0c8ce9 0%, #2563eb 100%);
   color: white;
   border: none;
-  padding: 16px 36px;
-  border-radius: 10px;
-  font-size: 16px;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -218,9 +188,9 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
-  padding: 16px 36px;
-  border-radius: 10px;
-  font-size: 16px;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -234,185 +204,26 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.heroVisual {
-  flex: 0.9;
-  position: relative;
-  perspective: 1200px;
-}
-
-.visualGlow {
-  position: absolute;
-  top: 10%;
-  left: 10%;
-  width: 80%;
-  height: 80%;
-  background: radial-gradient(circle, rgba(12, 140, 233, 0.35) 0%, transparent 60%);
-  filter: blur(40px);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.previewContainer {
-  position: relative;
-  background: #090b11;
+/* OpenClaw-Style Installation Command Box */
+.bashCommand {
+  background: #020306;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 35px 70px rgba(0,0,0,0.85);
-  transform: rotateY(-8deg) rotateX(6deg);
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 2;
-}
-
-.previewContainer:hover {
-  transform: rotateY(0deg) rotateX(0deg);
-}
-
-.previewHeader {
-  background: #121620;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.dots {
-  display: flex;
-  gap: 6px;
-}
-
-.dots span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-.dots span:nth-child(1) { background: #ff5f56; }
-.dots span:nth-child(2) { background: #ffbd2e; }
-.dots span:nth-child(3) { background: #27c93f; }
-
-.addressBar {
-  background: #06080d;
-  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 6px 12px;
-  color: #8b949e;
-  font-size: 11px;
-  flex: 1;
-  text-align: center;
+  padding: 12px 24px;
   font-family: monospace;
-}
-
-.previewContent {
-  height: 400px;
-  display: flex;
-}
-
-.previewSidebar {
-  width: 55px;
-  background: #121620;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.previewCanvas {
-  flex: 1;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 24px 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-/* High Fidelity Interactive Diagram Mockup */
-.nodeCard {
-  position: absolute;
-  width: 160px;
-  background: rgba(18, 22, 32, 0.92);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px);
-  z-index: 10;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.nodeCardActive {
-  border-color: #0c8ce9;
-  box-shadow: 0 0 20px rgba(12, 140, 233, 0.35);
-}
-
-.nodeHeader {
-  padding: 8px 12px;
+  font-size: 14px;
+  color: #38bdf8;
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.nodeIcon {
-  color: #38bdf8;
-}
-
-.nodeTitle {
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.nodeBody {
-  padding: 8px 12px;
-}
-
-.nodeRow {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: #8b949e;
-  padding: 4px 0;
-}
-
-.nodePin {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #30363d;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.nodePinLeft { left: -4px; }
-.nodePinRight { right: -4px; }
-
-.nodeCard1 {
-  top: 40px;
-  left: 40px;
-  animation: float 6s ease-in-out infinite;
-}
-
-.nodeCard2 {
-  top: 180px;
-  left: 240px;
-  animation: float 6s ease-in-out infinite 3s;
-}
-
-/* Pulsing SVG line */
-.svgLayer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 5;
-}
-
-.connectionLine {
-  stroke-dasharray: 8 8;
-  animation: dashPulse 25s linear infinite;
-}
-
-@keyframes dashPulse {
-  to { stroke-dashoffset: -1000; }
+.bashCommand:hover {
+  border-color: #0c8ce9;
+  box-shadow: 0 10px 30px rgba(12, 140, 233, 0.2);
 }
 
 /* Logos Marquee */
@@ -420,7 +231,7 @@
   padding: 48px 80px;
   border-top: 1px solid rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(18, 22, 32, 0.15);
+  background: rgba(10, 12, 18, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -586,7 +397,7 @@
 .svgVisualContainer {
   width: 100%;
   height: 280px;
-  background: rgba(18, 22, 32, 0.5);
+  background: rgba(7, 9, 14, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   position: relative;
@@ -617,7 +428,7 @@
 /* Editor preview mockup style */
 .editorMockup {
   position: relative;
-  background: #06080d;
+  background: #020306;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: hidden;
@@ -626,7 +437,7 @@
 }
 
 .editorHeader {
-  background: #121620;
+  background: #07090e;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   padding: 0 16px;
   display: flex;
@@ -662,7 +473,7 @@
 }
 
 .tabActive {
-  background: #06080d;
+  background: #020306;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-bottom: none;
@@ -679,7 +490,7 @@
   font-family: var(--mono);
   font-size: 13px;
   line-height: 1.65;
-  background: #06080d;
+  background: #020306;
   color: #c9d1d9;
   min-height: 250px;
   overflow-y: auto;
@@ -694,7 +505,7 @@
 
 /* Collaboration Section styling */
 .collabCard {
-  background: radial-gradient(circle at 5% 5%, rgba(12, 140, 233, 0.12) 0%, rgba(3, 6, 17, 0) 60%);
+  background: radial-gradient(circle at 5% 5%, rgba(12, 140, 233, 0.12) 0%, rgba(0, 0, 0, 0) 60%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   padding: 56px;
@@ -705,7 +516,7 @@
 
 .multiplayerDemo {
   height: 240px;
-  background: rgba(9, 11, 17, 0.85);
+  background: rgba(2, 3, 6, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   margin-top: 40px;
@@ -745,7 +556,7 @@
   position: absolute;
   width: 110px;
   padding: 8px;
-  background: #121620;
+  background: #07090e;
   border: 1px solid #21262d;
   border-radius: 6px;
   color: #fff;
@@ -770,6 +581,86 @@
   box-shadow: 0 0 15px rgba(12, 140, 233, 0.4);
 }
 
+/* OpenClaw-Style Testimonials Masonry Section */
+.testimonialsSection {
+  max-width: 1200px;
+  margin: 120px auto 0;
+  padding: 0 80px;
+  position: relative;
+  z-index: 10;
+}
+
+.testimonialsTitle {
+  text-align: center;
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 48px;
+}
+
+.testimonialsGrid {
+  column-count: 3;
+  column-gap: 24px;
+}
+
+.testimonialCard {
+  background: rgba(18, 22, 32, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  break-inside: avoid;
+  transition: all 0.3s ease;
+}
+
+.testimonialCard:hover {
+  background: rgba(18, 22, 32, 0.45);
+  border-color: rgba(12, 140, 233, 0.2);
+  transform: translateY(-2px);
+}
+
+.tweetHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0c8ce9 0%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.tweetUser {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.userHandle {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.tweetBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #c9d1d9;
+}
+
 /* Bento Grid Features Section */
 .bentoSection {
   max-width: 1200px;
@@ -788,7 +679,7 @@
 }
 
 .bentoCard {
-  background: rgba(18, 22, 32, 0.4);
+  background: rgba(6, 8, 12, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 36px;
@@ -999,12 +890,10 @@
 
 @media (max-width: 1024px) {
   .hero {
-    flex-direction: column;
-    padding: 120px 40px 40px;
-    text-align: center;
+    padding: 120px 20px 40px;
   }
-  .heroActions {
-    justify-content: center;
+  .testimonialsGrid {
+    column-count: 1;
   }
   .splitGrid, .reverseSplit {
     grid-template-columns: 1fr;
