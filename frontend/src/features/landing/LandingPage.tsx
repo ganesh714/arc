@@ -22,59 +22,117 @@ import {
   Server
 } from 'lucide-react';
 
+interface CodeToken {
+  text: string;
+  type: 'kw' | 'str' | 'var' | 'com' | 'typ' | 'plain';
+}
+
 interface CodeFile {
   name: string;
-  lang: string;
-  code: string;
+  tokens: CodeToken[];
 }
 
 const FILES_TEMPLATES: CodeFile[] = [
   {
     name: 'AuthGateway.tsx',
-    lang: 'typescript',
-    code: `// React Flow Component
-import React from 'react';
-import { useAuth } from './AuthContext';
-
-export const AuthNode = () => {
-  const { login } = useAuth();
-  return (
-    <div className="p-4 border border-purple-500 rounded-lg bg-gray-900">
-      <h3>OAuth Node</h3>
-      <button onClick={login}>Trigger OAuth</button>
-    </div>
-  );
-};`
+    tokens: [
+      { text: '// React Flow Component\n', type: 'com' },
+      { text: 'import ', type: 'kw' },
+      { text: 'React ', type: 'var' },
+      { text: 'from ', type: 'kw' },
+      { text: "'react'", type: 'str' },
+      { text: ';\nimport { ', type: 'plain' },
+      { text: 'useAuth ', type: 'var' },
+      { text: '} from ', type: 'kw' },
+      { text: "'./AuthContext'", type: 'str' },
+      { text: ';\n\nexport const ', type: 'kw' },
+      { text: 'AuthNode ', type: 'typ' },
+      { text: '= () => {\n  const { ', type: 'plain' },
+      { text: 'login ', type: 'var' },
+      { text: '} = ', type: 'plain' },
+      { text: 'useAuth', type: 'typ' },
+      { text: '();\n  return (\n    <', type: 'plain' },
+      { text: 'div ', type: 'kw' },
+      { text: 'className=', type: 'plain' },
+      { text: '"border border-purple-500 bg-gray-900"', type: 'str' },
+      { text: '>\n      <', type: 'plain' },
+      { text: 'h3', type: 'kw' },
+      { text: '>OAuth Node</', type: 'plain' },
+      { text: 'h3', type: 'kw' },
+      { text: '>\n      <', type: 'plain' },
+      { text: 'button ', type: 'kw' },
+      { text: 'onClick={', type: 'plain' },
+      { text: 'login', type: 'var' },
+      { text: '}>Trigger OAuth</', type: 'plain' },
+      { text: 'button', type: 'kw' },
+      { text: '>\n    </', type: 'plain' },
+      { text: 'div', type: 'kw' },
+      { text: '>\n  );\n};', type: 'plain' }
+    ]
   },
   {
     name: 'schema.sql',
-    lang: 'sql',
-    code: `-- Postgres DB Table Schemas
-CREATE TABLE projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  user_id UUID NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE files (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-  name VARCHAR(255) NOT NULL
-);`
+    tokens: [
+      { text: '-- Postgres DB Table Schemas\n', type: 'com' },
+      { text: 'CREATE TABLE ', type: 'kw' },
+      { text: 'projects ', type: 'typ' },
+      { text: '(\n  id ', type: 'plain' },
+      { text: 'UUID ', type: 'kw' },
+      { text: 'PRIMARY KEY DEFAULT ', type: 'kw' },
+      { text: 'gen_random_uuid()', type: 'var' },
+      { text: ',\n  name ', type: 'plain' },
+      { text: 'VARCHAR(255) ', type: 'kw' },
+      { text: 'NOT NULL', type: 'kw' },
+      { text: ',\n  user_id ', type: 'plain' },
+      { text: 'UUID ', type: 'kw' },
+      { text: 'NOT NULL', type: 'kw' },
+      { text: ',\n  created_at ', type: 'plain' },
+      { text: 'TIMESTAMP DEFAULT ', type: 'kw' },
+      { text: 'CURRENT_TIMESTAMP\n', type: 'var' },
+      { text: ');\n\nCREATE TABLE ', type: 'kw' },
+      { text: 'files ', type: 'typ' },
+      { text: '(\n  id ', type: 'plain' },
+      { text: 'UUID ', type: 'kw' },
+      { text: 'PRIMARY KEY DEFAULT ', type: 'kw' },
+      { text: 'gen_random_uuid()', type: 'var' },
+      { text: ',\n  project_id ', type: 'plain' },
+      { text: 'UUID REFERENCES ', type: 'kw' },
+      { text: 'projects(id) ', type: 'var' },
+      { text: 'ON DELETE CASCADE', type: 'kw' },
+      { text: ',\n  name ', type: 'plain' },
+      { text: 'VARCHAR(255) ', type: 'kw' },
+      { text: 'NOT NULL\n', type: 'kw' },
+      { text: ');', type: 'plain' }
+    ]
   },
   {
     name: 'api.ts',
-    lang: 'typescript',
-    code: `// Next.js Route Handler
-import { NextResponse } from 'next/server';
-
-export async function POST(req: Request) {
-  const payload = await req.json();
-  // Weave visual logic into DB schema
-  const dbResult = await db.save(payload);
-  return NextResponse.json({ status: 'compiled', dbResult });
-}`
+    tokens: [
+      { text: '// Next.js Route Handler\n', type: 'com' },
+      { text: 'import ', type: 'kw' },
+      { text: '{ NextResponse } ', type: 'plain' },
+      { text: 'from ', type: 'kw' },
+      { text: "'next/server'", type: 'str' },
+      { text: ';\n\nexport async function ', type: 'kw' },
+      { text: 'POST', type: 'typ' },
+      { text: '(req: ', type: 'plain' },
+      { text: 'Request', type: 'typ' },
+      { text: ') {\n  const ', type: 'plain' },
+      { text: 'payload ', type: 'var' },
+      { text: '= await ', type: 'plain' },
+      { text: 'req.json', type: 'var' },
+      { text: '();\n  \n  ', type: 'plain' },
+      { text: '// Save architecture diagram\n  ', type: 'com' },
+      { text: 'const ', type: 'kw' },
+      { text: 'dbResult ', type: 'var' },
+      { text: '= await ', type: 'plain' },
+      { text: 'db.save', type: 'var' },
+      { text: '(payload);\n  return ', type: 'plain' },
+      { text: 'NextResponse.json', type: 'typ' },
+      { text: '({ status: ', type: 'plain' },
+      { text: "'compiled'", type: 'str' },
+      { text: ', dbResult });\n}', type: 'plain' }
+    ]
   }
 ];
 
@@ -82,15 +140,72 @@ export function LandingPage() {
   const { login, enterGuestMode } = useAuth();
   const [faqOpenIndex, setFaqOpenIndex] = useState<number | null>(null);
   
-  // Interactive Code Playground State
+  // Code Editor typing states
   const [activeTab, setActiveTab] = useState(0);
-  const [typedCode, setTypedCode] = useState('');
-  const [charIndex, setCharIndex] = useState(0);
+  const [typedCharsCount, setTypedCharsCount] = useState(0);
   
-  // Canvas Ref for particle background
+  // HTML5 Canvas Ref
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // HTML5 Particle System Animation
+  // Bento Cards Spotlights
+  const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  // Multiplayer Live Simulation State Machine
+  const [simStep, setSimStep] = useState(0);
+  const [simCursors, setSimCursors] = useState({
+    sarah: { x: 50, y: 150 },
+    ganesh: { x: 300, y: 100 }
+  });
+  const [simNodes, setSimNodes] = useState({
+    client: false,
+    database: false,
+    clientActive: false,
+    databaseActive: false
+  });
+  const [simLineVisible, setSimLineVisible] = useState(false);
+  const [simPulseVisible, setSimPulseVisible] = useState(false);
+  const faqItems = [
+    {
+      q: "How does the Diagram-to-Code compiler work?",
+      a: "Loom parses the connections, variables, and shapes on the visual canvas, then uses our advanced semantic code parser alongside Gemini/Groq LLMs to construct clean React component syntax or robust SQL schemas in seconds."
+    },
+    {
+      q: "Is Postgres required to use Loom?",
+      a: "No! Loom supports a complete local storage Guest Mode. If you want persistent workspaces and database backups, you can link your Postgres database (e.g. Supabase, Render) by creating an account."
+    },
+    {
+      q: "Can I self-host Loom's backend?",
+      a: "Yes. Loom's API backend is built with Spring Boot and standard JPA models, making it extremely easy to dockerize and run on Render, AWS, or local Kubernetes clusters."
+    },
+    {
+      q: "Which LLM models are supported?",
+      a: "We natively routing vision and logic requests to Gemini 1.5 Pro, Gemini 1.5 Flash, and Groq's high-speed models using our built-in failover-ring manager."
+    }
+  ];
+
+  const toggleFaq = (index: number) => {
+    setFaqOpenIndex(faqOpenIndex === index ? null : index);
+  };
+
+  // Intersection Observer for scroll reveal
+  useEffect(() => {
+    const revealElements = document.querySelectorAll(`.${styles.reveal}`);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add(styles.revealVisible);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    revealElements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  // HTML5 Premium Particle/Galaxy Background Canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -108,17 +223,21 @@ export function LandingPage() {
       vx: number;
       vy: number;
       radius: number;
+      alpha: number;
+      pulseSpeed: number;
     }> = [];
 
-    // Initialize particles
-    const particleCount = Math.min(Math.floor(width / 20), 80);
+    // Initialize particles (stars)
+    const particleCount = Math.min(Math.floor(width / 16), 110);
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: Math.random() * 1.5 + 1
+        vx: (Math.random() - 0.5) * 0.18,
+        vy: (Math.random() - 0.5) * 0.18,
+        radius: Math.random() * 2 + 0.8,
+        alpha: Math.random() * 0.5 + 0.2,
+        pulseSpeed: Math.random() * 0.02 + 0.005
       });
     }
 
@@ -141,7 +260,6 @@ export function LandingPage() {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Render & Connect Particles
       particles.forEach((p, idx) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -152,34 +270,47 @@ export function LandingPage() {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        // Draw particle
+        // Gently pulse alpha
+        p.alpha += p.pulseSpeed;
+        if (p.alpha > 0.8 || p.alpha < 0.2) {
+          p.pulseSpeed = -p.pulseSpeed;
+        }
+
+        // Draw glowing particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.2)';
+        ctx.fillStyle = `rgba(139, 92, 246, ${p.alpha * 0.45})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#8b5cf6';
         ctx.fill();
+        ctx.shadowBlur = 0; // Reset shadow
 
-        // Connect nearby particles
+        // Connect nearby particles with glowing filaments
         for (let j = idx + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 120) {
+          if (dist < 130) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(139, 92, 246, ${0.1 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = `rgba(139, 92, 246, ${0.12 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }
 
-        // Draw connection to mouse cursor
+        // Draw connections to mouse cursor with gravitation effect
         const mouseDist = Math.hypot(p.x - mouseX, p.y - mouseY);
-        if (mouseDist < 180) {
+        if (mouseDist < 200) {
+          // Subtle gravitational attraction
+          p.x += (mouseX - p.x) * 0.003;
+          p.y += (mouseY - p.y) * 0.003;
+
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(mouseX, mouseY);
-          ctx.strokeStyle = `rgba(12, 140, 233, ${0.15 * (1 - mouseDist / 180)})`;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = `rgba(56, 189, 248, ${0.22 * (1 - mouseDist / 200)})`;
+          ctx.lineWidth = 0.9;
           ctx.stroke();
         }
       });
@@ -196,58 +327,123 @@ export function LandingPage() {
     };
   }, []);
 
-  // Code Typing Simulation
+  // Code Typing Simulation Character Counter Loop
   useEffect(() => {
-    const fullText = FILES_TEMPLATES[activeTab].code;
-    if (charIndex < fullText.length) {
+    const totalChars = FILES_TEMPLATES[activeTab].tokens.reduce((acc, t) => acc + t.text.length, 0);
+    if (typedCharsCount < totalChars) {
       const timeout = setTimeout(() => {
-        setTypedCode(prev => prev + fullText[charIndex]);
-        setCharIndex(prev => prev + 1);
+        setTypedCharsCount(prev => prev + 1);
       }, 15);
       return () => clearTimeout(timeout);
+    } else {
+      const timer = setTimeout(() => {
+        const nextIndex = (activeTab + 1) % FILES_TEMPLATES.length;
+        setActiveTab(nextIndex);
+        setTypedCharsCount(0);
+      }, 3500);
+      return () => clearTimeout(timer);
     }
-  }, [charIndex, activeTab]);
+  }, [typedCharsCount, activeTab]);
 
   const selectTab = (index: number) => {
     setActiveTab(index);
-    setTypedCode('');
-    setCharIndex(0);
+    setTypedCharsCount(0);
   };
 
-  // Autocycle files when idle
+  // Helper to render typed tokens with syntax highlighting
+  const renderTypedTokens = () => {
+    const tokens = FILES_TEMPLATES[activeTab].tokens;
+    let charAccumulator = 0;
+    const renderedSpans = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (charAccumulator >= typedCharsCount) break;
+
+      const remainingChars = typedCharsCount - charAccumulator;
+      if (remainingChars >= t.text.length) {
+        // Fully typed token
+        renderedSpans.push(
+          <span key={i} className={styles[t.type] || ''}>
+            {t.text}
+          </span>
+        );
+        charAccumulator += t.text.length;
+      } else {
+        // Partially typed token
+        renderedSpans.push(
+          <span key={i} className={styles[t.type] || ''}>
+            {t.text.substring(0, remainingChars)}
+          </span>
+        );
+        charAccumulator += remainingChars;
+        break;
+      }
+    }
+
+    return renderedSpans;
+  };
+
+  // Bento Card Cursor Spotlight Track
+  const handleBentoMouseMove = (e: React.MouseEvent<HTMLDivElement>, index: number) => {
+    const card = cardRefs.current[index];
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
+  // Multiplayer Diagram Workspace Simulation State Machine Loop
   useEffect(() => {
-    const fullText = FILES_TEMPLATES[activeTab].code;
-    if (charIndex >= fullText.length) {
-      const timer = setTimeout(() => {
-        const nextIndex = (activeTab + 1) % FILES_TEMPLATES.length;
-        selectTab(nextIndex);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [charIndex, activeTab]);
+    const interval = setInterval(() => {
+      setSimStep(prev => (prev + 1) % 8);
+    }, 1800);
 
-  const toggleFaq = (index: number) => {
-    setFaqOpenIndex(faqOpenIndex === index ? null : index);
-  };
+    return () => clearInterval(interval);
+  }, []);
 
-  const faqItems = [
-    {
-      q: "How does the Diagram-to-Code compiler work?",
-      a: "Loom parses the connections, variables, and shapes on the visual canvas, then uses our advanced semantic code parser alongside Gemini/Groq LLMs to construct clean React component syntax or robust SQL schemas in seconds."
-    },
-    {
-      q: "Is Postgres required to use Loom?",
-      a: "No! Loom supports a complete local storage Guest Mode. If you want persistent workspaces and database backups, you can link your Postgres database (e.g. Supabase, Render) by creating an account."
-    },
-    {
-      q: "Can I self-host Loom's backend?",
-      a: "Yes. Loom's API backend is built with Spring Boot and standard JPA models, making it extremely easy to dockerize and run on Render, AWS, or local Kubernetes clusters."
-    },
-    {
-      q: "Which LLM models are supported?",
-      a: "We natively routing vision and logic requests to Gemini 1.5 Pro, Gemini 1.5 Flash, and Groq's high-speed models using our built-in failover-ring manager."
+  useEffect(() => {
+    switch (simStep) {
+      case 0:
+        // Reset
+        setSimCursors({ sarah: { x: 30, y: 160 }, ganesh: { x: 260, y: 180 } });
+        setSimNodes({ client: false, database: false, clientActive: false, databaseActive: false });
+        setSimLineVisible(false);
+        setSimPulseVisible(false);
+        break;
+      case 1:
+        // Sarah moves to click/spawn client node
+        setSimCursors(prev => ({ ...prev, sarah: { x: 60, y: 60 } }));
+        break;
+      case 2:
+        // Client node appears, Sarah moves away
+        setSimNodes(prev => ({ ...prev, client: true, clientActive: true }));
+        setSimCursors(prev => ({ ...prev, sarah: { x: 180, y: 80 } }));
+        break;
+      case 3:
+        // Ganesh moves to click/spawn db node
+        setSimCursors(prev => ({ ...prev, ganesh: { x: 230, y: 150 } }));
+        break;
+      case 4:
+        // Database node appears
+        setSimNodes(prev => ({ ...prev, database: true, databaseActive: true }));
+        setSimCursors(prev => ({ ...prev, ganesh: { x: 280, y: 80 } }));
+        break;
+      case 5:
+        // Connecting line draws between client and db node
+        setSimLineVisible(true);
+        break;
+      case 6:
+        // Pulse signal fires down the path
+        setSimPulseVisible(true);
+        break;
+      case 7:
+        // Idle showing finished layout
+        break;
     }
-  ];
+  }, [simStep]);
 
   return (
     <div className={styles.container}>
@@ -393,7 +589,7 @@ export function LandingPage() {
       </section>
 
       {/* Storyline Timeline: Section 1 - AI Code Generation */}
-      <div id="code-generation" className={styles.timelineSection}>
+      <div id="code-generation" className={`${styles.timelineSection} ${styles.reveal}`}>
         <div className={styles.timelineConnector}>
           <div className={styles.timelineDot}><Sparkles size={16} /></div>
           <div className={styles.timelineLine}></div>
@@ -442,7 +638,7 @@ export function LandingPage() {
                 </div>
               </div>
               <pre className={styles.editorBody}>
-                <code>{typedCode}</code>
+                <code>{renderTypedTokens()}</code>
               </pre>
             </div>
           </div>
@@ -450,27 +646,74 @@ export function LandingPage() {
       </div>
 
       {/* Storyline Timeline: Section 2 - Collaborative Multiplayer (REVERSED COLUMNS) */}
-      <div id="collaboration" className={styles.timelineSection}>
+      <div id="collaboration" className={`${styles.timelineSection} ${styles.reveal}`}>
         <div className={styles.timelineConnector}>
           <div className={styles.timelineDot}><Users size={16} /></div>
           <div className={styles.timelineLine}></div>
         </div>
         <div className={styles.timelineContent}>
           <div className={`${styles.splitGrid} ${styles.reverseSplit}`}>
-            {/* Visual on the Left */}
+            {/* Live Multiplayer Construct Visual */}
             <div className={styles.collabCard}>
               <div className={styles.multiplayerDemo}>
-                <div className={`${styles.cursor} ${styles.cursor1}`}>
+                {/* SVG link line drawn dynamically */}
+                <svg className={styles.svgLayer}>
+                  {simLineVisible && (
+                    <>
+                      <path 
+                        d="M 130,70 L 220,130" 
+                        fill="none" 
+                        stroke="rgba(16, 185, 129, 0.4)" 
+                        strokeWidth="2" 
+                      />
+                      <path 
+                        d="M 130,70 L 220,130" 
+                        fill="none" 
+                        stroke="#10b981" 
+                        strokeWidth="2" 
+                        className={styles.connectionLine}
+                      />
+                    </>
+                  )}
+                  {simPulseVisible && (
+                    <circle cx="175" cy="100" r="5" fill="#10b981" style={{ filter: 'drop-shadow(0 0 8px #10b981)' }}>
+                      <animateMotion dur="1.2s" repeatCount="indefinite" path="M 130,70 L 220,130" />
+                    </circle>
+                  )}
+                </svg>
+
+                {/* Simulated Cursors */}
+                <div 
+                  className={`${styles.cursor} ${styles.cursor1}`} 
+                  style={{ left: `${simCursors.sarah.x}px`, top: `${simCursors.sarah.y}px` }}
+                >
                   <MessageSquare size={12} /> Sarah (UX Architect)
                 </div>
-                <div className={`${styles.cursor} ${styles.cursor2}`}>
+                <div 
+                  className={`${styles.cursor} ${styles.cursor2}`} 
+                  style={{ left: `${simCursors.ganesh.x}px`, top: `${simCursors.ganesh.y}px` }}
+                >
                   <Code size={12} /> Ganesh (Backend Dev)
                 </div>
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#21262d', fontSize: '18px', fontWeight: 700, pointerEvents: 'none' }}>
-                  Real-Time Sync active
+
+                {/* Client Node */}
+                <div 
+                  className={`${styles.simNode} ${simNodes.client ? styles.simNodeActive : ''} ${simNodes.clientActive ? styles.simNodeHighlight : ''}`}
+                  style={{ left: '30px', top: '40px' }}
+                >
+                  <Server size={12} color="#f43f5e" /> Client.ts
+                </div>
+
+                {/* DB Node */}
+                <div 
+                  className={`${styles.simNode} ${simNodes.database ? styles.simNodeActive : ''} ${simNodes.databaseActive ? styles.simNodeHighlight : ''}`}
+                  style={{ left: '210px', top: '120px' }}
+                >
+                  <Database size={12} color="#10b981" /> Database.sql
                 </div>
               </div>
             </div>
+
             {/* Content on the Right */}
             <div>
               <div className={styles.sectionHeader}>
@@ -499,35 +742,55 @@ export function LandingPage() {
       </div>
 
       {/* Bento Grid Features Section */}
-      <section id="features" className={styles.bentoSection}>
+      <section id="features" className={`${styles.bentoSection} ${styles.reveal}`}>
         <div className={styles.sectionHeader} style={{ textAlign: 'center', marginBottom: '60px' }}>
           <span className={styles.sectionTag}>Productivity Kit</span>
           <h2 className={styles.sectionTitle}>Engineered for Modern Teams</h2>
         </div>
         <div className={styles.bentoGrid}>
           {/* Card 1 (Large) */}
-          <div className={`${styles.bentoCard} ${styles.bentoLarge}`}>
+          <div 
+            ref={el => { cardRefs.current[0] = el; }}
+            className={`${styles.bentoCard} ${styles.bentoLarge}`}
+            onMouseMove={e => handleBentoMouseMove(e, 0)}
+          >
+            <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><History size={24} /></div>
             <h3>Historical Reversions</h3>
             <p>Full undo/redo stack allows developers to rewind through layout variations and canvas edits safely, ensuring you never lose code changes.</p>
           </div>
           {/* Card 2 */}
-          <div className={styles.bentoCard}>
+          <div 
+            ref={el => { cardRefs.current[1] = el; }}
+            className={styles.bentoCard}
+            onMouseMove={e => handleBentoMouseMove(e, 1)}
+          >
+            <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Keyboard size={24} /></div>
             <h3>Keyboard Hotkeys</h3>
             <p>Speed up layout modeling with custom keyboard shortcuts for shapes, lines, grouping, and layer order.</p>
           </div>
           {/* Card 3 */}
-          <div className={styles.bentoCard}>
+          <div 
+            ref={el => { cardRefs.current[2] = el; }}
+            className={styles.bentoCard}
+            onMouseMove={e => handleBentoMouseMove(e, 2)}
+          >
+            <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Layers size={24} /></div>
             <h3>Infinite Canvas</h3>
             <p>Model complex architectures with nested schemas, modular frames, and sub-systems on a smooth zooming grid.</p>
           </div>
           {/* Card 4 (Large) */}
-          <div className={`${styles.bentoCard} ${styles.bentoLarge}`}>
+          <div 
+            ref={el => { cardRefs.current[3] = el; }}
+            className={`${styles.bentoCard} ${styles.bentoLarge}`}
+            onMouseMove={e => handleBentoMouseMove(e, 3)}
+          >
+            <div className={styles.bentoSpotlight}></div>
             <div className={styles.bentoGlow}></div>
             <div className={styles.bentoCardIcon}><Share2 size={24} /></div>
             <h3>Multi-framework Exports</h3>
@@ -537,7 +800,7 @@ export function LandingPage() {
       </section>
 
       {/* FAQ Accordion Section (New styled Cards) */}
-      <section id="faq" className={styles.faqSection}>
+      <section id="faq" className={`${styles.faqSection} ${styles.reveal}`}>
         <h2 className={styles.faqTitle}>Frequently Asked Questions</h2>
         <div className={styles.faqList}>
           {faqItems.map((item, index) => (
@@ -558,7 +821,7 @@ export function LandingPage() {
       </section>
 
       {/* CTA Card Section */}
-      <section className={styles.ctaSection}>
+      <section className={`${styles.ctaSection} ${styles.reveal}`}>
         <div className={styles.ctaCard}>
           <div className={styles.logoIcon} style={{ width: '48px', height: '48px', fontSize: '24px' }}>L</div>
           <h2>Ready to weave code?</h2>
