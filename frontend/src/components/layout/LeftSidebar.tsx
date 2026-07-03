@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Workflow,
   Box,
+  Pin,
 } from 'lucide-react';
 
 // ─── Shape Categories ───────────────────────────────────────────────────────
@@ -90,7 +91,12 @@ const SHAPE_CATEGORIES = [
   },
 ];
 
-export function LeftSidebar() {
+interface LeftSidebarProps {
+  isPinned?: boolean;
+  onPinToggle?: () => void;
+}
+
+export function LeftSidebar({ isPinned = true, onPinToggle }: LeftSidebarProps) {
   const [activeTab, setActiveTab] = useState<'layers' | 'shapes'>('layers');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
   const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState, addShape } = useDiagram();
@@ -210,19 +216,45 @@ export function LeftSidebar() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.tabs}>
-        <button 
-          className={`${styles.tab} ${activeTab === 'layers' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('layers')}
-        >
-          Layers
-        </button>
-        <button 
-          className={`${styles.tab} ${activeTab === 'shapes' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('shapes')}
-        >
-          Shapes
-        </button>
+      <div className={styles.tabs} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button 
+            className={`${styles.tab} ${activeTab === 'layers' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('layers')}
+          >
+            Layers
+          </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'shapes' ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab('shapes')}
+          >
+            Shapes
+          </button>
+        </div>
+
+        {onPinToggle && (
+          <button 
+            onClick={onPinToggle} 
+            className={styles.pinBtn} 
+            title={isPinned ? "Unpin sidebar (auto-collapse on hover leave)" : "Pin sidebar"}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px',
+              borderRadius: '6px',
+              transition: 'all 0.2s',
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+          >
+            <Pin size={13} style={{ transform: isPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 0.2s', color: isPinned ? '#0c8ce9' : 'var(--text-muted)' }} />
+          </button>
+        )}
       </div>
 
       <div className={styles.panelContent}>
