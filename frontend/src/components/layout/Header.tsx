@@ -8,10 +8,10 @@ import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
 import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard, History } from 'lucide-react';
 
 export function Header() {
-  const { nodes, theme, toggleTheme, toggleAiChat, toggleDesignPanel, saveStatus } = useDiagram();
+  const { nodes, theme, toggleTheme, toggleAiChat, toggleVersionHistory, toggleDesignPanel, saveStatus } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -80,6 +80,20 @@ export function Header() {
             }}
           >
             <Bot size={14} style={{ color: '#0c8ce9' }} />
+          </button>
+          <button 
+            className={styles.btn} 
+            onClick={toggleVersionHistory} 
+            title="Version History"
+            style={{
+              padding: '6px 8px',
+              minWidth: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <History size={14} style={{ color: '#38bdf8' }} />
           </button>
           <button 
             className={styles.btn} 
