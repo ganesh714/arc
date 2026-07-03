@@ -98,6 +98,13 @@ interface DiagramContextType {
   isAiChatOpen: boolean;
   toggleAiChat: () => void;
 
+  // Version History state
+  isVersionHistoryOpen: boolean;
+  toggleVersionHistory: () => void;
+  versions: { id: string; createdAt: number }[];
+  fetchVersions: (fileId?: string) => Promise<void>;
+  restoreVersion: (versionId: string) => Promise<void>;
+
   // Design Panel state
   isDesignPanelOpen: boolean;
   toggleDesignPanel: () => void;
@@ -321,6 +328,55 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const toggleAiChat = () => setIsAiChatOpen(prev => !prev);
 
+  // Version History state
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<{ id: string; createdAt: number }[]>([]);
+
+  const toggleVersionHistory = () => {
+    setIsVersionHistoryOpen(prev => {
+      const next = !prev;
+      if (next) {
+        fetchVersions();
+      }
+      return next;
+    });
+  };
+
+  const fetchVersions = async (fileId: string = activeFileId) => {
+    if (isGuest || !fileId) return;
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${fileId}/versions`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setVersions(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch versions:', error);
+    }
+  };
+
+  const restoreVersion = async (versionId: string) => {
+    if (isGuest || !activeFileId) return;
+    try {
+      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}/versions/${versionId}/restore`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.nodes) {
+          setNodesState(data.nodes);
+          saveHistoryState(data.nodes);
+          fetchVersions();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore version:', error);
+    }
+  };
+
   // Design Panel open/close state
   const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(false);
   const toggleDesignPanel = () => setIsDesignPanelOpen(prev => !prev);
@@ -431,6 +487,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         } else {
           lastSavedNodesStr.current = currentNodesStr;
           setSaveStatus('saved');
+          fetchVersions();
         }
       } catch (error) {
         console.error('Failed to auto-save to backend:', error);
@@ -1380,6 +1437,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         
         lastSavedNodesStr.current = JSON.stringify(loadedNodes);
         setNodesState(loadedNodes);
+        fetchVersions(fileId);
         
         setProjects(prev => prev.map(p => {
           if (p.id === projectId) {
@@ -1627,6 +1685,13 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       // AI Chat
       isAiChatOpen,
       toggleAiChat,
+
+      // Version History
+      isVersionHistoryOpen,
+      toggleVersionHistory,
+      versions,
+      fetchVersions,
+      restoreVersion,
 
       // Design Panel
       isDesignPanelOpen,
