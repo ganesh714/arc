@@ -20,6 +20,8 @@ function WorkspaceRoute() {
   const { switchProject, activeProjectId, activeFileId, isSidebarOpen, isAiChatOpen, isDesignPanelOpen, isVersionHistoryOpen } = useDiagram();
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
+  const [isLeftSidebarPinned, setIsLeftSidebarPinned] = useState(false); // Collapsed by default
+  const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
 
   useEffect(() => {
     if (projectId && fileId && (projectId !== activeProjectId || fileId !== activeFileId)) {
@@ -85,27 +87,77 @@ function WorkspaceRoute() {
         <Header />
         
         <div className="flex flex-1 relative overflow-hidden">
-          <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
-            <LeftSidebar />
-          </div>
+          {/* Static Pinned LeftSidebar */}
+          {isLeftSidebarPinned && (
+            <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
+              <LeftSidebar isPinned={true} onPinToggle={() => setIsLeftSidebarPinned(false)} />
+            </div>
+          )}
 
-          <div
-            onMouseDown={startLeftResize}
-            style={{
-              width: '4px',
-              cursor: 'col-resize',
-              backgroundColor: 'transparent',
-              position: 'relative',
-              zIndex: 10,
-              display: 'flex',
-              justifyContent: 'center',
-              height: '100%',
-              flexShrink: 0
-            }}
-            className="group"
-          >
-            <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
-          </div>
+          {/* Resizer handle (only when pinned) */}
+          {isLeftSidebarPinned && (
+            <div
+              onMouseDown={startLeftResize}
+              style={{
+                width: '4px',
+                cursor: 'col-resize',
+                backgroundColor: 'transparent',
+                position: 'relative',
+                zIndex: 10,
+                display: 'flex',
+                justifyContent: 'center',
+                height: '100%',
+                flexShrink: 0
+              }}
+              className="group"
+            >
+              <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
+            </div>
+          )}
+
+          {/* Floating Collapsible LeftSidebar (when unpinned) */}
+          {!isLeftSidebarPinned && (
+            <>
+              {/* Trigger hover target zone on the left edge */}
+              <div 
+                onMouseEnter={() => setIsLeftSidebarHovered(true)}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '12px',
+                  zIndex: 35,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                className="group"
+              >
+                <div style={{ width: '4px', height: '40px', borderRadius: '2px', backgroundColor: 'rgba(12, 140, 233, 0.3)', opacity: 0, transition: 'opacity 0.2s' }} className="group-hover:opacity-100" />
+              </div>
+
+              {/* Sidebar drawer card */}
+              <div 
+                onMouseEnter={() => setIsLeftSidebarHovered(true)}
+                onMouseLeave={() => setIsLeftSidebarHovered(false)}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '260px',
+                  zIndex: 40,
+                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-100%)',
+                  transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: isLeftSidebarHovered ? '10px 0 30px rgba(0,0,0,0.5)' : 'none',
+                }}
+              >
+                <LeftSidebar isPinned={false} onPinToggle={() => setIsLeftSidebarPinned(true)} />
+              </div>
+            </>
+          )}
 
           <div className="flex-1 h-full relative overflow-hidden">
             <Canvas />
