@@ -94,10 +94,15 @@ const SHAPE_CATEGORIES = [
 interface LeftSidebarProps {
   isPinned?: boolean;
   onPinToggle?: () => void;
+  activeTab?: 'layers' | 'shapes';
+  onTabChange?: (tab: 'layers' | 'shapes') => void;
 }
 
-export function LeftSidebar({ isPinned = true, onPinToggle }: LeftSidebarProps) {
-  const [activeTab, setActiveTab] = useState<'layers' | 'shapes'>('layers');
+export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChange }: LeftSidebarProps) {
+  const [localActiveTab, setLocalActiveTab] = useState<'layers' | 'shapes'>('layers');
+  const currentTab = onTabChange ? activeTab : localActiveTab;
+  const setCurrentTab = onTabChange ? onTabChange : setLocalActiveTab;
+
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
   const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState, addShape } = useDiagram();
   
@@ -219,14 +224,14 @@ export function LeftSidebar({ isPinned = true, onPinToggle }: LeftSidebarProps) 
       <div className={styles.tabs} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <div style={{ display: 'flex', gap: '4px' }}>
           <button 
-            className={`${styles.tab} ${activeTab === 'layers' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('layers')}
+            className={`${styles.tab} ${currentTab === 'layers' ? styles.activeTab : ''}`}
+            onClick={() => setCurrentTab('layers')}
           >
             Layers
           </button>
           <button 
-            className={`${styles.tab} ${activeTab === 'shapes' ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab('shapes')}
+            className={`${styles.tab} ${currentTab === 'shapes' ? styles.activeTab : ''}`}
+            onClick={() => setCurrentTab('shapes')}
           >
             Shapes
           </button>
@@ -258,7 +263,7 @@ export function LeftSidebar({ isPinned = true, onPinToggle }: LeftSidebarProps) 
       </div>
 
       <div className={styles.panelContent}>
-        {activeTab === 'layers' ? (
+        {currentTab === 'layers' ? (
           <>
             <div className={styles.sectionHeader}>
               <span className={styles.sectionTitle}>Layers list</span>
