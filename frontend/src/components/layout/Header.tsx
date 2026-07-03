@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCollaboration } from '@/context/CollaborationContext';
 import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
@@ -13,12 +14,31 @@ import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboa
 export function Header() {
   const { nodes, theme, toggleTheme, toggleAiChat, toggleVersionHistory, toggleDesignPanel, saveStatus } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
+  const { remoteCursors } = useCollaboration();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
   const navigate = useNavigate();
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  };
+
+  const getColorForUser = (name: string) => {
+    const colors = ['#0c8ce9', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#38bdf8', '#a78bfa', '#34d399'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   const handleExport = () => {
     const html = generateExportCode(nodes);
@@ -67,6 +87,51 @@ export function Header() {
         </div>
 
         <div className={styles.actions}>
+          {/* Presence Avatars list */}
+          <div className={styles.avatarGroup}>
+            {/* Active remote peers */}
+            {Object.keys(remoteCursors).map((peerId) => {
+              const peer = remoteCursors[peerId];
+              const initials = getInitials(peer.name);
+              const color = getColorForUser(peer.name);
+              return (
+                <div 
+                  key={peerId} 
+                  className={styles.avatar} 
+                  style={{ backgroundColor: color }}
+                >
+                  {initials}
+                  <span className={styles.avatarTooltip}>{peer.name} (Active)</span>
+                </div>
+              );
+            })}
+
+            {/* Current user */}
+            <div 
+              className={styles.avatar}
+              style={{ 
+                backgroundColor: user?.name ? getColorForUser(user.name) : '#8b949e',
+                border: '1.5px solid rgba(16, 185, 129, 0.6)'
+              }}
+            >
+              {user?.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user.name} 
+                  style={{ width: '100%', height: '100%', borderRadius: '50%' }} 
+                />
+              ) : (
+                getInitials(user?.name || 'Guest')
+              )}
+              <span className={styles.onlineIndicator} />
+              <span className={styles.avatarTooltip}>
+                {user?.name || 'Guest User'} (You)
+              </span>
+            </div>
+          </div>
+
+          <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 4px' }} />
+
           <button 
             className={styles.btn} 
             onClick={toggleAiChat} 

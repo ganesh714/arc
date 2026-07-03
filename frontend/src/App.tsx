@@ -10,6 +10,7 @@ import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { AIChatSidebar } from '@/components/layout/AIChatSidebar';
 import { VersionHistorySidebar } from '@/components/layout/VersionHistorySidebar';
+import { CommandPalette } from '@/components/ui/CommandPalette';
 import { Canvas } from '@/features/diagram/components/Canvas';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/Dashboard';
@@ -24,6 +25,7 @@ function WorkspaceRoute() {
   const [isLeftSidebarPinned, setIsLeftSidebarPinned] = useState(false); // Collapsed by default
   const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState<'layers' | 'shapes' | 'templates'>('layers');
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Responsive layout: collapse panel pinning on small screens
   useEffect(() => {
@@ -35,6 +37,19 @@ function WorkspaceRoute() {
     window.addEventListener('resize', handleResize);
     handleResize(); // trigger initial check
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Global keyboard listener for Command Palette shortcut Ctrl+K
+  useEffect(() => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      // Toggle Command Palette on Ctrl+K or Cmd+K
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
   }, []);
 
   useEffect(() => {
@@ -359,6 +374,13 @@ function WorkspaceRoute() {
           )}
         </div>
       </div>
+
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        setIsLeftSidebarPinned={setIsLeftSidebarPinned}
+        setActiveLeftTab={setActiveLeftTab}
+      />
     </div>
   );
 }
