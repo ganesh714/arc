@@ -8,6 +8,7 @@ import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { AIChatSidebar } from '@/components/layout/AIChatSidebar';
+import { VersionHistorySidebar } from '@/components/layout/VersionHistorySidebar';
 import { Canvas } from '@/features/diagram/components/Canvas';
 import { LandingPage } from '@/features/landing/LandingPage';
 import { Dashboard } from '@/features/dashboard/Dashboard';
@@ -16,7 +17,7 @@ import { Loader } from '@/components/ui/Loader';
 
 function WorkspaceRoute() {
   const { projectId, fileId } = useParams();
-  const { switchProject, activeProjectId, activeFileId, isSidebarOpen, isAiChatOpen, isDesignPanelOpen } = useDiagram();
+  const { switchProject, activeProjectId, activeFileId, isSidebarOpen, isAiChatOpen, isDesignPanelOpen, isVersionHistoryOpen } = useDiagram();
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
 
@@ -113,6 +114,12 @@ function WorkspaceRoute() {
           {isAiChatOpen && (
             <div style={{ width: '320px', minWidth: '320px', height: '100%', position: 'relative' }}>
               <AIChatSidebar />
+            </div>
+          )}
+
+          {isVersionHistoryOpen && (
+            <div style={{ width: '320px', minWidth: '320px', height: '100%', position: 'relative' }}>
+              <VersionHistorySidebar />
             </div>
           )}
 
