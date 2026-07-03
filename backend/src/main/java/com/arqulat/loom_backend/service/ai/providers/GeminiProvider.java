@@ -75,7 +75,10 @@ public class GeminiProvider extends AbstractAIProvider {
         requestBody.put("contents", List.of(content));
 
         if (systemPrompt.contains("JSON")) {
-            requestBody.put("generationConfig", Map.of("responseMimeType", "application/json"));
+            Map<String, Object> generationConfig = new HashMap<>();
+            generationConfig.put("responseMimeType", "application/json");
+            generationConfig.put("responseSchema", getDiagramResponseSchema());
+            requestBody.put("generationConfig", generationConfig);
         }
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -132,7 +135,10 @@ public class GeminiProvider extends AbstractAIProvider {
         }
         requestBody.put("contents", List.of(content));
         
-        requestBody.put("generationConfig", Map.of("responseMimeType", "application/json"));
+        Map<String, Object> generationConfig = new HashMap<>();
+        generationConfig.put("responseMimeType", "application/json");
+        generationConfig.put("responseSchema", getDiagramResponseSchema());
+        requestBody.put("generationConfig", generationConfig);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
@@ -155,6 +161,84 @@ public class GeminiProvider extends AbstractAIProvider {
         }
 
         throw new RuntimeException("Failed to parse Gemini response: " + response.getBody());
+    }
+
+    private Map<String, Object> getDiagramResponseSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "ARRAY");
+        schema.put("description", "Array of diagram nodes with visual layout details and connection edges");
+
+        Map<String, Object> nodeProperties = new HashMap<>();
+        nodeProperties.put("id", Map.of("type", "STRING", "description", "Unique identifier for the node"));
+        nodeProperties.put("type", Map.of("type", "STRING", "description", "Shape type (e.g. box, database, cylinder, server, cloud, queue, decision-merge, browser, mobile, line, arrow)"));
+        
+        Map<String, Object> positionProperties = new HashMap<>();
+        positionProperties.put("x", Map.of("type", "NUMBER"));
+        positionProperties.put("y", Map.of("type", "NUMBER"));
+        nodeProperties.put("position", Map.of(
+            "type", "OBJECT",
+            "properties", positionProperties,
+            "required", List.of("x", "y")
+        ));
+
+        Map<String, Object> dimensionsProperties = new HashMap<>();
+        dimensionsProperties.put("width", Map.of("type", "NUMBER"));
+        dimensionsProperties.put("height", Map.of("type", "NUMBER"));
+        nodeProperties.put("dimensions", Map.of(
+            "type", "OBJECT",
+            "properties", dimensionsProperties,
+            "required", List.of("width", "height")
+        ));
+
+        nodeProperties.put("content", Map.of("type", "STRING", "description", "Title, label or body text displayed inside the node"));
+        
+        Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fillColor", Map.of("type", "STRING", "description", "Hex color string (e.g. #0c8ce9)"));
+        styleProperties.put("strokeColor", Map.of("type", "STRING", "description", "Hex color string"));
+        nodeProperties.put("style", Map.of(
+            "type", "OBJECT",
+            "properties", styleProperties
+        ));
+
+        nodeProperties.put("rotation", Map.of("type", "NUMBER"));
+
+        Map<String, Object> pointProperties = new HashMap<>();
+        pointProperties.put("x", Map.of("type", "NUMBER"));
+        pointProperties.put("y", Map.of("type", "NUMBER"));
+        Map<String, Object> pointSchema = Map.of(
+            "type", "OBJECT",
+            "properties", pointProperties,
+            "required", List.of("x", "y")
+        );
+
+        nodeProperties.put("startPoint", pointSchema);
+        nodeProperties.put("endPoint", pointSchema);
+        
+        Map<String, Object> connectionProperties = new HashMap<>();
+        connectionProperties.put("nodeId", Map.of("type", "STRING"));
+        connectionProperties.put("portId", Map.of("type", "STRING"));
+        Map<String, Object> connectionSchema = Map.of(
+            "type", "OBJECT",
+            "properties", connectionProperties
+        );
+
+        nodeProperties.put("startConnection", connectionSchema);
+        nodeProperties.put("endConnection", connectionSchema);
+        nodeProperties.put("lineStyle", Map.of("type", "STRING", "description", "solid, dashed, dotted, double"));
+        nodeProperties.put("lineCurve", Map.of("type", "STRING", "description", "straight, curved"));
+        nodeProperties.put("arrowType", Map.of("type", "STRING", "description", "none, single, double"));
+        nodeProperties.put("points", Map.of("type", "ARRAY", "items", pointSchema));
+        
+        nodeProperties.put("label", Map.of("type", "STRING"));
+        nodeProperties.put("groupId", Map.of("type", "STRING"));
+
+        schema.put("items", Map.of(
+            "type", "OBJECT",
+            "properties", nodeProperties,
+            "required", List.of("id", "type", "position", "dimensions", "content")
+        ));
+
+        return schema;
     }
 
     @Override
