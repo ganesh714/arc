@@ -25,6 +25,7 @@ import {
   Workflow,
   Box,
   Pin,
+  LayoutTemplate,
 } from 'lucide-react';
 
 // ─── Shape Categories ───────────────────────────────────────────────────────
@@ -94,17 +95,25 @@ const SHAPE_CATEGORIES = [
 interface LeftSidebarProps {
   isPinned?: boolean;
   onPinToggle?: () => void;
-  activeTab?: 'layers' | 'shapes';
-  onTabChange?: (tab: 'layers' | 'shapes') => void;
+  activeTab?: 'layers' | 'shapes' | 'templates';
+  onTabChange?: (tab: 'layers' | 'shapes' | 'templates') => void;
 }
 
 export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChange }: LeftSidebarProps) {
-  const [localActiveTab, setLocalActiveTab] = useState<'layers' | 'shapes'>('layers');
+  const [localActiveTab, setLocalActiveTab] = useState<'layers' | 'shapes' | 'templates'>('layers');
   const currentTab = onTabChange ? activeTab : localActiveTab;
   const setCurrentTab = onTabChange ? onTabChange : setLocalActiveTab;
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
   const { nodes, selectedNodeIds, selectNode, setNodes, setSelectedNodeIds, saveHistoryState, addShape } = useDiagram();
+
+  const loadTemplate = (templateNodes: any[], name: string) => {
+    if (window.confirm(`Load ${name}? This will clear your current workspace nodes.`)) {
+      saveHistoryState(nodes);
+      setNodes(templateNodes);
+      setSelectedNodeIds([]);
+    }
+  };
   
   // Drag and drop states for layer reordering
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -235,6 +244,12 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
           >
             Shapes
           </button>
+          <button 
+            className={`${styles.tab} ${currentTab === 'templates' ? styles.activeTab : ''}`}
+            onClick={() => setCurrentTab('templates')}
+          >
+            Templates
+          </button>
         </div>
 
         {onPinToggle && (
@@ -316,7 +331,7 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
               </div>
             )}
           </>
-        ) : (
+        ) : currentTab === 'shapes' ? (
           // ─── Shapes Tab ────────────────────────────────────────────────────
           <div className={styles.shapesPanel}>
             {SHAPE_CATEGORIES.map(cat => {
@@ -352,6 +367,122 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
                 </div>
               );
             })}
+          </div>
+        ) : (
+          // ─── Templates Tab ──────────────────────────────────────────────────
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px' }}>
+            <div className={styles.sectionHeader} style={{ padding: '0px' }}>
+              <span className={styles.sectionTitle}>Default Templates</span>
+              <span className="text-[10px] text-slate-500 font-bold">3 presets</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* User Authentication Flowchart */}
+              <button
+                onClick={() => loadTemplate([
+                    { id: 'start', type: 'terminator', content: 'Start', position: { x: 250, y: 50 }, dimensions: { width: 100, height: 45 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
+                    { id: 'login', type: 'process', content: 'Login Page', position: { x: 230, y: 140 }, dimensions: { width: 140, height: 60 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                    { id: 'decision', type: 'decision-merge', content: 'Credentials\nValid?', position: { x: 240, y: 250 }, dimensions: { width: 120, height: 90 }, style: { backgroundColor: '#d97706', color: '#fff', borderColor: '#b45309', strokeWidth: 1 } },
+                    { id: 'dashboard', type: 'process', content: 'Dashboard', position: { x: 120, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
+                    { id: 'error', type: 'process', content: 'Show Error', position: { x: 360, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#ef4444', color: '#fff', borderColor: '#dc2626', strokeWidth: 1 } },
+                    { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'start', anchor: 'bottom' }, endConnection: { nodeId: 'login', anchor: 'top' }, startPoint: { x: 300, y: 95 }, endPoint: { x: 300, y: 140 } },
+                    { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'login', anchor: 'bottom' }, endConnection: { nodeId: 'decision', anchor: 'top' }, startPoint: { x: 300, y: 200 }, endPoint: { x: 300, y: 250 } },
+                    { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'left' }, endConnection: { nodeId: 'dashboard', anchor: 'top' }, startPoint: { x: 240, y: 295 }, endPoint: { x: 180, y: 400 } },
+                    { id: 'conn4', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'right' }, endConnection: { nodeId: 'error', anchor: 'top' }, startPoint: { x: 360, y: 295 }, endPoint: { x: 420, y: 400 } },
+                ], 'User Authentication Flowchart')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+              >
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', padding: '8px', borderRadius: '8px' }}>
+                  <Workflow size={18} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>User Authentication</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flowchart login pattern</span>
+                </div>
+              </button>
+
+              {/* 3-Tier Architecture Grid */}
+              <button
+                onClick={() => loadTemplate([
+                    { id: 'browser', type: 'browser', content: 'Browser App', position: { x: 50, y: 180 }, dimensions: { width: 120, height: 70 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                    { id: 'gateway', type: 'server', content: 'API Gateway', position: { x: 230, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
+                    { id: 'server', type: 'server', content: 'App Server', position: { x: 410, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#8b5cf6', color: '#fff', borderColor: '#7c3aed', strokeWidth: 1 } },
+                    { id: 'db', type: 'database', content: 'SQL Database', position: { x: 590, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
+                    { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'browser', anchor: 'right' }, endConnection: { nodeId: 'gateway', anchor: 'left' }, startPoint: { x: 170, y: 215 }, endPoint: { x: 230, y: 215 } },
+                    { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'gateway', anchor: 'right' }, endConnection: { nodeId: 'server', anchor: 'left' }, startPoint: { x: 340, y: 215 }, endPoint: { x: 410, y: 215 } },
+                    { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'server', anchor: 'right' }, endConnection: { nodeId: 'db', anchor: 'left' }, startPoint: { x: 520, y: 215 }, endPoint: { x: 590, y: 215 } },
+                ], '3-Tier Architecture template')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+              >
+                <div style={{ backgroundColor: 'rgba(12, 140, 233, 0.1)', color: '#38bdf8', padding: '8px', borderRadius: '8px' }}>
+                  <LayoutTemplate size={18} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>3-Tier Architecture</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Client-Server-DB grid layout</span>
+                </div>
+              </button>
+
+              {/* UML Design patterns */}
+              <button
+                onClick={() => loadTemplate([
+                    { id: 'user', type: 'uml-class', content: 'User\n--\n+ id: string\n+ name: string\n--\n+ login(): void', position: { x: 100, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                    { id: 'account', type: 'uml-class', content: 'Account\n--\n+ balance: double\n--\n+ deposit(amt): void', position: { x: 320, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                    { id: 'conn1', type: 'line', startConnection: { nodeId: 'user', anchor: 'right' }, endConnection: { nodeId: 'account', anchor: 'left' }, startPoint: { x: 250, y: 150 }, endPoint: { x: 320, y: 150 } },
+                ], 'UML Classes template')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+              >
+                <div style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', padding: '8px', borderRadius: '8px' }}>
+                  <Cpu size={18} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>UML Class Diagram</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Object oriented structural pattern</span>
+                </div>
+              </button>
+            </div>
           </div>
         )}
       </div>

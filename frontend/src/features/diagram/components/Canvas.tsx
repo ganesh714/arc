@@ -1642,30 +1642,6 @@ export function Canvas() {
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
-        {/* Undo/Redo Action Group */}
-        <div style={{ display: 'flex', gap: '2px', marginRight: '6px' }}>
-          <button 
-            className={styles.toolButton} 
-            onClick={undo} 
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-            style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
-          >
-            <Undo2 size={15} />
-          </button>
-          <button 
-            className={styles.toolButton} 
-            onClick={redo} 
-            disabled={!canRedo}
-            title="Redo (Ctrl+Shift+Z)"
-            style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
-          >
-            <Redo2 size={15} />
-          </button>
-        </div>
-
-        <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-default)', marginRight: '8px' }} />
-
         <div className={styles.shapeSelectorContainer}>
           <button 
             className={`${styles.toolButton} ${activeTool === 'select' ? styles.toolButtonActive : ''}`}
@@ -1880,6 +1856,28 @@ export function Canvas() {
           style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}
         >
           <MessageSquare size={15} />
+        </button>
+      </div>
+
+      {/* Floating History HUD (Undo/Redo) - Positioned above Zoom HUD */}
+      <div className={styles.historyHUD}>
+        <button 
+          className={styles.zoomBtn} 
+          onClick={undo} 
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        >
+          <Undo2 size={13} />
+        </button>
+        <button 
+          className={styles.zoomBtn} 
+          onClick={redo} 
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        >
+          <Redo2 size={13} />
         </button>
       </div>
 

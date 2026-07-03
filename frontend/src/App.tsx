@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
-import { Layers, Square } from 'lucide-react';
+import { Layers, Square, LayoutTemplate } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
 import { Header } from '@/components/layout/Header';
@@ -23,7 +23,7 @@ function WorkspaceRoute() {
   const [rightWidth, setRightWidth] = useState(340);
   const [isLeftSidebarPinned, setIsLeftSidebarPinned] = useState(false); // Collapsed by default
   const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
-  const [activeLeftTab, setActiveLeftTab] = useState<'layers' | 'shapes'>('layers');
+  const [activeLeftTab, setActiveLeftTab] = useState<'layers' | 'shapes' | 'templates'>('layers');
 
   // Responsive layout: collapse panel pinning on small screens
   useEffect(() => {
@@ -152,7 +152,7 @@ function WorkspaceRoute() {
                   alignItems: 'center',
                   paddingTop: '20px',
                   gap: '16px',
-                  zIndex: 35,
+                  zIndex: 45, // Elevated above the sliding drawer panel!
                   position: 'relative'
                 }}
               >
@@ -243,6 +243,50 @@ function WorkspaceRoute() {
                     <Square size={14} />
                   </button>
                 </div>
+
+                {/* Active indicator dot / line for Templates */}
+                <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                  {activeLeftTab === 'templates' && isLeftSidebarHovered && (
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: '25%',
+                      height: '50%',
+                      width: '3px',
+                      backgroundColor: '#0c8ce9',
+                      borderRadius: '0 4px 4px 0',
+                      boxShadow: '0 0 10px #0c8ce9'
+                    }} />
+                  )}
+                  <button 
+                    onMouseEnter={() => {
+                      setIsLeftSidebarHovered(true);
+                      setActiveLeftTab('templates');
+                    }}
+                    onClick={() => {
+                      setIsLeftSidebarHovered(true);
+                      setActiveLeftTab('templates');
+                    }}
+                    style={{
+                      color: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '#0c8ce9' : '#8b949e',
+                      padding: '8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'rgba(12, 140, 233, 0.1)' : 'transparent',
+                      transform: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                      border: 'none',
+                      outline: 'none'
+                    }}
+                    title="Templates Presets (Hover to open)"
+                  >
+                    <LayoutTemplate size={15} />
+                  </button>
+                </div>
               </div>
 
               {/* Sidebar drawer card */}
@@ -251,12 +295,13 @@ function WorkspaceRoute() {
                 onMouseLeave={() => setIsLeftSidebarHovered(false)}
                 style={{
                   position: 'absolute',
-                  left: '40px', // Align right next to the thin 40px visible bar
+                  left: 0, // Positioned at 0 to slide out from behind the thin activity bar!
                   top: 0,
                   bottom: 0,
-                  width: '260px',
+                  width: '300px', // 260px content + 40px padding offset
+                  paddingLeft: '40px', // Leave spacing matching activity bar width
                   zIndex: 40,
-                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-125%)',
+                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-100%)',
                   transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                   boxShadow: isLeftSidebarHovered ? '12px 0 35px rgba(0,0,0,0.6)' : 'none',
                 }}
