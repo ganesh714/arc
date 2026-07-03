@@ -13,9 +13,12 @@ import com.arqulat.loom_backend.dto.FileRequests.CreateFileRequest;
 import com.arqulat.loom_backend.dto.FileRequests.UpdateFileRequest;
 import com.arqulat.loom_backend.dto.Responses.FileDetailDTO;
 import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
+import com.arqulat.loom_backend.dto.Responses.FileVersionDTO;
 import com.arqulat.loom_backend.model.DiagramFile;
+import com.arqulat.loom_backend.model.DiagramFileVersion;
 import com.arqulat.loom_backend.model.Project;
 import com.arqulat.loom_backend.repository.DiagramFileRepository;
+import com.arqulat.loom_backend.repository.DiagramFileVersionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,6 +27,9 @@ public class FileService {
 
     @Autowired
     private DiagramFileRepository fileRepository;
+
+    @Autowired
+    private DiagramFileVersionRepository versionRepository;
 
     @Autowired
     private ProjectService projectService;
@@ -52,14 +58,23 @@ public class FileService {
             throw new com.arqulat.loom_backend.exception.DuplicateResourceException("A file with this name already exists in the project");
         }
         
+        JsonNode emptyNodes = objectMapper.createArrayNode();
         DiagramFile file = DiagramFile.builder()
                 .name(request.getName())
                 .canvasBgColor(request.getBackgroundColor() != null ? request.getBackgroundColor() : "#0f0f0f")
                 .project(project)
-                .nodes(objectMapper.createArrayNode())
+                .nodes(emptyNodes)
                 .build();
         
         DiagramFile saved = fileRepository.save(file);
+
+        // Snapshot initial version
+        DiagramFileVersion version = DiagramFileVersion.builder()
+                .diagramFile(saved)
+                .nodes(emptyNodes)
+                .build();
+        versionRepository.save(version);
+
         return mapToSummary(saved);
     }
 
@@ -81,8 +96,46 @@ public class FileService {
                 throw new com.arqulat.loom_backend.exception.PayloadTooLargeException("Diagram payload exceeds the maximum allowed size of 5MB");
             }
             file.setNodes(nodesJson);
+
+            // Snapshot updated version
+            DiagramFileVersion version = DiagramFileVersion.builder()
+                    .diagramFile(file)
+                    .nodes(nodesJson)
+                    .build();
+            versionRepository.save(version);
         }
         DiagramFile updated = fileRepository.save(file);
+        return mapToDetail(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FileVersionDTO> getFileVersions(UUID fileId, UUID userId) {
+        getFileIfOwned(fileId, userId); // Verify ownership
+        List<DiagramFileVersion> versions = versionRepository.findByDiagramFileIdOrderByCreatedAtDesc(fileId);
+        return versions.stream().map(this::mapToVersionDTO).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public FileDetailDTO restoreFileVersion(UUID fileId, UUID versionId, UUID userId) {
+        DiagramFile file = getFileIfOwned(fileId, userId);
+        DiagramFileVersion version = versionRepository.findById(versionId)
+                .orElseThrow(() -> new com.arqulat.loom_backend.exception.ResourceNotFoundException("Version not found"));
+        
+        if (!version.getDiagramFile().getId().equals(fileId)) {
+            throw new IllegalArgumentException("Version does not belong to the requested file");
+        }
+
+        // Restore file nodes
+        file.setNodes(version.getNodes());
+        DiagramFile updated = fileRepository.save(file);
+
+        // Optional: Save a new version representing the restoration action itself
+        DiagramFileVersion restoredVersionSnapshot = DiagramFileVersion.builder()
+                .diagramFile(file)
+                .nodes(version.getNodes())
+                .build();
+        versionRepository.save(restoredVersionSnapshot);
+
         return mapToDetail(updated);
     }
 
@@ -125,6 +178,13 @@ public class FileService {
                 .canvasBgColor(file.getCanvasBgColor())
                 .nodes(file.getNodes())
                 .updatedAt(file.getUpdatedAt() != null ? file.getUpdatedAt().toInstant(ZoneOffset.UTC).toEpochMilli() : System.currentTimeMillis())
+                .build();
+    }
+
+    private FileVersionDTO mapToVersionDTO(DiagramFileVersion version) {
+        return FileVersionDTO.builder()
+                .id(version.getId())
+                .createdAt(version.getCreatedAt() != null ? version.getCreatedAt().toInstant(ZoneOffset.UTC).toEpochMilli() : System.currentTimeMillis())
                 .build();
     }
 }
