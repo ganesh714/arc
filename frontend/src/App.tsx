@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
+import { Layers, Square } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
 import { Header } from '@/components/layout/Header';
@@ -118,24 +119,54 @@ function WorkspaceRoute() {
           {/* Floating Collapsible LeftSidebar (when unpinned) */}
           {!isLeftSidebarPinned && (
             <>
-              {/* Trigger hover target zone on the left edge */}
-              <div 
+              {/* Thin visible activity bar */}
+              <div
                 onMouseEnter={() => setIsLeftSidebarHovered(true)}
                 style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: '12px',
-                  zIndex: 35,
-                  cursor: 'pointer',
+                  width: '36px',
+                  minWidth: '36px',
+                  height: '100%',
+                  backgroundColor: '#020306',
+                  borderRight: '1px solid rgba(255, 255, 255, 0.05)',
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  paddingTop: '16px',
+                  gap: '12px',
+                  zIndex: 35,
+                  position: 'relative'
                 }}
-                className="group"
               >
-                <div style={{ width: '4px', height: '40px', borderRadius: '2px', backgroundColor: 'rgba(12, 140, 233, 0.3)', opacity: 0, transition: 'opacity 0.2s' }} className="group-hover:opacity-100" />
+                <div 
+                  style={{
+                    color: isLeftSidebarHovered ? '#38bdf8' : '#8b949e',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: isLeftSidebarHovered ? 'rgba(12, 140, 233, 0.08)' : 'transparent',
+                    transition: 'all 0.2s'
+                  }}
+                  title="Hover to open Layers & Shapes panel"
+                >
+                  <Layers size={16} />
+                </div>
+                <div 
+                  style={{
+                    color: '#8b949e',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="Hover to open Layers & Shapes panel"
+                >
+                  <Square size={14} />
+                </div>
               </div>
 
               {/* Sidebar drawer card */}
@@ -144,12 +175,12 @@ function WorkspaceRoute() {
                 onMouseLeave={() => setIsLeftSidebarHovered(false)}
                 style={{
                   position: 'absolute',
-                  left: 0,
+                  left: '36px', // Align right next to the thin visible bar
                   top: 0,
                   bottom: 0,
                   width: '260px',
                   zIndex: 40,
-                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-100%)',
+                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-120%)',
                   transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                   boxShadow: isLeftSidebarHovered ? '10px 0 30px rgba(0,0,0,0.5)' : 'none',
                 }}
