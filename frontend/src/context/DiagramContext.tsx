@@ -1327,11 +1327,17 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const switchProject = async (targetId: string) => {
+  const switchProject = async (targetId: string, targetFileId?: string) => {
     const target = projects.find(p => p.id === targetId);
     if (!target) return;
     
-    let targetFile = target.files.length > 0 ? target.files[0] : null;
+    let targetFile = null;
+    if (targetFileId) {
+      targetFile = target.files.find(f => f.id === targetFileId) || null;
+    }
+    if (!targetFile && target.files.length > 0) {
+      targetFile = target.files[0];
+    }
     
     if (!targetFile && isGuest) {
       const newFileId = Math.random().toString(36).substring(2, 10);
