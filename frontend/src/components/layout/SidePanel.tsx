@@ -22,6 +22,7 @@ export function SidePanel() {
     moveNode, 
     resizeNode, 
     updateLinePoints,
+    setNodes,
     bringToFront,
     sendToBack,
     alignSelected,
@@ -149,12 +150,66 @@ export function SidePanel() {
     if (!node) return;
     resizeNode(
       node.id,
-      {
-        ...node.dimensions,
-        [dimension]: isNaN(value) ? 0 : value,
-      },
+      { ...node.dimensions, [dimension]: value },
       node.position
     );
+  };
+
+  const handleSplitElbowLine = () => {
+    if (!node || node.routing !== 'elbow' || !node.startPoint || !node.endPoint) return;
+    
+    const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+    
+    const points = isVerticalElbow ? [
+      { x: node.startPoint.x, y: node.startPoint.y },
+      { x: node.startPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+      { x: node.endPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+      { x: node.endPoint.x, y: node.endPoint.y }
+    ] : [
+      { x: node.startPoint.x, y: node.startPoint.y },
+      { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.startPoint.y },
+      { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.endPoint.y },
+      { x: node.endPoint.x, y: node.endPoint.y }
+    ];
+
+    const validPoints = [points[0]];
+    for (let i = 1; i < points.length; i++) {
+      const p1 = validPoints[validPoints.length - 1];
+      const p2 = points[i];
+      if (Math.abs(p1.x - p2.x) > 1 || Math.abs(p1.y - p2.y) > 1) {
+        validPoints.push(p2);
+      }
+    }
+
+    if (validPoints.length < 2) return;
+
+    const newLines: DiagramNode[] = [];
+    for (let i = 0; i < validPoints.length - 1; i++) {
+      const id = `line-${Date.now()}-${i}`;
+      const p1 = validPoints[i];
+      const p2 = validPoints[i+1];
+      const isFirst = i === 0;
+      const isLast = i === validPoints.length - 2;
+      
+      const newLine: DiagramNode = {
+        ...node,
+        id,
+        routing: 'straight',
+        startPoint: { ...p1 },
+        endPoint: { ...p2 },
+        position: { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y) },
+        dimensions: { width: Math.max(15, Math.abs(p2.x - p1.x)), height: Math.max(15, Math.abs(p2.y - p1.y)) },
+        startConnection: isFirst ? node.startConnection : { nodeId: newLines[i-1].id, anchor: 'closest' },
+        endConnection: isLast ? node.endConnection : undefined,
+        arrowType: isLast ? (node.arrowType || (node.type === 'arrow' ? 'single' : 'none')) : 'none',
+      };
+      
+      newLine.waypoints = undefined;
+      newLines.push(newLine);
+    }
+
+    setNodes(prev => [...prev.filter(n => n.id !== node.id), ...newLines]);
+    selectNode(null);
   };
 
   const handleStartPointChange = (axis: 'x' | 'y', value: number) => {
@@ -1150,13 +1205,34 @@ export function SidePanel() {
                   <span className={styles.rowLabel}>Route</span>
                   <select
                     className={styles.select}
-                    value={node.lineCurve || 'straight'}
-                    onChange={(e) => updateNode({ ...node, lineCurve: e.target.value as 'straight' | 'curved' })}
+                    value={node.routing || 'straight'}
+                    onChange={(e) => updateNode({ ...node, routing: e.target.value as 'straight' | 'elbow' | 'curved' })}
                   >
                     <option value="straight">Straight</option>
+                    <option value="elbow">Elbow</option>
                     <option value="curved">Curved</option>
                   </select>
                 </div>
+                {node.routing === 'elbow' && (
+                  <div className={styles.row}>
+                    <button 
+                      onClick={handleSplitElbowLine}
+                      style={{
+                        width: '100%',
+                        padding: '6px',
+                        background: 'var(--bg-panel-hover)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        marginTop: '4px'
+                      }}
+                    >
+                      Split into Straight Lines
+                    </button>
+                  </div>
+                )}
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Pattern</span>
                   <select
