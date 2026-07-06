@@ -265,10 +265,16 @@ export function AIChatSidebar() {
       }
     } catch (error: any) {
       console.error("Failed to generate AI visual", error);
+      
+      const isRateLimit = error.message?.includes('429') || error.message?.toLowerCase().includes('limit') || error.message?.toLowerCase().includes('busy') || error.message?.includes('503');
+      const aestheticMessage = isRateLimit 
+        ? "✨ The neural pathways are currently saturated. Our AI architects are taking a brief rest to cool down. Please try again in a moment."
+        : "✨ The cosmic weaves are temporarily tangled. Our systems are working to restore the AI connection. Please try again shortly.";
+
       setMessages(prev => [...prev, { 
         id: Date.now().toString(), 
         role: 'ai', 
-        content: `Error: ${error.message || 'Network error (CORS or Mixed Content)'}. Please check console.`, 
+        content: aestheticMessage,
         isError: true 
       }]);
     } finally {
