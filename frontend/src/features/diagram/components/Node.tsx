@@ -945,6 +945,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
                              onWaypointDragStart?.(e, node.id, i);
                           }, 0);
                         }}
+                        onMouseDown={(e) => { e.stopPropagation(); }}
                       >
                         <circle cx={hp.x - node.position.x} cy={hp.y - node.position.y} r={4} fill="white" stroke="#0c8ce9" strokeWidth={1} opacity={0.6} />
                         <text x={hp.x - node.position.x} y={hp.y - node.position.y} fill="#0c8ce9" fontSize="8" fontWeight="bold" textAnchor="middle" dominantBaseline="central" opacity={0.8}>+</text>
@@ -969,6 +970,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
                         // If these are generated, the caller needs to know to initialize them first
                         onWaypointDragStart?.(e, node.id, i);
                       }}
+                      onMouseDown={(e) => { e.stopPropagation(); }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
