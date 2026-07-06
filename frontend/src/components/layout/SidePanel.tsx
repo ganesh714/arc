@@ -22,7 +22,6 @@ export function SidePanel() {
     moveNode, 
     resizeNode, 
     updateLinePoints,
-    setNodes,
     bringToFront,
     sendToBack,
     alignSelected,
@@ -155,62 +154,7 @@ export function SidePanel() {
     );
   };
 
-  const handleSplitElbowLine = () => {
-    if (!node || node.routing !== 'elbow' || !node.startPoint || !node.endPoint) return;
-    
-    const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
-    
-    const points = isVerticalElbow ? [
-      { x: node.startPoint.x, y: node.startPoint.y },
-      { x: node.startPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
-      { x: node.endPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
-      { x: node.endPoint.x, y: node.endPoint.y }
-    ] : [
-      { x: node.startPoint.x, y: node.startPoint.y },
-      { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.startPoint.y },
-      { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.endPoint.y },
-      { x: node.endPoint.x, y: node.endPoint.y }
-    ];
 
-    const validPoints = [points[0]];
-    for (let i = 1; i < points.length; i++) {
-      const p1 = validPoints[validPoints.length - 1];
-      const p2 = points[i];
-      if (Math.abs(p1.x - p2.x) > 1 || Math.abs(p1.y - p2.y) > 1) {
-        validPoints.push(p2);
-      }
-    }
-
-    if (validPoints.length < 2) return;
-
-    const newLines: DiagramNode[] = [];
-    for (let i = 0; i < validPoints.length - 1; i++) {
-      const id = `line-${Date.now()}-${i}`;
-      const p1 = validPoints[i];
-      const p2 = validPoints[i+1];
-      const isFirst = i === 0;
-      const isLast = i === validPoints.length - 2;
-      
-      const newLine: DiagramNode = {
-        ...node,
-        id,
-        routing: 'straight',
-        startPoint: { ...p1 },
-        endPoint: { ...p2 },
-        position: { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y) },
-        dimensions: { width: Math.max(15, Math.abs(p2.x - p1.x)), height: Math.max(15, Math.abs(p2.y - p1.y)) },
-        startConnection: isFirst ? node.startConnection : { nodeId: newLines[i-1].id, anchor: 'closest' },
-        endConnection: isLast ? node.endConnection : undefined,
-        arrowType: isLast ? (node.arrowType || (node.type === 'arrow' ? 'single' : 'none')) : 'none',
-      };
-      
-      newLine.waypoints = undefined;
-      newLines.push(newLine);
-    }
-
-    setNodes(prev => [...prev.filter(n => n.id !== node.id), ...newLines]);
-    selectNode(null);
-  };
 
   const handleStartPointChange = (axis: 'x' | 'y', value: number) => {
     if (!node || !node.startPoint || !node.endPoint) return;
@@ -1248,48 +1192,62 @@ export function SidePanel() {
               <span className={styles.rowLabel}>Start Target</span>
               <select
                 className={styles.select}
-                value={node.startConnection?.nodeId || ''}
+                value={node.startConnection ? `${node.startConnection.nodeId}:${node.startConnection.anchor}` : ''}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (!val) {
                     updateNode({ ...node, startConnection: undefined });
                   } else {
-                    const targetNode = nodes.find(n => n.id === val);
-                    const anchor = targetNode && (targetNode.type === 'line' || targetNode.type === 'arrow') ? 'closest' : 'bottom';
-                    updateNode({ ...node, startConnection: { nodeId: val, anchor } });
+                    const [nodeId, anchor] = val.split(':');
+                    updateNode({ ...node, startConnection: { nodeId, anchor: anchor as any } });
                   }
                 }}
               >
                 <option value="">None (Floating)</option>
-                {nodes.filter(n => n.id !== node.id).map(n => (
-                  <option key={n.id} value={n.id}>
-                    {n.type === 'line' || n.type === 'arrow' ? `[Line] ${n.id.substring(0,8)}` : `[${n.type}] ${n.content || n.id.substring(0,8)}`}
-                  </option>
-                ))}
+                {nodes.filter(n => n.id !== node.id).flatMap(n => {
+                  if (n.type === 'line' || n.type === 'arrow') {
+                    return [
+                      <option key={`${n.id}:closest`} value={`${n.id}:closest`}>[Line] {n.id.substring(0,8)} (Closest)</option>,
+                      <option key={`${n.id}:start`} value={`${n.id}:start`}>[Line] {n.id.substring(0,8)} (Start)</option>,
+                      <option key={`${n.id}:end`} value={`${n.id}:end`}>[Line] {n.id.substring(0,8)} (End)</option>
+                    ];
+                  } else {
+                    return [
+                      <option key={`${n.id}:bottom`} value={`${n.id}:bottom`}>[{n.type}] {n.content || n.id.substring(0,8)}</option>
+                    ];
+                  }
+                })}
               </select>
             </div>
             <div className={styles.row}>
               <span className={styles.rowLabel}>End Target</span>
               <select
                 className={styles.select}
-                value={node.endConnection?.nodeId || ''}
+                value={node.endConnection ? `${node.endConnection.nodeId}:${node.endConnection.anchor}` : ''}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (!val) {
                     updateNode({ ...node, endConnection: undefined });
                   } else {
-                    const targetNode = nodes.find(n => n.id === val);
-                    const anchor = targetNode && (targetNode.type === 'line' || targetNode.type === 'arrow') ? 'closest' : 'top';
-                    updateNode({ ...node, endConnection: { nodeId: val, anchor } });
+                    const [nodeId, anchor] = val.split(':');
+                    updateNode({ ...node, endConnection: { nodeId, anchor: anchor as any } });
                   }
                 }}
               >
                 <option value="">None (Floating)</option>
-                {nodes.filter(n => n.id !== node.id).map(n => (
-                  <option key={n.id} value={n.id}>
-                    {n.type === 'line' || n.type === 'arrow' ? `[Line] ${n.id.substring(0,8)}` : `[${n.type}] ${n.content || n.id.substring(0,8)}`}
-                  </option>
-                ))}
+                {nodes.filter(n => n.id !== node.id).flatMap(n => {
+                  if (n.type === 'line' || n.type === 'arrow') {
+                    return [
+                      <option key={`${n.id}:closest`} value={`${n.id}:closest`}>[Line] {n.id.substring(0,8)} (Closest)</option>,
+                      <option key={`${n.id}:start`} value={`${n.id}:start`}>[Line] {n.id.substring(0,8)} (Start)</option>,
+                      <option key={`${n.id}:end`} value={`${n.id}:end`}>[Line] {n.id.substring(0,8)} (End)</option>
+                    ];
+                  } else {
+                    return [
+                      <option key={`${n.id}:top`} value={`${n.id}:top`}>[{n.type}] {n.content || n.id.substring(0,8)}</option>
+                    ];
+                  }
+                })}
               </select>
             </div>
           </div>

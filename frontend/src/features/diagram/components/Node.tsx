@@ -144,7 +144,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           ...node,
           startPoint: { x: bestAnchor.x, y: bestAnchor.y },
           startConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
-        });
+        }, false);
       } else {
         updateNode({
           ...node,
@@ -155,7 +155,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             width: Math.max(15, Math.abs(node.endPoint!.x - currentX)), 
             height: Math.max(15, Math.abs(node.endPoint!.y - currentY)) 
           }
-        });
+        }, false);
       }
     };
     
@@ -230,7 +230,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           ...node,
           endPoint: { x: bestAnchor.x, y: bestAnchor.y },
           endConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
-        });
+        }, false);
       } else {
         updateNode({
           ...node,
@@ -241,7 +241,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             width: Math.max(15, Math.abs(currentX - node.startPoint!.x)), 
             height: Math.max(15, Math.abs(currentY - node.startPoint!.y)) 
           }
-        });
+        }, false);
       }
     };
     
@@ -1367,6 +1367,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
+              pointerEvents: 'auto',
               zIndex: 30,
               boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
@@ -1385,6 +1386,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
+              pointerEvents: 'auto',
               zIndex: 30,
               boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}

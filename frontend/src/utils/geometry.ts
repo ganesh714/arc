@@ -1,4 +1,4 @@
-import { Point, DiagramNode } from '../types';
+import type { Point, DiagramNode } from '../types';
 
 export function getClosestPointOnSegment(p: Point, a: Point, b: Point): Point {
   const atob = { x: b.x - a.x, y: b.y - a.y };

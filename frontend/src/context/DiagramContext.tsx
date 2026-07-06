@@ -959,7 +959,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
       const newLines: DiagramNode[] = [];
       for (let i = 0; i < validPoints.length - 1; i++) {
-        const newId = `line-${Date.now()}-${i}`;
+        const newId = `line-${Math.random().toString(36).substring(2, 8)}`;
         const p1 = validPoints[i];
         const p2 = validPoints[i+1];
         const isFirst = i === 0;
@@ -1025,9 +1025,38 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const updateNode = (updatedNode: DiagramNode) => {
-    saveHistoryState(nodes);
-    setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
+  const updateNode = (updatedNode: DiagramNode, saveHistory: boolean = true) => {
+    if (saveHistory) {
+      saveHistoryState(nodes);
+    }
+    setNodes((prev) => {
+      const nextNodes = prev.map(node => node.id === updatedNode.id ? updatedNode : node);
+      let finalNodes = [...nextNodes];
+      let didCascade = false;
+      for (let i = 0; i < finalNodes.length; i++) {
+        const node = finalNodes[i];
+        if ((node.type === 'line' || node.type === 'arrow') && (node.startConnection?.nodeId === updatedNode.id || node.endConnection?.nodeId === updatedNode.id)) {
+          const newNode = { ...node };
+          if (node.startConnection?.nodeId === updatedNode.id) {
+            newNode.startPoint = getAnchorPoint(updatedNode, node.startConnection.anchor, node.endPoint);
+          }
+          if (node.endConnection?.nodeId === updatedNode.id) {
+            newNode.endPoint = getAnchorPoint(updatedNode, node.endConnection.anchor, node.startPoint);
+          }
+          const minX = Math.min(newNode.startPoint!.x, newNode.endPoint!.x);
+          const minY = Math.min(newNode.startPoint!.y, newNode.endPoint!.y);
+          newNode.position = { x: minX, y: minY };
+          newNode.dimensions = { 
+            width: Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x)),
+            height: Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y))
+          };
+          newNode.waypoints = undefined;
+          finalNodes[i] = newNode;
+          didCascade = true;
+        }
+      }
+      return didCascade ? finalNodes : nextNodes;
+    });
     broadcast('NODE_UPDATED', updatedNode);
   };
 
@@ -1110,9 +1139,11 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest', currentPoint?: { x: number; y: number }) => {
-    if (anchor === 'closest' && currentPoint && (node.type === 'line' || node.type === 'arrow')) {
-      return getClosestPointOnLineNode(currentPoint, node);
+  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest' | 'start' | 'end', currentPoint?: { x: number; y: number }) => {
+    if (node.type === 'line' || node.type === 'arrow') {
+      if (anchor === 'start' && node.startPoint) return { ...node.startPoint };
+      if (anchor === 'end' && node.endPoint) return { ...node.endPoint };
+      if (anchor === 'closest' && currentPoint) return getClosestPointOnLineNode(currentPoint, node);
     }
     const { x, y } = node.position;
     const { width, height } = node.dimensions;
@@ -1121,6 +1152,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       case 'bottom': return { x: x + width / 2, y: y + height };
       case 'left': return { x, y: y + height / 2 };
       case 'right': return { x: x + width, y: y + height / 2 };
+      case 'start': return { x: x + width / 2, y: y + height / 2 };
+      case 'end': return { x: x + width / 2, y: y + height / 2 };
       case 'closest': return { x: x + width / 2, y: y + height / 2 };
     }
   };
