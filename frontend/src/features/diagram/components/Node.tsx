@@ -438,9 +438,10 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         backgroundColor: 'transparent',
         outline: activeTool === 'erase' && isHovered 
           ? `${1.5 / zoom}px solid #f04438` 
-          : isSelected 
+          : (isSelected && node.type !== 'line' && node.type !== 'arrow')
             ? `${1.5 / zoom}px solid #0c8ce9` 
             : 'none',
+        pointerEvents: (node.type === 'line' || node.type === 'arrow') ? 'none' : 'auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -901,12 +902,13 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               }
 
               return (
-                <g style={{ cursor: 'move' }}>
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
                   <path
                     d={elbowPath}
                     stroke="transparent"
                     strokeWidth="16"
                     fill="none"
+                    style={{ pointerEvents: 'stroke' }}
                   />
                   <path
                     d={elbowPath}
@@ -997,17 +999,19 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
 
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
               const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
+              const curvedPath = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
 
               return (
-                <g style={{ cursor: 'move' }}>
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
                   <path
-                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
+                    d={curvedPath}
                     stroke="transparent"
                     strokeWidth="16"
                     fill="none"
+                    style={{ pointerEvents: 'stroke' }}
                   />
                   <path
-                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
+                    d={curvedPath}
                     stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
                     fill="none"
@@ -1027,7 +1031,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
               return (
-                <g style={{ cursor: 'move' }}>
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
                   <line
                     x1={startX}
                     y1={startY}
@@ -1035,6 +1039,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
                     y2={endY}
                     stroke="transparent"
                     strokeWidth="16"
+                    style={{ pointerEvents: 'stroke' }}
                   />
                   <line
                     x1={startX}
