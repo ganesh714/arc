@@ -6,6 +6,7 @@ import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
 import { renderExtendedShape } from './ShapeRenderers';
 import { getSemanticStyle } from '../../../utils/semanticStyles';
+import { getClosestPointOnLineNode } from '../../../utils/geometry';
 
 const parseCssString = (css: string) => {
   if (!css || typeof css !== 'string') return null;
@@ -105,11 +106,22 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
       const currentY = initialStart.y + dy;
 
       // Snapping logic
-      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
       for (const n of nodes) {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        if (n.id === node.id) continue;
+        
+        if (n.type === 'line' || n.type === 'arrow') {
+          const closest = getClosestPointOnLineNode({ x: currentX, y: currentY }, n);
+          const dist = Math.sqrt(Math.pow(currentX - closest.x, 2) + Math.pow(currentY - closest.y, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: 'closest', x: closest.x, y: closest.y };
+          }
+          continue;
+        }
+        
         const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
         for (const a of anchors) {
           let ax = n.position.x;
@@ -180,11 +192,22 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
       const currentY = initialEnd.y + dy;
 
       // Snapping logic
-      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
       for (const n of nodes) {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        if (n.id === node.id) continue;
+        
+        if (n.type === 'line' || n.type === 'arrow') {
+          const closest = getClosestPointOnLineNode({ x: currentX, y: currentY }, n);
+          const dist = Math.sqrt(Math.pow(currentX - closest.x, 2) + Math.pow(currentY - closest.y, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: 'closest', x: closest.x, y: closest.y };
+          }
+          continue;
+        }
+        
         const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
         for (const a of anchors) {
           let ax = n.position.x;

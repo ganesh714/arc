@@ -4,6 +4,7 @@ import type { DiagramNode } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
+import { getClosestPointOnLineNode } from '../utils/geometry';
 
 export interface CanvasConfig {
   backgroundColor: string;
@@ -1012,10 +1013,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           const movedNode = updatedNodes.find(n => n.id === id)!;
 
           if (node.startConnection?.nodeId === id) {
-            newNode.startPoint = getAnchorPoint(movedNode, node.startConnection.anchor);
+            newNode.startPoint = getAnchorPoint(movedNode, node.startConnection.anchor, node.endPoint);
           }
           if (node.endConnection?.nodeId === id) {
-            newNode.endPoint = getAnchorPoint(movedNode, node.endConnection.anchor);
+            newNode.endPoint = getAnchorPoint(movedNode, node.endConnection.anchor, node.startPoint);
           }
 
           // Recalculate bounding box for the line
@@ -1047,7 +1048,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right') => {
+  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest', currentPoint?: { x: number; y: number }) => {
+    if (anchor === 'closest' && currentPoint && (node.type === 'line' || node.type === 'arrow')) {
+      return getClosestPointOnLineNode(currentPoint, node);
+    }
     const { x, y } = node.position;
     const { width, height } = node.dimensions;
     switch (anchor) {
@@ -1055,6 +1059,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       case 'bottom': return { x: x + width / 2, y: y + height };
       case 'left': return { x, y: y + height / 2 };
       case 'right': return { x: x + width, y: y + height / 2 };
+      case 'closest': return { x: x + width / 2, y: y + height / 2 };
     }
   };
 
@@ -1095,12 +1100,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
           if (node.startConnection && movedIds.includes(node.startConnection.nodeId)) {
             const connectedNode = updatedNodes.find(n => n.id === node.startConnection!.nodeId)!;
-            newNode.startPoint = getAnchorPoint(connectedNode, node.startConnection.anchor);
+            newNode.startPoint = getAnchorPoint(connectedNode, node.startConnection.anchor, node.endPoint);
             needsUpdate = true;
           }
           if (node.endConnection && movedIds.includes(node.endConnection.nodeId)) {
             const connectedNode = updatedNodes.find(n => n.id === node.endConnection!.nodeId)!;
-            newNode.endPoint = getAnchorPoint(connectedNode, node.endConnection.anchor);
+            newNode.endPoint = getAnchorPoint(connectedNode, node.endConnection.anchor, node.startPoint);
             needsUpdate = true;
           }
 

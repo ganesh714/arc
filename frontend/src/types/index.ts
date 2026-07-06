@@ -35,7 +35,7 @@ export interface Point {
 
 export interface Connection {
   nodeId: string;
-  anchor: 'top' | 'bottom' | 'left' | 'right';
+  anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest';
 }
 
 export interface NodeSection {
