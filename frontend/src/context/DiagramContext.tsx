@@ -55,6 +55,7 @@ interface DiagramContextType {
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   moveSelectedNodes: (draggedNodeId: string, position: { x: number; y: number }) => void;
+  splitElbowLine: (id: string) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
   selectNode: (id: string | null, multi?: boolean) => void;
   setSelectedNodeIds: (ids: string[]) => void;
@@ -926,6 +927,67 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     broadcast('NODE_ADDED', newNode);
   };
 
+  const splitElbowLine = (id: string) => {
+    setNodes(prev => {
+      const node = prev.find(n => n.id === id);
+      if (!node || node.routing !== 'elbow' || !node.startPoint || !node.endPoint) return prev;
+      
+      const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+      
+      const points = isVerticalElbow ? [
+        { x: node.startPoint.x, y: node.startPoint.y },
+        { x: node.startPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+        { x: node.endPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+        { x: node.endPoint.x, y: node.endPoint.y }
+      ] : [
+        { x: node.startPoint.x, y: node.startPoint.y },
+        { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.startPoint.y },
+        { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.endPoint.y },
+        { x: node.endPoint.x, y: node.endPoint.y }
+      ];
+
+      const validPoints = [points[0]];
+      for (let i = 1; i < points.length; i++) {
+        const p1 = validPoints[validPoints.length - 1];
+        const p2 = points[i];
+        if (Math.abs(p1.x - p2.x) > 1 || Math.abs(p1.y - p2.y) > 1) {
+          validPoints.push(p2);
+        }
+      }
+
+      if (validPoints.length < 2) return prev;
+
+      const newLines: DiagramNode[] = [];
+      for (let i = 0; i < validPoints.length - 1; i++) {
+        const newId = `line-${Date.now()}-${i}`;
+        const p1 = validPoints[i];
+        const p2 = validPoints[i+1];
+        const isFirst = i === 0;
+        const isLast = i === validPoints.length - 2;
+        
+        const newLine: DiagramNode = {
+          ...node,
+          id: newId,
+          routing: 'straight',
+          startPoint: { ...p1 },
+          endPoint: { ...p2 },
+          position: { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y) },
+          dimensions: { width: Math.max(15, Math.abs(p2.x - p1.x)), height: Math.max(15, Math.abs(p2.y - p1.y)) },
+          startConnection: isFirst ? node.startConnection : { nodeId: newLines[i-1].id, anchor: 'closest' },
+          endConnection: isLast ? node.endConnection : undefined,
+          arrowType: isLast ? (node.arrowType || (node.type === 'arrow' ? 'single' : 'none')) : 'none',
+        };
+        
+        newLine.waypoints = undefined;
+        newLines.push(newLine);
+      }
+
+      saveHistoryState(prev);
+      return [...prev.filter(n => n.id !== node.id), ...newLines];
+    });
+    setSelectedNodeIds([]);
+  };
+
   const updateLinePoints = (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
 
     setNodes((prev) => prev.map(node => {
@@ -1653,6 +1715,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       updateMultipleNodes,
       moveNode, 
       moveSelectedNodes,
+      splitElbowLine,
       resizeNode, 
       selectNode, 
       setSelectedNodeIds,

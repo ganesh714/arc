@@ -41,7 +41,8 @@ import {
   AlignStartVertical,
   AlignVerticalSpaceAround,
   AlignEndVertical,
-  Layers
+  Layers,
+  Scissors
 } from 'lucide-react';
 
 export function Canvas() {
@@ -94,7 +95,8 @@ export function Canvas() {
     groupSelected,
     ungroupSelected,
     panOffset,
-    setPanOffset
+    setPanOffset,
+    splitElbowLine
   } = useDiagram();
   const { broadcast } = useCollaboration();
 
@@ -1516,6 +1518,15 @@ export function Canvas() {
                 >
                   <Activity size={11} />
                 </button>
+                {selectedNode.routing === 'elbow' && (
+                  <button 
+                    className={styles.contextBtn}
+                    onClick={() => splitElbowLine(selectedNode.id)}
+                    title="Split into Straight Lines"
+                  >
+                    <Scissors size={11} />
+                  </button>
+                )}
                 <div className={styles.divider} style={{ height: '12px' }} />
               </>
             )}

@@ -1213,26 +1213,6 @@ export function SidePanel() {
                     <option value="curved">Curved</option>
                   </select>
                 </div>
-                {node.routing === 'elbow' && (
-                  <div className={styles.row}>
-                    <button 
-                      onClick={handleSplitElbowLine}
-                      style={{
-                        width: '100%',
-                        padding: '6px',
-                        background: 'var(--bg-panel-hover)',
-                        border: '1px solid var(--border-default)',
-                        color: 'var(--text-primary)',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '11px',
-                        marginTop: '4px'
-                      }}
-                    >
-                      Split into Straight Lines
-                    </button>
-                  </div>
-                )}
                 <div className={styles.row}>
                   <span className={styles.rowLabel}>Pattern</span>
                   <select
@@ -1258,6 +1238,60 @@ export function SidePanel() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {isLine && node.type !== 'custom-connector' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Connections</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Start Target</span>
+              <select
+                className={styles.select}
+                value={node.startConnection?.nodeId || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    updateNode({ ...node, startConnection: undefined });
+                  } else {
+                    const targetNode = nodes.find(n => n.id === val);
+                    const anchor = targetNode && (targetNode.type === 'line' || targetNode.type === 'arrow') ? 'closest' : 'bottom';
+                    updateNode({ ...node, startConnection: { nodeId: val, anchor } });
+                  }
+                }}
+              >
+                <option value="">None (Floating)</option>
+                {nodes.filter(n => n.id !== node.id).map(n => (
+                  <option key={n.id} value={n.id}>
+                    {n.type === 'line' || n.type === 'arrow' ? `[Line] ${n.id.substring(0,8)}` : `[${n.type}] ${n.content || n.id.substring(0,8)}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>End Target</span>
+              <select
+                className={styles.select}
+                value={node.endConnection?.nodeId || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    updateNode({ ...node, endConnection: undefined });
+                  } else {
+                    const targetNode = nodes.find(n => n.id === val);
+                    const anchor = targetNode && (targetNode.type === 'line' || targetNode.type === 'arrow') ? 'closest' : 'top';
+                    updateNode({ ...node, endConnection: { nodeId: val, anchor } });
+                  }
+                }}
+              >
+                <option value="">None (Floating)</option>
+                {nodes.filter(n => n.id !== node.id).map(n => (
+                  <option key={n.id} value={n.id}>
+                    {n.type === 'line' || n.type === 'arrow' ? `[Line] ${n.id.substring(0,8)}` : `[${n.type}] ${n.content || n.id.substring(0,8)}`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 
