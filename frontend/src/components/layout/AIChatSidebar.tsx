@@ -268,8 +268,8 @@ export function AIChatSidebar() {
       
       const isRateLimit = error.message?.includes('429') || error.message?.toLowerCase().includes('limit') || error.message?.toLowerCase().includes('busy') || error.message?.includes('503');
       const aestheticMessage = isRateLimit 
-        ? "✨ The neural pathways are currently saturated. Our AI architects are taking a brief rest to cool down. Please try again in a moment."
-        : "✨ The cosmic weaves are temporarily tangled. Our systems are working to restore the AI connection. Please try again shortly.";
+        ? "✨ The neural pathways are saturated (Server is Busy). The AI servers are experiencing high traffic. Please try again in a minute."
+        : "✨ The cosmic weaves are tangled (AI Provider Error). The external AI service failed to respond. Please try again shortly.";
 
       setMessages(prev => [...prev, { 
         id: Date.now().toString(), 
