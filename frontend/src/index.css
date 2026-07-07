@@ -149,6 +149,13 @@ button, input, select, textarea {
   body {
     @apply bg-background text-foreground;
   }
+
+  strong, b {
+    font-weight: 700 !important;
+  }
+  em, i {
+    font-style: italic !important;
+  }
 }
 
 /* Global keyframes for canvas animations (referenced by inline styles, not CSS modules) */

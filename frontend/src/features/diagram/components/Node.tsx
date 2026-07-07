@@ -285,6 +285,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
     textAlign: node.style?.textAlign || 'center',
     width: '100%',
     wordBreak: 'break-word',
+    opacity: isEditing ? 0 : 1,
   };
 
   // Shadow filters vs css box shadows
@@ -1402,45 +1403,111 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         </>
       )}
       {isEditing && (
-        <textarea
-          key={node.content}
-          defaultValue={node.content}
-          autoFocus
-          onBlur={(e) => {
-            const val = e.target.value.trim();
-            updateNode({ ...node, content: val });
-            setIsEditing(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              top: '-40px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+              borderRadius: '8px',
+              padding: '4px',
+              display: 'flex',
+              gap: '4px',
+              zIndex: 101,
+              boxShadow: 'var(--shadow-lg)'
+            }}
+            onMouseDown={(e) => {
+              // Prevent losing focus on textarea
               e.preventDefault();
-              const val = (e.target as HTMLTextAreaElement).value.trim();
+            }}
+          >
+            {[
+              { label: 'B', prefix: '**', suffix: '**', tooltip: 'Bold' },
+              { label: 'I', prefix: '*', suffix: '*', tooltip: 'Italic' },
+              { label: '<>', prefix: '`', suffix: '`', tooltip: 'Code' },
+            ].map(({ label, prefix, suffix, tooltip }) => (
+              <button
+                key={label}
+                title={tooltip}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: label === 'B' ? 'bold' : 'normal',
+                  fontStyle: label === 'I' ? 'italic' : 'normal',
+                  fontFamily: label === '<>' ? 'monospace' : 'inherit',
+                  fontSize: '12px'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const textarea = document.getElementById(`node-edit-${node.id}`) as HTMLTextAreaElement;
+                  if (!textarea) return;
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const text = textarea.value;
+                  const before = text.substring(0, start);
+                  const selected = text.substring(start, end);
+                  const after = text.substring(end);
+                  textarea.value = before + prefix + selected + suffix + after;
+                  textarea.focus();
+                  textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            id={`node-edit-${node.id}`}
+            key={node.content}
+            defaultValue={node.content}
+            autoFocus
+            onBlur={(e) => {
+              const val = e.target.value.trim();
               updateNode({ ...node, content: val });
               setIsEditing(false);
-            }
-            if (e.key === 'Escape') {
-              setIsEditing(false);
-            }
-          }}
-          style={{
-            position: 'absolute',
-            width: '90%',
-            height: '80%',
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(4px)',
-            border: '1px solid #0c8ce9',
-            borderRadius: '6px',
-            color: '#fff',
-            fontFamily: 'inherit',
-            fontSize: node.style?.fontSize || '11px',
-            textAlign: node.style?.textAlign || 'center',
-            padding: '8px',
-            resize: 'none',
-            outline: 'none',
-            zIndex: 100,
-            boxSizing: 'border-box'
-          }}
-        />
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const val = (e.target as HTMLTextAreaElement).value.trim();
+                updateNode({ ...node, content: val });
+                setIsEditing(false);
+              }
+              if (e.key === 'Escape') {
+                setIsEditing(false);
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'transparent',
+              border: 'none',
+              color: textStyle.color,
+              fontFamily: 'inherit',
+              fontSize: textStyle.fontSize,
+              fontWeight: textStyle.fontWeight,
+              textAlign: textStyle.textAlign,
+              padding: '16px', // average padding for most shapes
+              resize: 'none',
+              outline: 'none',
+              zIndex: 100,
+              boxSizing: 'border-box'
+            }}
+          />
+        </>
       )}
     </Rnd>
   );

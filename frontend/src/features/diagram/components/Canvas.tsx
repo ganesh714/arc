@@ -1090,7 +1090,7 @@ export function Canvas() {
         onDoubleClick={(e) => {
           if (activeTool !== 'select') return;
           const target = e.target as HTMLElement;
-          const isCanvasBg = target === canvasRef.current || target.classList.contains(styles.canvas);
+          const isCanvasBg = target === canvasRef.current || target.classList.contains(styles.canvas) || target.id === 'arc-export-area';
           if (!isCanvasBg) return;
           const rect = e.currentTarget.getBoundingClientRect();
           const canvasX = (e.clientX - rect.left) / zoom - panOffset.x;
