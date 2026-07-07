@@ -143,21 +143,21 @@ export function Dashboard() {
             <span>Settings</span>
           </div>
           
-          <div style={{ margin: '16px 12px', padding: '12px', background: '#040508', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <div style={{ margin: '16px 12px', padding: '12px', background: 'var(--bg-canvas)', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={18} color="#0c8ce9" />}
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-blue-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={18} color="var(--accent-blue)" />}
               </div>
               <div style={{ overflow: 'hidden', flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
-                <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
               </div>
               <button 
                 onClick={toggleTheme}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }}
                 title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-                onMouseOver={(e) => { e.currentTarget.style.background = '#0c8ce920'; e.currentTarget.style.color = '#fff'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#888'; }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-blue-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; }}
               >
                 {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
               </button>
@@ -165,9 +165,9 @@ export function Dashboard() {
             
             <button 
               onClick={logout}
-              style={{ width: '100%', background: '#07090e', border: '1px solid rgba(255, 255, 255, 0.04)', color: '#999', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
-              onMouseOver={(e) => { e.currentTarget.style.background = '#0c8ce915'; e.currentTarget.style.color = '#fff'; }}
-              onMouseOut={(e) => { e.currentTarget.style.background = '#07090e'; e.currentTarget.style.color = '#999'; }}
+              style={{ width: '100%', background: 'var(--bg-canvas)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-blue-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'var(--bg-canvas)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
             >
               <LogOut size={14} /> Sign out
             </button>
@@ -185,18 +185,18 @@ export function Dashboard() {
           
           <div className={styles.actions}>
             <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#444' }} />
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
                 placeholder="Search projects..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
-                  backgroundColor: '#12141a',
-                  border: '1px solid #1a1d26',
+                  backgroundColor: 'var(--bg-panel-solid)',
+                  border: '1px solid var(--border-default)',
                   borderRadius: '8px',
                   padding: '10px 12px 10px 36px',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '14px',
                   width: '280px',
                   outline: 'none'
@@ -238,8 +238,8 @@ export function Dashboard() {
                   <div className={styles.cardIcon}>
                     <FolderKanban size={64} strokeWidth={1} />
                   </div>                  {project.files.length > 0 && (
-                    <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: '#0c8ce920', padding: '6px', borderRadius: '50%' }}>
-                      <Sparkles size={14} color="#0c8ce9" />
+                    <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'var(--accent-blue-subtle)', padding: '6px', borderRadius: '50%' }}>
+                      <Sparkles size={14} color="var(--accent-blue)" />
                     </div>
                   )}
                 </div>
@@ -249,7 +249,7 @@ export function Dashboard() {
                     <span className={styles.projectName}>{project.name}</span>
                     <div style={{ position: 'relative' }}>
                       <button 
-                        style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer', padding: '4px' }} 
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} 
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveMenuId(activeMenuId === project.id ? null : project.id);
@@ -263,18 +263,18 @@ export function Dashboard() {
                           position: 'absolute',
                           top: '100%',
                           right: '0',
-                          backgroundColor: '#161922',
-                          border: '1px solid #222631',
+                          backgroundColor: 'var(--bg-panel-solid)',
+                          border: '1px solid var(--border-default)',
                           borderRadius: '6px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                          boxShadow: 'var(--shadow-sm)',
                           zIndex: 50,
                           minWidth: '120px',
                           overflow: 'hidden'
                         }}>
                           <button 
                             onClick={(e) => handleRename(e, project.id, project.name)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid #222631', color: '#fff', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#222631'}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
                             <Edit size={12} /> Rename
@@ -282,7 +282,7 @@ export function Dashboard() {
                           <button 
                             onClick={(e) => handleDelete(e, project.id)}
                             style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ef444420'}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
                             <Trash2 size={12} /> Delete
@@ -294,7 +294,7 @@ export function Dashboard() {
                   
                   <div className={styles.projectMeta}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={14} color="#444" />
+                      <Clock size={14} color="var(--text-muted)" />
                       <span>{formatDate(project.updatedAt)}</span>
                     </div>
                     <div className={styles.nodeCount}>
@@ -308,7 +308,7 @@ export function Dashboard() {
           </div>
         ) : (
           <div className={styles.emptyState}>
-            <div style={{ backgroundColor: '#161922', padding: '32px', borderRadius: '50%', color: '#0c8ce9' }}>
+            <div style={{ backgroundColor: 'var(--bg-surface-solid)', padding: '32px', borderRadius: '50%', color: 'var(--accent-blue)' }}>
               <LayoutGrid size={48} strokeWidth={1.5} />
             </div>
             <h2>No projects found</h2>

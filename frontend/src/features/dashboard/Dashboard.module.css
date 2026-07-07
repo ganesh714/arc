@@ -1,7 +1,7 @@
 .container {
   height: 100vh;
   width: 100%;
-  background-color: #000000; /* Pure dark theme */
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
   display: flex;
   overflow: hidden;
@@ -11,8 +11,8 @@
 .sidebar {
   width: 260px;
   min-width: 260px;
-  background-color: #020306; /* Dark space background */
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-panel-solid);
+  border-right: 1px solid var(--border-default);
   display: flex;
   flex-direction: column;
   padding: 24px 12px;
@@ -28,7 +28,7 @@
   padding: 40px 60px;
   overflow-y: auto;
   height: 100%;
-  background-color: #040508;
+  background-color: var(--bg-canvas);
   position: relative;
 }
 
@@ -85,7 +85,7 @@
   font-weight: 700;
   font-size: 18px;
   letter-spacing: -0.5px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .navSection {
@@ -95,7 +95,7 @@
 .navLabel {
   font-size: 10px;
   font-weight: 800;
-  color: #4b5563;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   padding: 0 12px 12px;
@@ -107,21 +107,21 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #8b949e;
+  color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .navLink:hover {
-  background-color: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .activeNavLink {
-  background-color: rgba(12, 140, 233, 0.08);
-  border: 1px solid rgba(12, 140, 233, 0.2);
-  color: #38bdf8;
+  background-color: var(--accent-blue-subtle);
+  border: 1px solid var(--border-active);
+  color: var(--accent-blue);
 }
 
 .header {
@@ -136,12 +136,12 @@
   font-size: 32px;
   font-weight: 800;
   margin: 0;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: -1px;
 }
 
 .titleSection p {
-  color: #8b949e;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-top: 6px;
 }
@@ -180,8 +180,8 @@
 }
 
 .statCard {
-  background-color: rgba(18, 22, 32, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background-color: var(--bg-panel-solid);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   padding: 24px;
   display: flex;
@@ -192,20 +192,20 @@
 }
 
 .statCard:hover {
-  border-color: rgba(12, 140, 233, 0.2);
+  border-color: var(--border-active);
   transform: translateY(-2px);
 }
 
 .statIcon {
   width: 52px;
   height: 52px;
-  background-color: #020306;
+  background-color: var(--bg-canvas);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #38bdf8;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-default);
 }
 
 .statInfo {
@@ -216,12 +216,12 @@
 .statValue {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .statLabel {
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-secondary);
 }
 
 .grid {
@@ -232,8 +232,8 @@
 
 /* Glassmorphic Project Workspace Card styling */
 .card {
-  background: rgba(18, 22, 32, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--border-default);
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
@@ -243,21 +243,21 @@
 }
 
 .card:hover {
-  border-color: rgba(12, 140, 233, 0.35);
+  border-color: var(--border-active);
   transform: translateY(-6px);
-  background: rgba(18, 22, 32, 0.45);
+  background: var(--bg-hover);
   box-shadow: 0 20px 40px rgba(12, 140, 233, 0.15);
 }
 
 .preview {
   height: 140px;
-  background-color: #020306;
+  background-color: var(--bg-canvas);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-default);
   background-image: 
     radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.015) 1px, transparent 0);
   background-size: 20px 20px;
@@ -296,7 +296,7 @@
 .projectName {
   font-weight: 700;
   font-size: 16px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .projectMeta {
@@ -304,19 +304,19 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #8b949e;
+  color: var(--text-secondary);
 }
 
 .nodeCount {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(12, 140, 233, 0.08);
+  background: var(--accent-blue-subtle);
   padding: 4px 10px;
   border-radius: 8px;
-  color: #38bdf8;
+  color: var(--accent-blue);
   font-weight: 700;
-  border: 1px solid rgba(12, 140, 233, 0.15);
+  border: 1px solid var(--border-active);
 }
 
 .emptyState {
@@ -325,16 +325,16 @@
   align-items: center;
   justify-content: center;
   padding: 100px;
-  background-color: #020306;
-  border: 2px dashed rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-panel-solid);
+  border: 2px dashed var(--border-default);
   border-radius: 24px;
   gap: 20px;
-  color: #8b949e;
+  color: var(--text-secondary);
   text-align: center;
 }
 
 .emptyState h2 {
-  color: #fff;
+  color: var(--text-primary);
   margin: 0;
   font-size: 24px;
   font-weight: 800;
