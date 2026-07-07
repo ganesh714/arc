@@ -4,6 +4,9 @@ import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
+import { renderExtendedShape } from './ShapeRenderers';
+import { getSemanticStyle } from '../../../utils/semanticStyles';
+import { getClosestPointOnLineNode } from '../../../utils/geometry';
 
 const parseCssString = (css: string) => {
   if (!css || typeof css !== 'string') return null;
@@ -22,16 +25,31 @@ const parseCssString = (css: string) => {
 
 interface NodeProps {
   node: DiagramNode;
+  onWaypointDragStart?: (e: React.PointerEvent, nodeId: string, index: number) => void;
 }
 
-export function Node({ node }: NodeProps) {
-  const { selectedNodeIds, selectNode, moveNode, moveSelectedNodes, resizeNode, zoom, activeTool, selectToolMode, setNodes, nodes, updateNode, saveHistoryState } = useDiagram();
+export function Node({ node, onWaypointDragStart }: NodeProps) {
+  const { 
+    selectedNodeIds, 
+    selectNode, 
+    moveNode, 
+    moveSelectedNodes, 
+    resizeNode, 
+    zoom, 
+    activeTool, 
+    selectToolMode, 
+    nodes, 
+    updateNode, 
+    saveHistoryState,
+    setActiveSnapLines,
+    setNodes
+  } = useDiagram();
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
-  const FigmaHandle = ({ position }: { position: string }) => {
+  const renderFigmaHandle = (position: string) => {
     const handleSize = 6 / zoom;
     const borderSize = 1.5 / zoom;
     const offsetPos = -3 / zoom;
@@ -88,11 +106,22 @@ export function Node({ node }: NodeProps) {
       const currentY = initialStart.y + dy;
 
       // Snapping logic
-      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
       for (const n of nodes) {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        if (n.id === node.id) continue;
+        
+        if (n.type === 'line' || n.type === 'arrow') {
+          const closest = getClosestPointOnLineNode({ x: currentX, y: currentY }, n);
+          const dist = Math.sqrt(Math.pow(currentX - closest.x, 2) + Math.pow(currentY - closest.y, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: 'closest', x: closest.x, y: closest.y };
+          }
+          continue;
+        }
+        
         const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
         for (const a of anchors) {
           let ax = n.position.x;
@@ -115,7 +144,7 @@ export function Node({ node }: NodeProps) {
           ...node,
           startPoint: { x: bestAnchor.x, y: bestAnchor.y },
           startConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
-        });
+        }, false);
       } else {
         updateNode({
           ...node,
@@ -126,7 +155,7 @@ export function Node({ node }: NodeProps) {
             width: Math.max(15, Math.abs(node.endPoint!.x - currentX)), 
             height: Math.max(15, Math.abs(node.endPoint!.y - currentY)) 
           }
-        });
+        }, false);
       }
     };
     
@@ -163,11 +192,22 @@ export function Node({ node }: NodeProps) {
       const currentY = initialEnd.y + dy;
 
       // Snapping logic
-      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right'; x: number; y: number } | null = null;
+      let bestAnchor: { nodeId: string; anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest'; x: number; y: number } | null = null;
       let minDistance = 20 / zoom;
 
       for (const n of nodes) {
-        if (n.id === node.id || n.type === 'line' || n.type === 'arrow') continue;
+        if (n.id === node.id) continue;
+        
+        if (n.type === 'line' || n.type === 'arrow') {
+          const closest = getClosestPointOnLineNode({ x: currentX, y: currentY }, n);
+          const dist = Math.sqrt(Math.pow(currentX - closest.x, 2) + Math.pow(currentY - closest.y, 2));
+          if (dist < minDistance) {
+            minDistance = dist;
+            bestAnchor = { nodeId: n.id, anchor: 'closest', x: closest.x, y: closest.y };
+          }
+          continue;
+        }
+        
         const anchors: ('top' | 'bottom' | 'left' | 'right')[] = ['top', 'bottom', 'left', 'right'];
         for (const a of anchors) {
           let ax = n.position.x;
@@ -190,7 +230,7 @@ export function Node({ node }: NodeProps) {
           ...node,
           endPoint: { x: bestAnchor.x, y: bestAnchor.y },
           endConnection: { nodeId: bestAnchor.nodeId, anchor: bestAnchor.anchor }
-        });
+        }, false);
       } else {
         updateNode({
           ...node,
@@ -201,7 +241,7 @@ export function Node({ node }: NodeProps) {
             width: Math.max(15, Math.abs(currentX - node.startPoint!.x)), 
             height: Math.max(15, Math.abs(currentY - node.startPoint!.y)) 
           }
-        });
+        }, false);
       }
     };
     
@@ -218,22 +258,27 @@ export function Node({ node }: NodeProps) {
   };
 
   const activeHandles = isSelected ? {
-    topLeft: <FigmaHandle position="topLeft" />,
-    topRight: <FigmaHandle position="topRight" />,
-    bottomLeft: <FigmaHandle position="bottomLeft" />,
-    bottomRight: <FigmaHandle position="bottomRight" />,
-    top: <FigmaHandle position="top" />,
-    bottom: <FigmaHandle position="bottom" />,
-    left: <FigmaHandle position="left" />,
-    right: <FigmaHandle position="right" />,
+    topLeft: renderFigmaHandle("topLeft"),
+    topRight: renderFigmaHandle("topRight"),
+    bottomLeft: renderFigmaHandle("bottomLeft"),
+    bottomRight: renderFigmaHandle("bottomRight"),
+    top: renderFigmaHandle("top"),
+    bottom: renderFigmaHandle("bottom"),
+    left: renderFigmaHandle("left"),
+    right: renderFigmaHandle("right"),
   } : undefined;
 
   const isLine = node.type === 'line' || node.type === 'arrow' || node.type === 'custom-connector';
   const isComment = node.type === 'comment';
 
+  // Semantic auto-coloring
+  const semanticStyle = getSemanticStyle(node.tag);
+  const effectiveBorder = node.style?.borderColor || semanticStyle.borderColor;
+  const effectiveColor = node.style?.color || semanticStyle.color;
+
   // Build text style object
   const textStyle: React.CSSProperties = {
-    color: node.style?.color || '#e3e3e3',
+    color: effectiveColor || '#e3e3e3',
     fontSize: node.style?.fontSize || '11px',
     fontWeight: node.style?.fontWeight || 'normal',
     textAlign: node.style?.textAlign || 'center',
@@ -245,11 +290,63 @@ export function Node({ node }: NodeProps) {
   const hasShadow = !!node.style?.boxShadow;
   const shadowFilter = hasShadow ? `drop-shadow(${node.style!.boxShadow})` : 'none';
 
+  const extendedShape = renderExtendedShape({ node, textStyle, shadowFilter });
+
   return (
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
+      onDrag={(_e, d) => {
+        // Smart Guides Logic
+        if (activeTool !== 'select' || selectToolMode !== 'move') return;
+        
+        const SNAP_THRESHOLD = 5;
+        const currentLeft = d.x;
+        const currentRight = d.x + node.dimensions.width;
+        const currentCenterX = d.x + node.dimensions.width / 2;
+        const currentTop = d.y;
+        const currentBottom = d.y + node.dimensions.height;
+        const currentCenterY = d.y + node.dimensions.height / 2;
+
+        const newSnapLines: { axis: 'x' | 'y', position: number }[] = [];
+
+        nodes.forEach(otherNode => {
+          // Skip self and lines/arrows
+          if (otherNode.id === node.id || otherNode.type === 'line' || otherNode.type === 'arrow') return;
+          // Skip other selected nodes if we are dragging a multi-selection group
+          if (selectedNodeIds.includes(otherNode.id)) return;
+
+          const otherLeft = otherNode.position.x;
+          const otherRight = otherNode.position.x + otherNode.dimensions.width;
+          const otherCenterX = otherNode.position.x + otherNode.dimensions.width / 2;
+          const otherTop = otherNode.position.y;
+          const otherBottom = otherNode.position.y + otherNode.dimensions.height;
+          const otherCenterY = otherNode.position.y + otherNode.dimensions.height / 2;
+
+          // X-Axis alignments
+          if (Math.abs(currentLeft - otherLeft) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherLeft });
+          else if (Math.abs(currentRight - otherRight) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherRight });
+          else if (Math.abs(currentCenterX - otherCenterX) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherCenterX });
+          else if (Math.abs(currentLeft - otherRight) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherRight });
+          else if (Math.abs(currentRight - otherLeft) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'x', position: otherLeft });
+
+          // Y-Axis alignments
+          if (Math.abs(currentTop - otherTop) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherTop });
+          else if (Math.abs(currentBottom - otherBottom) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherBottom });
+          else if (Math.abs(currentCenterY - otherCenterY) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherCenterY });
+          else if (Math.abs(currentTop - otherBottom) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherBottom });
+          else if (Math.abs(currentBottom - otherTop) < SNAP_THRESHOLD) newSnapLines.push({ axis: 'y', position: otherTop });
+        });
+
+        // Deduplicate lines
+        const uniqueLines = newSnapLines.filter((line, index, self) => 
+          index === self.findIndex((t) => t.axis === line.axis && t.position === line.position)
+        );
+
+        setActiveSnapLines(uniqueLines);
+      }}
       onDragStop={(_e, d) => {
+        setActiveSnapLines([]);
         if (selectedNodeIds.includes(node.id)) {
           moveSelectedNodes(node.id, { x: d.x, y: d.y });
         } else {
@@ -364,9 +461,10 @@ export function Node({ node }: NodeProps) {
         backgroundColor: 'transparent',
         outline: activeTool === 'erase' && isHovered 
           ? `${1.5 / zoom}px solid #f04438` 
-          : isSelected 
+          : (isSelected && node.type !== 'line' && node.type !== 'arrow')
             ? `${1.5 / zoom}px solid #0c8ce9` 
             : 'none',
+        pointerEvents: (node.type === 'line' || node.type === 'arrow') ? 'none' : 'auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -374,15 +472,14 @@ export function Node({ node }: NodeProps) {
         opacity: node.style?.opacity !== undefined ? Number(node.style.opacity) : 1,
       }}
     >
-      {node.type === 'diamond' ? (
+      {extendedShape ? extendedShape : node.type === 'diamond' ? (
         <div
           style={{
-            width: '70.7%',
-            height: '70.7%',
-            transform: `rotate(${45 + (node.rotation || 0)}deg)`,
-            backgroundColor: node.style?.backgroundColor || '#2e2c24',
-            border: `1.5px solid ${node.style?.borderColor || '#c69c3a'}`,
-            borderRadius: node.style?.borderRadius || '2px',
+            width: '100%',
+            height: '100%',
+            backgroundColor: node.style?.backgroundColor || semanticStyle.backgroundColor || '#2e2c24',
+            border: `2px ${node.style?.borderStyle || 'solid'} ${effectiveBorder || '#c69c3a'}`,
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -390,10 +487,8 @@ export function Node({ node }: NodeProps) {
             filter: shadowFilter
           }}
         >
-          <div style={{ transform: `rotate(${-45 - (node.rotation || 0)}deg)`, width: '141.4%', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ ...textStyle, padding: '4px' }}>
-              {node.content}
-            </div>
+          <div style={{ ...textStyle, padding: '16px', textAlign: 'center' }}>
+            {node.content}
           </div>
         </div>
       ) : node.type === 'circle' ? (
@@ -753,27 +848,165 @@ export function Node({ node }: NodeProps) {
             <defs>
               <marker
                 id={`arrowhead-end-${node.id}`}
-                markerWidth="6"
-                markerHeight="5"
-                refX="5"
-                refY="2.5"
-                orient="auto"
+                markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto"
               >
-                <polygon points="0 0, 6 2.5, 0 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                {node.arrowHead === 'hollow' ? (
+                  <polygon points="0 0, 6 2.5, 0 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowHead === 'open' ? (
+                  <polyline points="0 0, 5 2.5, 0 5" fill="none" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1.5" />
+                ) : node.arrowHead === 'diamond-filled' ? (
+                  <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                ) : node.arrowHead === 'diamond-hollow' ? (
+                  <polygon points="0 2.5, 3 0, 6 2.5, 3 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowHead === 'circle' ? (
+                  <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : (
+                  <polygon points="0 0, 6 2.5, 0 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                )}
               </marker>
               <marker
                 id={`arrowhead-start-${node.id}`}
-                markerWidth="6"
-                markerHeight="5"
-                refX="1"
-                refY="2.5"
-                orient="auto"
+                markerWidth="6" markerHeight="5" refX="1" refY="2.5" orient="auto"
               >
-                <polygon points="6 0, 0 2.5, 6 5" fill={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                {node.arrowTail === 'hollow' ? (
+                  <polygon points="6 0, 0 2.5, 6 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowTail === 'open' ? (
+                  <polyline points="6 0, 1 2.5, 6 5" fill="none" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1.5" />
+                ) : node.arrowTail === 'diamond-filled' ? (
+                  <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                ) : node.arrowTail === 'diamond-hollow' ? (
+                  <polygon points="6 2.5, 3 0, 0 2.5, 3 5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : node.arrowTail === 'circle' ? (
+                  <circle cx="3" cy="2.5" r="2.5" fill="#ffffff" stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} strokeWidth="1" />
+                ) : (
+                  <polygon points="6 0, 0 2.5, 6 5" fill={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')} />
+                )}
               </marker>
             </defs>
 
-            {node.lineCurve === 'curved' ? (() => {
+            {node.routing === 'elbow' ? (() => {
+              const startX = node.startPoint!.x - node.position.x;
+              const startY = node.startPoint!.y - node.position.y;
+              const endX = node.endPoint!.x - node.position.x;
+              const endY = node.endPoint!.y - node.position.y;
+              
+              const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
+
+              const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+              const midY = (startY + endY) / 2;
+              const midX = (startX + endX) / 2;
+              
+              let elbowPath = '';
+              let generatedWaypoints: { x: number, y: number }[] = [];
+              if (node.waypoints && node.waypoints.length > 0) {
+                elbowPath = `M ${startX} ${startY}`;
+                for (const wp of node.waypoints) {
+                  elbowPath += ` L ${wp.x - node.position.x} ${wp.y - node.position.y}`;
+                }
+                elbowPath += ` L ${endX} ${endY}`;
+              } else {
+                elbowPath = isVerticalElbow 
+                  ? `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`
+                  : `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
+                  
+                // Store generated midpoints so they can be grabbed
+                if (isVerticalElbow) {
+                  generatedWaypoints = [
+                    { x: startX + node.position.x, y: midY + node.position.y },
+                    { x: endX + node.position.x, y: midY + node.position.y }
+                  ];
+                } else {
+                  generatedWaypoints = [
+                    { x: midX + node.position.x, y: startY + node.position.y },
+                    { x: midX + node.position.x, y: endY + node.position.y }
+                  ];
+                }
+              }
+
+              return (
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
+                  <path
+                    d={elbowPath}
+                    stroke="transparent"
+                    strokeWidth="16"
+                    fill="none"
+                    style={{ pointerEvents: 'stroke' }}
+                  />
+                  <path
+                    d={elbowPath}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    strokeWidth="2"
+                    fill="none"
+                    strokeDasharray={dasharray}
+                    markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
+                    markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
+                  />
+                  
+                  {/* Faint midpoints to add new waypoints */}
+                  {isSelected && (() => {
+                    const currentWps = node.waypoints || generatedWaypoints;
+                    if (currentWps.length === 0) return null;
+                    
+                    const hints = [
+                      { x: (startX + node.position.x + currentWps[0].x) / 2, y: (startY + node.position.y + currentWps[0].y) / 2 },
+                      ...currentWps.slice(0, -1).map((wp, idx) => ({
+                        x: (wp.x + currentWps[idx+1].x) / 2,
+                        y: (wp.y + currentWps[idx+1].y) / 2
+                      })),
+                      { x: (currentWps[currentWps.length-1].x + endX + node.position.x) / 2, y: (currentWps[currentWps.length-1].y + endY + node.position.y) / 2 }
+                    ];
+                    
+                    return hints.map((hp, i) => (
+                      <g key={`hint-${i}`} style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          const newWaypoints = [...currentWps];
+                          newWaypoints.splice(i, 0, { x: hp.x, y: hp.y });
+                          updateNode({ ...node, waypoints: newWaypoints });
+                          setTimeout(() => {
+                             onWaypointDragStart?.(e, node.id, i);
+                          }, 0);
+                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); }}
+                      >
+                        <circle cx={hp.x - node.position.x} cy={hp.y - node.position.y} r={4} fill="white" stroke="#0c8ce9" strokeWidth={1} opacity={0.6} />
+                        <text x={hp.x - node.position.x} y={hp.y - node.position.y} fill="#0c8ce9" fontSize="8" fontWeight="bold" textAnchor="middle" dominantBaseline="central" opacity={0.8}>+</text>
+                      </g>
+                    ));
+                  })()}
+                  
+                  {/* Draggable waypoints (bend points) */}
+                  {isSelected && (node.waypoints || generatedWaypoints).map((wp, i) => (
+                    <circle 
+                      key={i} 
+                      cx={wp.x - node.position.x} 
+                      cy={wp.y - node.position.y} 
+                      r={5}
+                      fill="white" 
+                      stroke="#0c8ce9" 
+                      strokeWidth={2}
+                      style={{ cursor: 'crosshair', pointerEvents: 'all' }}
+                      onPointerDown={(e) => {
+                        if (e.button === 2) return; // ignore right click
+                        e.stopPropagation();
+                        // If these are generated, the caller needs to know to initialize them first
+                        onWaypointDragStart?.(e, node.id, i);
+                      }}
+                      onMouseDown={(e) => { e.stopPropagation(); }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (node.waypoints) {
+                          const newWaypoints = node.waypoints.filter((_, idx) => idx !== i);
+                          updateNode({ ...node, waypoints: newWaypoints.length ? newWaypoints : undefined });
+                        }
+                      }}
+                    />
+                  ))}
+                </g>
+              );
+            })() : node.lineCurve === 'curved' ? (() => {
               const startX = node.startPoint!.x - node.position.x;
               const startY = node.startPoint!.y - node.position.y;
               const endX = node.endPoint!.x - node.position.x;
@@ -790,21 +1023,24 @@ export function Node({ node }: NodeProps) {
               const controlY = midY + ny * curveOffset;
 
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
+              const curvedPath = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
 
               return (
-                <g style={{ cursor: 'move' }}>
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
                   <path
-                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
+                    d={curvedPath}
                     stroke="transparent"
                     strokeWidth="16"
                     fill="none"
+                    style={{ pointerEvents: 'stroke' }}
                   />
                   <path
-                    d={`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    d={curvedPath}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
                     fill="none"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
+                    strokeDasharray={dasharray}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -817,9 +1053,10 @@ export function Node({ node }: NodeProps) {
               const endY = node.endPoint!.y - node.position.y;
 
               const effectiveArrowType = node.arrowType || (node.type === 'arrow' ? 'single' : 'none');
+              const dasharray = node.lineStyle === 'dashed' ? '5 4' : node.lineStyle === 'dotted' ? '2 2' : undefined;
 
               return (
-                <g style={{ cursor: 'move' }}>
+                <g style={{ cursor: 'move', pointerEvents: 'all' }}>
                   <line
                     x1={startX}
                     y1={startY}
@@ -827,15 +1064,16 @@ export function Node({ node }: NodeProps) {
                     y2={endY}
                     stroke="transparent"
                     strokeWidth="16"
+                    style={{ pointerEvents: 'stroke' }}
                   />
                   <line
                     x1={startX}
                     y1={startY}
                     x2={endX}
                     y2={endY}
-                    stroke={node.style?.borderColor || (node.type === 'line' ? '#888888' : '#0c8ce9')}
+                    stroke={effectiveBorder || (node.type === 'line' ? '#888888' : '#0c8ce9')}
                     strokeWidth="2"
-                    strokeDasharray={node.lineStyle === 'dashed' ? '5 4' : undefined}
+                    strokeDasharray={dasharray}
                     markerStart={effectiveArrowType === 'double' ? `url(#arrowhead-start-${node.id})` : undefined}
                     markerEnd={(effectiveArrowType === 'single' || effectiveArrowType === 'double') ? `url(#arrowhead-end-${node.id})` : undefined}
                   />
@@ -843,6 +1081,62 @@ export function Node({ node }: NodeProps) {
               );
             })()}
           </svg>
+          
+          {/* Edge Label */}
+          {node.label && (() => {
+            const startX = node.startPoint!.x - node.position.x;
+            const startY = node.startPoint!.y - node.position.y;
+            const endX = node.endPoint!.x - node.position.x;
+            const endY = node.endPoint!.y - node.position.y;
+            let labelX = (startX + endX) / 2;
+            let labelY = (startY + endY) / 2;
+
+            if (node.waypoints && node.waypoints.length > 0) {
+              const midIndex = Math.floor((node.waypoints.length - 1) / 2);
+              const wp1 = midIndex >= 0 ? node.waypoints[midIndex] : { x: startX + node.position.x, y: startY + node.position.y };
+              const wp2 = midIndex + 1 < node.waypoints.length ? node.waypoints[midIndex + 1] : { x: endX + node.position.x, y: endY + node.position.y };
+              labelX = (wp1.x + wp2.x) / 2 - node.position.x;
+              labelY = (wp1.y + wp2.y) / 2 - node.position.y;
+            } else if (node.routing === 'elbow') {
+              labelX = (startX + endX) / 2;
+              labelY = startY;
+            } else if (node.lineCurve === 'curved') {
+              const dx = endX - startX;
+              const dy = endY - startY;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              const curveOffset = Math.max(15, Math.min(60, len * 0.15));
+              const nx = len > 0 ? -dy / len : 0;
+              const ny = len > 0 ? dx / len : 0;
+              labelX += nx * (curveOffset * 0.5);
+              labelY += ny * (curveOffset * 0.5);
+            }
+
+            if (node.labelPosition === 'start') {
+              labelX = startX + (endX - startX) * 0.2;
+              labelY = startY + (endY - startY) * 0.2;
+            } else if (node.labelPosition === 'end') {
+              labelX = startX + (endX - startX) * 0.8;
+              labelY = startY + (endY - startY) * 0.8;
+            }
+
+            return (
+              <div style={{
+                position: 'absolute',
+                left: `${labelX}px`,
+                top: `${labelY}px`,
+                transform: 'translate(-50%, -50%)',
+                background: node.style?.backgroundColor || 'var(--bg-canvas)',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: node.style?.fontSize || '10px',
+                color: effectiveColor || 'var(--text-primary)',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap'
+              }}>
+                {node.label}
+              </div>
+            );
+          })()}
         </div>
         )
       ) : node.type === 'path' ? (
@@ -1023,6 +1317,41 @@ export function Node({ node }: NodeProps) {
         </div>
       )}
 
+      {/* Anchor Dots (When drawing or selecting a line) */}
+      {!isLine && (activeTool === 'arrow' || activeTool === 'line' || (selectedNodeIds.length === 1 && (nodes.find(n => n.id === selectedNodeIds[0])?.type === 'line' || nodes.find(n => n.id === selectedNodeIds[0])?.type === 'arrow'))) && (
+        <>
+          {['top', 'bottom', 'left', 'right'].map((anchor) => {
+            let left = '50%';
+            let top = '50%';
+            if (anchor === 'top') top = '0%';
+            if (anchor === 'bottom') top = '100%';
+            if (anchor === 'left') left = '0%';
+            if (anchor === 'right') left = '100%';
+            return (
+              <div
+                key={anchor}
+                data-anchor={anchor}
+                data-node-id={node.id}
+                style={{
+                  position: 'absolute',
+                  left,
+                  top,
+                  width: `${8 / zoom}px`,
+                  height: `${8 / zoom}px`,
+                  backgroundColor: '#0c8ce9',
+                  border: `${1.5 / zoom}px solid white`,
+                  borderRadius: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'auto',
+                  zIndex: 20,
+                  opacity: 0.8
+                }}
+              />
+            );
+          })}
+        </>
+      )}
+
       {isSelected && isLine && (
         <>
           {/* Start Point Handle */}
@@ -1038,6 +1367,7 @@ export function Node({ node }: NodeProps) {
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
+              pointerEvents: 'auto',
               zIndex: 30,
               boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}
@@ -1056,6 +1386,7 @@ export function Node({ node }: NodeProps) {
               borderRadius: '50%',
               transform: 'translate(-50%, -50%)',
               cursor: 'pointer',
+              pointerEvents: 'auto',
               zIndex: 30,
               boxShadow: `0 ${1 / zoom}px ${3 / zoom}px rgba(0,0,0,0.3)`,
             }}

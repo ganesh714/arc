@@ -45,4 +45,13 @@ public class Responses {
         private JsonNode nodes;
         private long updatedAt;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class FileVersionDTO {
+        private UUID id;
+        private long createdAt;
+    }
 }

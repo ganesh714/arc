@@ -53,10 +53,10 @@ export const CollaborationProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+    const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
     
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${loomApiUrl}/ws`, null, {
+      webSocketFactory: () => new SockJS(`${arcApiUrl}/ws`, null, {
         withCredentials: true
       } as any),
       connectHeaders: {

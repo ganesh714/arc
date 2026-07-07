@@ -25,33 +25,44 @@ public class AIFallbackRingManager implements AIService {
     }
 
     @Override
-    public String generateDiagramNodes(String prompt) throws Exception {
+    public String generateDiagramNodes(String prompt, String imageBase64) throws Exception {
         for (AIProvider provider : fallbackRing) {
             try {
-                logger.info("Attempting AI generation using provider: {}", provider.getProviderName());
-                String result = provider.generate(prompt);
+                if (imageBase64 != null && !imageBase64.isEmpty() && !(provider instanceof GeminiProvider)) {
+                    logger.info("Skipping provider {} because it does not support Vision. Routing to Gemini.", provider.getProviderName());
+                    continue;
+                }
                 
-                // If it succeeds, return the valid JSON string immediately
-                logger.info("Successfully generated diagram nodes using {}", provider.getProviderName());
-                return result;
+                logger.info("Attempting AI generation (Pass 1 - SLD) using provider: {}", provider.getProviderName());
+                String sld = provider.generate(prompt, AIPrompts.PASS1_SLD_PROMPT, imageBase64);
+                
+                logger.info("Successfully generated SLD using {}. Now attempting Pass 2 (JSON)...", provider.getProviderName());
+                String pass2Prompt = "SLD Blueprint:\n" + sld + "\n\nOriginal Request Context:\n" + prompt;
+                String jsonResult = provider.generate(pass2Prompt, AIPrompts.PASS2_STYLE_PROMPT, null);
+                
+                logger.info("Successfully completed two-pass diagram generation using {}", provider.getProviderName());
+                return jsonResult;
                 
             } catch (Exception e) {
-                // Log the failure and continue to the next provider in the ring
-                logger.warn("Provider {} failed. Reason: {}. Falling back to next provider...", provider.getProviderName(), e.getMessage());
+                logger.warn("Provider {} failed during two-pass generation. Reason: {}. Falling back to next provider...", provider.getProviderName(), e.getMessage());
             }
         }
         
-        // If we exit the loop, it means ALL providers have failed.
         logger.error("All AI providers in the fallback ring have failed.");
         throw new Exception("Unable to generate diagram nodes. All configured AI providers failed.");
     }
 
     @Override
-    public String editDiagramNodes(String prompt, String contextNodes) throws Exception {
+    public String editDiagramNodes(String prompt, String contextNodes, String imageBase64) throws Exception {
         for (AIProvider provider : fallbackRing) {
             try {
+                if (imageBase64 != null && !imageBase64.isEmpty() && !(provider instanceof GeminiProvider)) {
+                    logger.info("Skipping provider {} because it does not support Vision. Routing to Gemini.", provider.getProviderName());
+                    continue;
+                }
+                
                 logger.info("Attempting AI edit using provider: {}", provider.getProviderName());
-                String result = provider.edit(prompt, contextNodes);
+                String result = provider.edit(prompt, contextNodes, imageBase64);
                 
                 logger.info("Successfully edited diagram nodes using {}", provider.getProviderName());
                 return result;

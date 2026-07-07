@@ -149,13 +149,12 @@ export function SidePanel() {
     if (!node) return;
     resizeNode(
       node.id,
-      {
-        ...node.dimensions,
-        [dimension]: isNaN(value) ? 0 : value,
-      },
+      { ...node.dimensions, [dimension]: value },
       node.position
     );
   };
+
+
 
   const handleStartPointChange = (axis: 'x' | 'y', value: number) => {
     if (!node || !node.startPoint || !node.endPoint) return;
@@ -1150,10 +1149,11 @@ export function SidePanel() {
                   <span className={styles.rowLabel}>Route</span>
                   <select
                     className={styles.select}
-                    value={node.lineCurve || 'straight'}
-                    onChange={(e) => updateNode({ ...node, lineCurve: e.target.value as 'straight' | 'curved' })}
+                    value={node.routing || 'straight'}
+                    onChange={(e) => updateNode({ ...node, routing: e.target.value as 'straight' | 'elbow' | 'curved' })}
                   >
                     <option value="straight">Straight</option>
+                    <option value="elbow">Elbow</option>
                     <option value="curved">Curved</option>
                   </select>
                 </div>
@@ -1182,6 +1182,74 @@ export function SidePanel() {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {isLine && node.type !== 'custom-connector' && (
+          <div className={styles.section}>
+            <span className={styles.sectionTitle}>Connections</span>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Start Target</span>
+              <select
+                className={styles.select}
+                value={node.startConnection ? `${node.startConnection.nodeId}:${node.startConnection.anchor}` : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    updateNode({ ...node, startConnection: undefined });
+                  } else {
+                    const [nodeId, anchor] = val.split(':');
+                    updateNode({ ...node, startConnection: { nodeId, anchor: anchor as any } });
+                  }
+                }}
+              >
+                <option value="">None (Floating)</option>
+                {nodes.filter(n => n.id !== node.id).flatMap(n => {
+                  if (n.type === 'line' || n.type === 'arrow') {
+                    return [
+                      <option key={`${n.id}:closest`} value={`${n.id}:closest`}>[Line] {n.id.substring(0,8)} (Closest)</option>,
+                      <option key={`${n.id}:start`} value={`${n.id}:start`}>[Line] {n.id.substring(0,8)} (Start)</option>,
+                      <option key={`${n.id}:end`} value={`${n.id}:end`}>[Line] {n.id.substring(0,8)} (End)</option>
+                    ];
+                  } else {
+                    return [
+                      <option key={`${n.id}:bottom`} value={`${n.id}:bottom`}>[{n.type}] {n.content || n.id.substring(0,8)}</option>
+                    ];
+                  }
+                })}
+              </select>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>End Target</span>
+              <select
+                className={styles.select}
+                value={node.endConnection ? `${node.endConnection.nodeId}:${node.endConnection.anchor}` : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    updateNode({ ...node, endConnection: undefined });
+                  } else {
+                    const [nodeId, anchor] = val.split(':');
+                    updateNode({ ...node, endConnection: { nodeId, anchor: anchor as any } });
+                  }
+                }}
+              >
+                <option value="">None (Floating)</option>
+                {nodes.filter(n => n.id !== node.id).flatMap(n => {
+                  if (n.type === 'line' || n.type === 'arrow') {
+                    return [
+                      <option key={`${n.id}:closest`} value={`${n.id}:closest`}>[Line] {n.id.substring(0,8)} (Closest)</option>,
+                      <option key={`${n.id}:start`} value={`${n.id}:start`}>[Line] {n.id.substring(0,8)} (Start)</option>,
+                      <option key={`${n.id}:end`} value={`${n.id}:end`}>[Line] {n.id.substring(0,8)} (End)</option>
+                    ];
+                  } else {
+                    return [
+                      <option key={`${n.id}:top`} value={`${n.id}:top`}>[{n.type}] {n.content || n.id.substring(0,8)}</option>
+                    ];
+                  }
+                })}
+              </select>
+            </div>
           </div>
         )}
 

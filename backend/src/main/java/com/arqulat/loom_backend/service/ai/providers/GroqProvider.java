@@ -29,7 +29,7 @@ public class GroqProvider extends AbstractAIProvider {
     }
 
     @Override
-    public String generate(String prompt) throws Exception {
+    public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
         if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
             throw new IllegalStateException("Groq API key is not configured.");
         }
@@ -42,15 +42,19 @@ public class GroqProvider extends AbstractAIProvider {
 
         Map<String, Object> systemMessage = new HashMap<>();
         systemMessage.put("role", "system");
-        systemMessage.put("content", AIPrompts.SYSTEM_PROMPT);
+        systemMessage.put("content", systemPrompt);
 
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
-        userMessage.put("content", prompt + "\n\nCRITICAL INSTRUCTION: You MUST output ONLY a valid JSON array. Do not wrap in markdown or include any explanations.");
+        boolean expectsJson = systemPrompt.contains("JSON");
+        userMessage.put("content", prompt + (expectsJson ? "\n\nCRITICAL INSTRUCTION: You MUST output ONLY a valid JSON array. Do not wrap in markdown or include any explanations." : ""));
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
         requestBody.put("messages", List.of(systemMessage, userMessage));
+        if (expectsJson) {
+            requestBody.put("response_format", Map.of("type", "json_object"));
+        }
         requestBody.put("temperature", 0.7);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
@@ -65,14 +69,15 @@ public class GroqProvider extends AbstractAIProvider {
         JsonNode choices = root.path("choices");
         if (choices.isArray() && !choices.isEmpty()) {
             String text = choices.get(0).path("message").path("content").asText();
-            return cleanAndValidateJsonResponse(text);
+            expectsJson = systemPrompt.contains("JSON");
+            return expectsJson ? cleanAndValidateJsonResponse(text) : text;
         }
         
         throw new RuntimeException("Failed to parse Groq response: " + response.getBody());
     }
 
     @Override
-    public String edit(String prompt, String contextNodes) throws Exception {
+    public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
@@ -88,6 +93,7 @@ public class GroqProvider extends AbstractAIProvider {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
         requestBody.put("messages", List.of(systemMessage, userMessage));
+        requestBody.put("response_format", Map.of("type", "json_object"));
         requestBody.put("temperature", 0.7);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);

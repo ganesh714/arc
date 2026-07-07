@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
+import type { NodeType } from '@/types';
 import { Node } from './Node';
 import { RemoteCursors } from './RemoteCursors';
 import { useCollaboration } from '@/context/CollaborationContext';
@@ -28,7 +29,20 @@ import {
   StickyNote,
   Sparkles,
   Link,
-  Undo2
+  Unlink,
+  Undo2,
+  CornerDownRight,
+  Activity,
+  BringToFront,
+  SendToBack,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignStartVertical,
+  AlignVerticalSpaceAround,
+  AlignEndVertical,
+  Layers,
+  Scissors
 } from 'lucide-react';
 
 export function Canvas() {
@@ -56,12 +70,19 @@ export function Canvas() {
     addArrow,
     addCustomBlock,
     addCustomConnector,
+    updateWaypoint,
     zoom,
     setZoom,
     activeTool,
     setActiveTool,
     selectToolMode,
     setSelectToolMode,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+    activeSnapLines,
+    alignSelected,
     undo,
     redo,
     canUndo,
@@ -70,7 +91,12 @@ export function Canvas() {
     copySelected,
     pasteSelected,
     cutSelected,
-    deleteSelected
+    deleteSelected,
+    groupSelected,
+    ungroupSelected,
+    panOffset,
+    setPanOffset,
+    splitElbowLine
   } = useDiagram();
   const { broadcast } = useCollaboration();
 
@@ -78,7 +104,6 @@ export function Canvas() {
   const activeFile = activeProject?.files.find(f => f.id === activeFileId);
   const canvasBgColor = activeFile?.canvasConfig?.backgroundColor || 'var(--bg-canvas)';
 
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spacePressed, setSpacePressed] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -95,13 +120,78 @@ export function Canvas() {
 
   const drawingPreviewRef = useRef(drawingPreview);
   
+  const [_draggingWaypoint, setDraggingWaypoint] = useState<{
+    nodeId: string;
+    index: number;
+  } | null>(null);
+
+  const findNodeAndAnchor = (x: number, y: number, excludeIds: string[], targetElement?: EventTarget | null) => {
+    // Explicit fixed anchor drop
+    if (targetElement && (targetElement as HTMLElement).hasAttribute && (targetElement as HTMLElement).hasAttribute('data-anchor')) {
+      const el = targetElement as HTMLElement;
+      const anchor = el.getAttribute('data-anchor') as 'top' | 'bottom' | 'left' | 'right';
+      const nodeId = el.getAttribute('data-node-id') as string;
+      
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        const left = node.position.x;
+        const right = node.position.x + node.dimensions.width;
+        const top = node.position.y;
+        const bottom = node.position.y + node.dimensions.height;
+        const cx = left + node.dimensions.width / 2;
+        const cy = top + node.dimensions.height / 2;
+        
+        let anchorPt = { x: cx, y: cy };
+        if (anchor === 'top') anchorPt = { x: cx, y: top };
+        if (anchor === 'bottom') anchorPt = { x: cx, y: bottom };
+        if (anchor === 'left') anchorPt = { x: left, y: cy };
+        if (anchor === 'right') anchorPt = { x: right, y: cy };
+        return { nodeId, anchor, point: anchorPt };
+      }
+    }
+
+    // Search in reverse to get topmost node
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const node = nodes[i];
+      if (excludeIds.includes(node.id) || ['line', 'arrow', 'path', 'custom-connector'].includes(node.type)) continue;
+      
+      const left = node.position.x;
+      const right = node.position.x + node.dimensions.width;
+      const top = node.position.y;
+      const bottom = node.position.y + node.dimensions.height;
+      
+      if (x >= left && x <= right && y >= top && y <= bottom) {
+        const cx = left + node.dimensions.width / 2;
+        const cy = top + node.dimensions.height / 2;
+        
+        const dx = x - cx;
+        const dy = y - cy;
+        let anchor = 'bottom';
+        if (Math.abs(dx) > Math.abs(dy)) {
+          anchor = dx > 0 ? 'right' : 'left';
+        } else {
+          anchor = dy > 0 ? 'bottom' : 'top';
+        }
+        
+        let anchorPt = { x: cx, y: cy };
+        if (anchor === 'top') anchorPt = { x: cx, y: top };
+        if (anchor === 'bottom') anchorPt = { x: cx, y: bottom };
+        if (anchor === 'left') anchorPt = { x: left, y: cy };
+        if (anchor === 'right') anchorPt = { x: right, y: cy };
+
+        return { nodeId: node.id, anchor, point: anchorPt };
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     drawingPreviewRef.current = drawingPreview;
   }, [drawingPreview]);
 
   const [selectDropdownOpen, setSelectDropdownOpen] = useState(false);
   const [shapeDropdownOpen, setShapeDropdownOpen] = useState(false);
-  const [currentShapeType, setCurrentShapeType] = useState<'box' | 'circle' | 'triangle' | 'star' | 'diamond' | 'line' | 'arrow' | 'pill' | 'hexagon' | 'parallelogram' | 'database' | 'note' | 'comment' | 'custom-block' | 'custom-connector'>('box');
+  const [currentShapeType, setCurrentShapeType] = useState<NodeType>('box');
 
   // Close shape and select dropdown on click away
   useEffect(() => {
@@ -168,6 +258,43 @@ export function Canvas() {
         cutSelected();
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && key === 'd') {
+        e.preventDefault();
+        copySelected();
+        setTimeout(() => pasteSelected(), 50);
+        return;
+      }
+
+      // Group / Ungroup
+      if ((e.ctrlKey || e.metaKey) && key === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          ungroupSelected();
+        } else {
+          groupSelected();
+        }
+        return;
+      }
+
+      // Layer Arrangement Shortcuts
+      if ((e.ctrlKey || e.metaKey) && key === ']') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          bringToFront(selectedNodeIds);
+        } else {
+          bringForward(selectedNodeIds);
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && key === '[') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          sendToBack(selectedNodeIds);
+        } else {
+          sendBackward(selectedNodeIds);
+        }
+        return;
+      }
 
       // Delete / Backspace
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -197,13 +324,16 @@ export function Canvas() {
       } else if (key === 'e' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('erase');
       } else if (key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('circle');
+        setCurrentShapeType('circle');
+      } else if (key === 'm' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('comment');
       } else if (key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
         setActiveTool('box');
         setCurrentShapeType('box');
-      } else if (key === 'o' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-        setActiveTool('circle');
-        setCurrentShapeType('circle');
+      } else if (key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        setActiveTool('note');
+        setCurrentShapeType('note');
       } else if (key === 'l' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.shiftKey) {
           setActiveTool('arrow');
@@ -334,7 +464,7 @@ export function Canvas() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const type = e.dataTransfer.getData('application/loom-node-type');
+    const type = e.dataTransfer.getData('application/arc-node-type');
     if (!type) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -512,7 +642,7 @@ export function Canvas() {
         setDrawingPreview(prev => prev ? { ...prev, currentX, currentY } : null);
       };
 
-      const handleMouseUp = () => {
+      const handleMouseUp = (upEvent: MouseEvent) => {
         console.log('handleMouseUp triggered');
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
@@ -535,12 +665,25 @@ export function Canvas() {
             let newNode: any;
 
             if (isLineType) {
+              const startSnap = findNodeAndAnchor(sX, sY, []);
+              const endSnap = findNodeAndAnchor(cX, cY, [], upEvent.target);
+
+              const finalStartX = startSnap ? startSnap.point.x : sX;
+              const finalStartY = startSnap ? startSnap.point.y : sY;
+              const finalEndX = endSnap ? endSnap.point.x : cX;
+              const finalEndY = endSnap ? endSnap.point.y : cY;
+
+              const minX = Math.min(finalStartX, finalEndX);
+              const minY = Math.min(finalStartY, finalEndY);
+              const w = Math.max(10, Math.abs(finalEndX - finalStartX));
+              const h = Math.max(10, Math.abs(finalEndY - finalStartY));
+
               if (activeTool === 'custom-connector') {
                 newNode = {
                   id,
                   type: 'custom-connector',
-                  position: { x: left, y: top },
-                  dimensions: { width, height },
+                  position: { x: minX, y: minY },
+                  dimensions: { width: w, height: h },
                   content: '',
                   style: {
                     borderColor: '#e74c3c',
@@ -548,8 +691,10 @@ export function Canvas() {
                     borderWidth: '2px',
                     opacity: '0.8'
                   },
-                  startPoint: { x: sX, y: sY },
-                  endPoint: { x: cX, y: cY },
+                  startPoint: { x: finalStartX, y: finalStartY },
+                  endPoint: { x: finalEndX, y: finalEndY },
+                  startConnection: startSnap ? { nodeId: startSnap.nodeId, anchor: startSnap.anchor } : undefined,
+                  endConnection: endSnap ? { nodeId: endSnap.nodeId, anchor: endSnap.anchor } : undefined,
                   customConnectorStyle: {
                     borderBottomColor: '#e74c3c',
                     borderWidth: '12px'
@@ -559,14 +704,16 @@ export function Canvas() {
                 newNode = {
                   id,
                   type: activeTool,
-                  position: { x: left, y: top },
-                  dimensions: { width, height },
+                  position: { x: minX, y: minY },
+                  dimensions: { width: w, height: h },
                   content: '',
                   style: {
                     borderColor: activeTool === 'arrow' ? '#0c8ce9' : '#888888',
                   },
-                  startPoint: { x: sX, y: sY },
-                  endPoint: { x: cX, y: cY }
+                  startPoint: { x: finalStartX, y: finalStartY },
+                  endPoint: { x: finalEndX, y: finalEndY },
+                  startConnection: startSnap ? { nodeId: startSnap.nodeId, anchor: startSnap.anchor } : undefined,
+                  endConnection: endSnap ? { nodeId: endSnap.nodeId, anchor: endSnap.anchor } : undefined
                 };
               }
             } else if (activeTool === 'custom-block') {
@@ -765,6 +912,21 @@ export function Canvas() {
     });
   };
 
+  const handleUpdateNodeProperty = (key: string, value: any) => {
+    if (!selectedNode) return;
+    saveHistoryState(nodes);
+    const updates: any = { [key]: value };
+    
+    if (key === 'routing' && value === 'elbow') updates['lineCurve'] = undefined;
+    if (key === 'lineCurve' && value === 'curved') updates['routing'] = undefined;
+    if (key === 'routing' && value === 'straight') {
+      updates['routing'] = undefined;
+      updates['lineCurve'] = undefined;
+    }
+    
+    updateNode({ ...selectedNode, ...updates });
+  };
+
   const handleDeleteNode = (id: string) => {
     saveHistoryState(nodes);
     setNodes(nodes.filter(n => n.id !== id));
@@ -825,6 +987,42 @@ export function Canvas() {
     'custom-connector': 'Custom Connector'
   };
 
+  const tooltips = {
+    box: 'Rectangle',
+    pill: 'Pill',
+    circle: 'Ellipse',
+    triangle: 'Triangle',
+    hexagon: 'Hexagon',
+    diamond: 'Diamond',
+    parallelogram: 'Parallelogram',
+    star: 'Star',
+    database: 'Database',
+    note: 'Sticky Note',
+    comment: 'Comment',
+    line: 'Line',
+    arrow: 'Arrow',
+    'custom-block': 'Custom Block',
+    'custom-connector': 'Custom Connector'
+  };
+
+  const nodeIcons = {
+    box: <Square size={15} />,
+    pill: <PillIcon size={15} />,
+    circle: <Circle size={15} />,
+    triangle: <Triangle size={15} />,
+    hexagon: <Hexagon size={15} />,
+    diamond: <FlowchartDiamondIcon size={15} />,
+    parallelogram: <ParallelogramIcon size={15} />,
+    star: <StarIcon size={15} />,
+    database: <Database size={15} />,
+    note: <StickyNote size={15} />,
+    comment: <MessageSquare size={15} />,
+    line: <Minus size={15} />,
+    arrow: <ArrowRight size={15} />,
+    'custom-block': <Sparkles size={15} />,
+    'custom-connector': <Link size={15} />
+  };
+
   const getCursorClass = () => {
     if (isPanning) return styles.grabbingCursor;
     if (spacePressed || activeTool === 'hand') return styles.grabCursor;
@@ -873,81 +1071,97 @@ export function Canvas() {
           left: 0,
           pointerEvents: 'none'
         }}>
-          <div className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+          <div id="arc-export-area" className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
-              <Node key={node.id} node={node} />
+              <Node 
+                key={node.id} 
+                node={node} 
+                onWaypointDragStart={(e, nodeId, index) => {
+                  e.stopPropagation();
+                  setDraggingWaypoint({ nodeId, index });
+                  saveHistoryState(nodes); // Save pre-drag state
+                  
+                  // If this is a newly initialized waypoint (from the generated elbows),
+                  // we need to make sure the state is initialized in the context
+                  if (!node.waypoints || node.waypoints.length === 0) {
+                    const startX = node.startPoint!.x;
+                    const startY = node.startPoint!.y;
+                    const endX = node.endPoint!.x;
+                    const endY = node.endPoint!.y;
+                    const isVertical = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+                    
+                    let initialWaypoints = [];
+                    if (isVertical) {
+                      const midY = (startY + endY) / 2;
+                      initialWaypoints = [{ x: startX, y: midY }, { x: endX, y: midY }];
+                    } else {
+                      const midX = (startX + endX) / 2;
+                      initialWaypoints = [{ x: midX, y: startY }, { x: midX, y: endY }];
+                    }
+                    // Use setNodes to avoid recursive broadcast/history issues
+                    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, waypoints: initialWaypoints } : n));
+                  }
+                  
+                  const handleMouseMove = (moveEvent: MouseEvent) => {
+                    const rect = canvasRef.current?.getBoundingClientRect();
+                    if (!rect) return;
+                    const currentX = (moveEvent.clientX - rect.left) / zoom - panOffset.x;
+                    const currentY = (moveEvent.clientY - rect.top) / zoom - panOffset.y;
+                    updateWaypoint(nodeId, index, { x: currentX, y: currentY });
+                  };
+                  
+                  const handleMouseUp = (upEvent: MouseEvent) => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    setDraggingWaypoint(null);
+                    
+                    setNodes(prev => {
+                      let nextNodes = [...prev];
+                      const lineNode = nextNodes.find(n => n.id === nodeId);
+                      if (lineNode) {
+                        const isStart = index === 0;
+                        const isEnd = (lineNode.waypoints && index === lineNode.waypoints.length - 1) || (!lineNode.waypoints && index === 1);
+                        
+                        if (isStart || isEnd) {
+                           const pt = isStart ? lineNode.startPoint! : lineNode.endPoint!;
+                           const snap = findNodeAndAnchor(pt.x, pt.y, [nodeId], upEvent.target);
+                           if (snap) {
+                             if (isStart) {
+                               lineNode.startPoint = snap.point;
+                               lineNode.startConnection = { nodeId: snap.nodeId, anchor: snap.anchor as any };
+                             } else {
+                               lineNode.endPoint = snap.point;
+                               lineNode.endConnection = { nodeId: snap.nodeId, anchor: snap.anchor as any };
+                             }
+                           } else {
+                             if (isStart) lineNode.startConnection = undefined;
+                             if (isEnd) lineNode.endConnection = undefined;
+                           }
+                           
+                           const minX = Math.min(lineNode.startPoint!.x, lineNode.endPoint!.x);
+                           const minY = Math.min(lineNode.startPoint!.y, lineNode.endPoint!.y);
+                           lineNode.position = { x: minX, y: minY };
+                           lineNode.dimensions = { 
+                             width: Math.max(15, Math.abs(lineNode.endPoint!.x - lineNode.startPoint!.x)),
+                             height: Math.max(15, Math.abs(lineNode.endPoint!.y - lineNode.startPoint!.y))
+                           };
+                        }
+                      }
+                      
+                      const finalNode = nextNodes.find(n => n.id === nodeId);
+                      if (finalNode) {
+                        setTimeout(() => broadcast('NODE_UPDATED', finalNode), 0);
+                      }
+                      return nextNodes;
+                    });
+                  };
+                  
+                  document.addEventListener('mousemove', handleMouseMove);
+                  document.addEventListener('mouseup', handleMouseUp);
+                }}
+              />
             ))}
             <RemoteCursors />
-
-            {/* Floating Contextual Menu directly above the selected shape */}
-            {selectedNode && (() => {
-              const isLine = selectedNode.type === 'line' || selectedNode.type === 'arrow';
-              
-              // Menu layout dimensions logic
-              const menuTop = selectedNode.position.y < 50 
-                ? (selectedNode.position.y + selectedNode.dimensions.height + 8) 
-                : (selectedNode.position.y - 40);
-                
-              const menuLeft = Math.max(10, selectedNode.position.x + (selectedNode.dimensions.width / 2) - 80);
-
-              return (
-                <div 
-                  className={styles.contextMenu}
-                  style={{
-                    top: `${menuTop}px`,
-                    left: `${menuLeft}px`
-                  }}
-                >
-                  {/* Fill Color Picker (Only if shape) */}
-                  {!isLine && (
-                    <div className={styles.contextColorWrapper} title="Fill Color">
-                      <input 
-                        type="color" 
-                        className={styles.contextColorPicker}
-                        value={selectedNode.style?.backgroundColor || '#2c2c2c'}
-                        onChange={(e) => handleQuickChange('backgroundColor', e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Border / Line Color Picker */}
-                  <div className={styles.contextColorWrapper} title={isLine ? "Line Color" : "Stroke Color"}>
-                    <input 
-                      type="color" 
-                      className={styles.contextColorPicker}
-                      value={selectedNode.style?.borderColor || (isLine ? '#888888' : '#555555')}
-                      onChange={(e) => handleQuickChange('borderColor', e.target.value)}
-                    />
-                  </div>
-
-                  {/* Text Bold Toggle (Only if shape) */}
-                  {!isLine && (
-                    <>
-                      <div className={styles.divider} style={{ height: '12px' }} />
-                      <button 
-                        className={`${styles.contextBtn} ${selectedNode.style?.fontWeight === 'bold' ? styles.contextBtnActive : ''}`}
-                        onClick={() => handleQuickChange('fontWeight', selectedNode.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
-                        title="Toggle Bold Text"
-                      >
-                        <Bold size={11} />
-                      </button>
-                    </>
-                  )}
-
-                  <div className={styles.divider} style={{ height: '12px' }} />
-
-                  {/* Delete Element */}
-                  <button 
-                    className={styles.contextBtn} 
-                    onClick={() => handleDeleteNode(selectedNode.id)} 
-                    title="Delete element"
-                    style={{ color: '#f04438' }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              );
-            })()}
 
             {/* Live Drawing Preview */}
             {drawingPreview && (() => {
@@ -1177,6 +1391,39 @@ export function Canvas() {
               );
             })()}
 
+            {/* Smart Guides (Snap Lines) */}
+            {activeSnapLines.map((line, i) => {
+              if (line.axis === 'x') {
+                return (
+                  <div key={`snap-x-${i}`} style={{
+                    position: 'absolute',
+                    left: `${line.position}px`,
+                    top: 0,
+                    bottom: 0,
+                    width: '1px',
+                    backgroundColor: '#ff007f', // Pink/red guide
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    opacity: 0.7
+                  }} />
+                );
+              } else {
+                return (
+                  <div key={`snap-y-${i}`} style={{
+                    position: 'absolute',
+                    top: `${line.position}px`,
+                    left: 0,
+                    right: 0,
+                    height: '1px',
+                    backgroundColor: '#ff007f',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    opacity: 0.7
+                  }} />
+                );
+              }
+            })}
+
             {/* Marquee Selection inside scaled viewport (canvas coordinates) */}
             {marquee && isDragSelecting && (() => {
               const left = Math.min(marquee.startX, marquee.currentX);
@@ -1200,27 +1447,209 @@ export function Canvas() {
         </div>
       </div>
 
-      {/* Floating History Toolbar - Top Center */}
-      <div className={styles.historyToolbar}>
-        <button 
-          className={styles.toolButton} 
-          onClick={undo} 
-          disabled={!canUndo}
-          title="Undo (Ctrl+Z)"
-          style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
-        >
-          <Undo2 size={16} />
-        </button>
-        <button 
-          className={styles.toolButton} 
-          onClick={redo} 
-          disabled={!canRedo}
-          title="Redo (Ctrl+Shift+Z)"
-          style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
-        >
-          <Redo2 size={16} />
-        </button>
-      </div>
+      {/* Floating Contextual Menu directly above the selected shape */}
+      {selectedNode && (() => {
+        const isLine = selectedNode.type === 'line' || selectedNode.type === 'arrow';
+
+        return (
+          <div className={styles.contextMenu}>
+            <div className={styles.toolIcon}>
+              {(nodeIcons as Record<string, React.ReactNode>)[currentShapeType as string] || nodeIcons['box']}
+            </div>
+            {/* Fill Color Picker (Only if shape) */}
+            {!isLine && (
+              <div className={styles.contextColorWrapper} title="Fill Color">
+                <input 
+                  type="color" 
+                  className={styles.contextColorPicker}
+                  value={selectedNode.style?.backgroundColor || '#2c2c2c'}
+                  onChange={(e) => handleQuickChange('backgroundColor', e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Border / Line Color Picker */}
+            <div className={styles.contextColorWrapper} title={isLine ? "Line Color" : "Stroke Color"}>
+              <input 
+                type="color" 
+                className={styles.contextColorPicker}
+                value={selectedNode.style?.borderColor || (isLine ? '#888888' : '#555555')}
+                onChange={(e) => handleQuickChange('borderColor', e.target.value)}
+              />
+            </div>
+
+            {/* Text Bold Toggle (Only if shape) */}
+            {!isLine && (
+              <>
+                <div className={styles.divider} style={{ height: '12px' }} />
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.style?.fontWeight === 'bold' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleQuickChange('fontWeight', selectedNode.style?.fontWeight === 'bold' ? 'normal' : 'bold')}
+                  title="Toggle Bold Text"
+                >
+                  <Bold size={11} />
+                </button>
+              </>
+            )}
+
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Line Style Controls (Only if line) */}
+            {isLine && (
+              <>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.routing !== 'elbow' && selectedNode.lineCurve !== 'curved' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('routing', 'straight')}
+                  title="Straight Line"
+                >
+                  <Minus size={11} />
+                </button>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.routing === 'elbow' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('routing', 'elbow')}
+                  title="Elbow Line"
+                >
+                  <CornerDownRight size={11} />
+                </button>
+                <button 
+                  className={`${styles.contextBtn} ${selectedNode.lineCurve === 'curved' ? styles.contextBtnActive : ''}`}
+                  onClick={() => handleUpdateNodeProperty('lineCurve', 'curved')}
+                  title="Curved Line"
+                >
+                  <Activity size={11} />
+                </button>
+                {selectedNode.routing === 'elbow' && (
+                  <button 
+                    className={styles.contextBtn}
+                    onClick={() => splitElbowLine(selectedNode.id)}
+                    title="Split into Straight Lines"
+                  >
+                    <Scissors size={11} />
+                  </button>
+                )}
+                <div className={styles.divider} style={{ height: '12px' }} />
+              </>
+            )}
+
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Group / Ungroup (Single Node in Group) */}
+            {selectedNode.groupId && (
+              <>
+                <button 
+                  className={styles.contextBtn} 
+                  onClick={ungroupSelected} 
+                  title="Ungroup"
+                >
+                  <Unlink size={11} />
+                </button>
+                <div className={styles.divider} style={{ height: '12px' }} />
+              </>
+            )}
+
+            {/* Z-Index Controls */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => bringToFront([selectedNode.id])} 
+              title="Bring to Front"
+            >
+              <BringToFront size={11} />
+            </button>
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => sendToBack([selectedNode.id])} 
+              title="Send to Back"
+            >
+              <SendToBack size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Delete Element */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => handleDeleteNode(selectedNode.id)} 
+              title="Delete element"
+              style={{ color: '#f04438' }}
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* Multi-Select Floating Contextual Menu */}
+      {selectedNodeIds.length > 1 && (() => {
+        const selectedNodes = nodes.filter(n => selectedNodeIds.includes(n.id));
+        if (selectedNodes.length === 0) return null;
+        
+        const allGrouped = selectedNodes.every(n => n.groupId) && new Set(selectedNodes.map(n => n.groupId)).size === 1;
+
+        return (
+          <div className={styles.contextMenu}>
+            <div className={styles.toolIcon}>
+              <Layers size={14} />
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '0 4px' }}>
+              {selectedNodes.length}
+            </span>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Alignment Controls */}
+            <button className={styles.contextBtn} onClick={() => alignSelected('left')} title="Align Left">
+              <AlignLeft size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('center')} title="Align Center">
+              <AlignCenter size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('right')} title="Align Right">
+              <AlignRight size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('top')} title="Align Top">
+              <AlignStartVertical size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('middle')} title="Align Middle">
+              <AlignVerticalSpaceAround size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => alignSelected('bottom')} title="Align Bottom">
+              <AlignEndVertical size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Z-Index Controls */}
+            <button className={styles.contextBtn} onClick={() => bringToFront(selectedNodeIds)} title="Bring to Front">
+              <BringToFront size={11} />
+            </button>
+            <button className={styles.contextBtn} onClick={() => sendToBack(selectedNodeIds)} title="Send to Back">
+              <SendToBack size={11} />
+            </button>
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Grouping */}
+            {allGrouped ? (
+              <button className={styles.contextBtn} onClick={ungroupSelected} title="Ungroup">
+                <Unlink size={11} />
+              </button>
+            ) : (
+              <button className={styles.contextBtn} onClick={groupSelected} title="Group">
+                <Link size={11} />
+              </button>
+            )}
+            <div className={styles.divider} style={{ height: '12px' }} />
+
+            {/* Delete All Selected */}
+            <button 
+              className={styles.contextBtn} 
+              onClick={() => {
+                selectedNodes.forEach(n => handleDeleteNode(n.id));
+              }} 
+              title="Delete elements"
+              style={{ color: '#f04438' }}
+            >
+              <Trash2 size={11} />
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Figma Floating Toolbar - Bottom Center (Fixed overlay inside wrapper) */}
       <div className={styles.toolbar}>
@@ -1290,9 +1719,9 @@ export function Canvas() {
           <button
             className={`${styles.toolButton} ${['box', 'circle', 'triangle', 'star', 'pill', 'diamond', 'hexagon', 'parallelogram', 'database', 'note', 'line', 'arrow', 'custom-block', 'custom-connector'].includes(activeTool) ? styles.toolButtonActive : ''}`}
             onClick={() => setActiveTool(currentShapeType)}
-            title={shapeLabels[currentShapeType]}
+            title={`Draw ${(tooltips as Record<string, string>)[currentShapeType as string] || 'Shape'} (S)`}
           >
-            {shapeIcons[currentShapeType]}
+            {(shapeIcons as Record<string, React.ReactNode>)[currentShapeType as string]}
           </button>
           <button
             className={`${styles.chevronButton} ${shapeDropdownOpen ? styles.chevronButtonActive : ''}`}
@@ -1438,6 +1867,28 @@ export function Canvas() {
           style={activeTool === 'comment' ? { backgroundColor: 'var(--accent-purple)' } : { color: 'var(--accent-purple)' }}
         >
           <MessageSquare size={15} />
+        </button>
+      </div>
+
+      {/* Floating History HUD (Undo/Redo) - Positioned above Zoom HUD */}
+      <div className={styles.historyHUD}>
+        <button 
+          className={styles.zoomBtn} 
+          onClick={undo} 
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo ? 1 : 0.4, cursor: canUndo ? 'pointer' : 'not-allowed' }}
+        >
+          <Undo2 size={13} />
+        </button>
+        <button 
+          className={styles.zoomBtn} 
+          onClick={redo} 
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{ opacity: canRedo ? 1 : 0.4, cursor: canRedo ? 'pointer' : 'not-allowed' }}
+        >
+          <Redo2 size={13} />
         </button>
       </div>
 

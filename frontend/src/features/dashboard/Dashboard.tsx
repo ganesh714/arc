@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -15,24 +15,54 @@ import {
   Users,
   Settings,
   Grid3X3,
-  X
+  Sun,
+  Moon,
+  LogOut,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import { DashboardSettingsModal } from '@/components/layout/DashboardSettingsModal';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useNavigate } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 
-interface DashboardProps {
-  onEnterWorkspace: () => void;
-}
-
-export function Dashboard({ onEnterWorkspace }: DashboardProps) {
-  const { projects, addProject, switchProject, isLoadingProjects } = useDiagram();
+export function Dashboard() {
+  const { projects, addProject, isLoadingProjects, theme, toggleTheme } = useDiagram();
   const { user, logout, isGuest } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeNav, setActiveNav] = useState('recent');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  
+  const { updateProject, deleteProject } = useDiagram();
+
+
+  useEffect(() => {
+    if (!activeMenuId) return;
+    const handleOutsideClick = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, [activeMenuId]);
+
+  const handleRename = (e: React.MouseEvent, id: string, currentName: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    const newName = prompt('Enter new project name:', currentName);
+    if (newName && newName.trim() !== '' && newName !== currentName) {
+      updateProject(id, newName.trim());
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setActiveMenuId(null);
+    if (confirm('Are you sure you want to delete this project?')) {
+      deleteProject(id);
+    }
+  };
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -43,13 +73,17 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
   };
 
   const handleConfirmCreate = async (name: string, bgColor: string) => {
-    await addProject(name, 'Loom Diagrams', bgColor);
-    onEnterWorkspace();
+    const newProj = await addProject(name, 'Arc Diagrams', bgColor);
+    if (newProj && newProj.files.length > 0) {
+      navigate(`/project/${newProj.id}/file/${newProj.files[0].id}`);
+    }
   };
 
-  const handleProjectClick = async (id: string) => {
-    await switchProject(id);
-    onEnterWorkspace();
+  const handleProjectClick = (id: string) => {
+    const proj = projects.find(p => p.id === id);
+    if (proj && proj.files.length > 0) {
+      navigate(`/project/${id}/file/${proj.files[0].id}`);
+    }
   };
 
   const formatDate = (timestamp: number) => {
@@ -67,7 +101,7 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
       <aside className={styles.sidebar}>
         <div className={styles.logoArea}>
           <div className={styles.logoIcon}>L</div>
-          <span className={styles.logoText}>Loom Dashboard</span>
+          <span className={styles.logoText}>Arc Dashboard</span>
         </div>
 
         <nav className={styles.navSection}>
@@ -109,21 +143,33 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
             <span>Settings</span>
           </div>
           
-          <div style={{ margin: '16px 12px', padding: '12px', background: '#12141a', borderRadius: '12px', border: '1px solid #1a1d26' }}>
+          <div style={{ margin: '16px 12px', padding: '12px', background: 'var(--bg-canvas)', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#0c8ce920', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={16} color="#0c8ce9" />}
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--accent-blue-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {user?.picture ? <img src={user.picture} style={{ width: '100%' }} /> : <Users size={18} color="var(--accent-blue)" />}
               </div>
-              <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
-                <div style={{ fontSize: '10px', color: '#666' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{user?.name || 'Explorer'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{isGuest ? 'Guest Access' : 'Pro Account'}</div>
               </div>
+              <button 
+                onClick={toggleTheme}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', borderRadius: '6px', transition: 'all 0.2s' }}
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-blue-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+              >
+                {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
             </div>
+            
             <button 
               onClick={logout}
-              style={{ width: '100%', background: '#1a1d26', border: 'none', color: '#888', padding: '6px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              style={{ width: '100%', background: 'var(--bg-canvas)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
+              onMouseOver={(e) => { e.currentTarget.style.background = 'var(--accent-blue-subtle)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = 'var(--bg-canvas)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
             >
-              <X size={12} /> Sign out
+              <LogOut size={14} /> Sign out
             </button>
           </div>
         </nav>
@@ -139,18 +185,18 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
           
           <div className={styles.actions}>
             <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#444' }} />
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
                 placeholder="Search projects..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
-                  backgroundColor: '#12141a',
-                  border: '1px solid #1a1d26',
+                  backgroundColor: 'var(--bg-panel-solid)',
+                  border: '1px solid var(--border-default)',
                   borderRadius: '8px',
                   padding: '10px 12px 10px 36px',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   fontSize: '14px',
                   width: '280px',
                   outline: 'none'
@@ -192,8 +238,8 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
                   <div className={styles.cardIcon}>
                     <FolderKanban size={64} strokeWidth={1} />
                   </div>                  {project.files.length > 0 && (
-                    <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: '#0c8ce920', padding: '6px', borderRadius: '50%' }}>
-                      <Sparkles size={14} color="#0c8ce9" />
+                    <div style={{ position: 'absolute', bottom: '16px', right: '16px', background: 'var(--accent-blue-subtle)', padding: '6px', borderRadius: '50%' }}>
+                      <Sparkles size={14} color="var(--accent-blue)" />
                     </div>
                   )}
                 </div>
@@ -201,14 +247,54 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
                 <div className={styles.info}>
                   <div className={styles.projectHeader}>
                     <span className={styles.projectName}>{project.name}</span>
-                    <button style={{ background: 'none', border: 'none', color: '#444', cursor: 'pointer' }} onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical size={16} />
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button 
+                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === project.id ? null : project.id);
+                        }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      
+                      {activeMenuId === project.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          right: '0',
+                          backgroundColor: 'var(--bg-panel-solid)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: '6px',
+                          boxShadow: 'var(--shadow-sm)',
+                          zIndex: 50,
+                          minWidth: '120px',
+                          overflow: 'hidden'
+                        }}>
+                          <button 
+                            onClick={(e) => handleRename(e, project.id, project.name)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Edit size={12} /> Rename
+                          </button>
+                          <button 
+                            onClick={(e) => handleDelete(e, project.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className={styles.projectMeta}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={14} color="#444" />
+                      <Clock size={14} color="var(--text-muted)" />
                       <span>{formatDate(project.updatedAt)}</span>
                     </div>
                     <div className={styles.nodeCount}>
@@ -222,7 +308,7 @@ export function Dashboard({ onEnterWorkspace }: DashboardProps) {
           </div>
         ) : (
           <div className={styles.emptyState}>
-            <div style={{ backgroundColor: '#161922', padding: '32px', borderRadius: '50%', color: '#0c8ce9' }}>
+            <div style={{ backgroundColor: 'var(--bg-surface-solid)', padding: '32px', borderRadius: '50%', color: 'var(--accent-blue)' }}>
               <LayoutGrid size={48} strokeWidth={1.5} />
             </div>
             <h2>No projects found</h2>

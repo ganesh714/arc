@@ -20,6 +20,7 @@ import com.arqulat.loom_backend.dto.FileRequests.CreateFileRequest;
 import com.arqulat.loom_backend.dto.FileRequests.UpdateFileRequest;
 import com.arqulat.loom_backend.dto.Responses.FileDetailDTO;
 import com.arqulat.loom_backend.dto.Responses.FileSummaryDTO;
+import com.arqulat.loom_backend.dto.Responses.FileVersionDTO;
 import com.arqulat.loom_backend.service.FileService;
 
 import jakarta.validation.Valid;
@@ -64,5 +65,18 @@ public class FileController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable UUID fileId, Authentication authentication) {
         fileService.deleteFile(fileId, (UUID) authentication.getPrincipal());
+    }
+
+    @GetMapping("/files/{fileId}/versions")
+    public List<FileVersionDTO> getFileVersions(@PathVariable UUID fileId, Authentication authentication) {
+        return fileService.getFileVersions(fileId, (UUID) authentication.getPrincipal());
+    }
+
+    @PostMapping("/files/{fileId}/versions/{versionId}/restore")
+    public FileDetailDTO restoreFileVersion(
+            @PathVariable UUID fileId,
+            @PathVariable UUID versionId,
+            Authentication authentication) {
+        return fileService.restoreFileVersion(fileId, versionId, (UUID) authentication.getPrincipal());
     }
 }

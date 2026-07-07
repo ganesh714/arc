@@ -51,7 +51,7 @@ export function DashboardSettingsModal({ isOpen, onClose }: DashboardSettingsMod
               </button>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-3">
-              This sets the overall UI theme of the Loom application across the Dashboard and Canvas.
+              This sets the overall UI theme of the Arc application across the Dashboard and Canvas.
             </p>
           </div>
         </div>

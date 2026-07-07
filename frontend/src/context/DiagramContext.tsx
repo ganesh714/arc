@@ -4,6 +4,7 @@ import type { DiagramNode } from '@/types';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from './AuthContext';
 import { useCollaboration } from './CollaborationContext';
+import { getClosestPointOnLineNode } from '../utils/geometry';
 
 export interface CanvasConfig {
   backgroundColor: string;
@@ -25,6 +26,11 @@ export interface WorkspaceProject {
   updatedAt: number;
 }
 
+export interface SnapLine {
+  axis: 'x' | 'y';
+  position: number;
+}
+
 interface DiagramContextType {
   nodes: DiagramNode[];
   selectedNodeIds: string[];
@@ -42,20 +48,29 @@ interface DiagramContextType {
   addArrow: (position?: { x: number; y: number }) => void;
   addCustomBlock: (position?: { x: number; y: number }) => void;
   addCustomConnector: (position?: { x: number; y: number }) => void;
+  addShape: (type: string, position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
-  updateNode: (updatedNode: DiagramNode) => void;
+  updateWaypoint: (id: string, index: number, pos: { x: number; y: number }) => void;
+  updateNode: (updatedNode: DiagramNode, saveHistory?: boolean) => void;
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   moveSelectedNodes: (draggedNodeId: string, position: { x: number; y: number }) => void;
+  splitElbowLine: (id: string) => void;
   resizeNode: (id: string, dimensions: { width: number; height: number }, position: { x: number; y: number }) => void;
   selectNode: (id: string | null, multi?: boolean) => void;
   setSelectedNodeIds: (ids: string[]) => void;
   setNodes: (nodes: DiagramNode[] | ((prev: DiagramNode[]) => DiagramNode[])) => void;
   bringToFront: (ids: string[]) => void;
   sendToBack: (ids: string[]) => void;
+  bringForward: (ids: string[]) => void;
+  sendBackward: (ids: string[]) => void;
+  activeSnapLines: SnapLine[];
+  setActiveSnapLines: (lines: SnapLine[]) => void;
   alignSelected: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   zoom: number;
   setZoom: (zoom: number) => void;
+  panOffset: { x: number; y: number };
+  setPanOffset: (offset: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
   activeTool: string;
   setActiveTool: (tool: string) => void;
   selectToolMode: 'move' | 'scale';
@@ -65,10 +80,14 @@ interface DiagramContextType {
   projects: WorkspaceProject[];
   activeProjectId: string;
   activeFileId: string;
-  switchProject: (id: string) => void;
-  addProject: (name: string, category?: string, backgroundColor?: string) => void;
-  switchFile: (id: string) => void;
-  addFile: (projectId: string, name: string, backgroundColor?: string) => void;
+  switchProject: (id: string, fileId?: string) => void;
+  addProject: (name: string, category?: string, backgroundColor?: string) => Promise<WorkspaceProject | null | void>;
+  switchFile: (id: string, projectId?: string) => void;
+  addFile: (projectId: string, name: string, backgroundColor?: string) => Promise<string | undefined>;
+  updateProject: (id: string, name: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  updateFile: (id: string, name: string) => Promise<void>;
+  deleteFile: (id: string) => Promise<void>;
   updateCanvasConfig: (fileId: string, config: Partial<CanvasConfig>) => void;
   isLoadingProjects: boolean;
   isFileLoading: boolean;
@@ -80,6 +99,13 @@ interface DiagramContextType {
   // AI Chat state
   isAiChatOpen: boolean;
   toggleAiChat: () => void;
+
+  // Version History state
+  isVersionHistoryOpen: boolean;
+  toggleVersionHistory: () => void;
+  versions: { id: string; createdAt: number }[];
+  fetchVersions: (fileId?: string) => Promise<void>;
+  restoreVersion: (versionId: string) => Promise<void>;
 
   // Design Panel state
   isDesignPanelOpen: boolean;
@@ -101,6 +127,9 @@ interface DiagramContextType {
   // Theme state
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  
+  // Save status
+  saveStatus: 'saved' | 'saving' | 'unsaved' | 'error';
 }
 
 const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
@@ -108,8 +137,8 @@ const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-1',
-    name: 'Loom Diagram',
-    category: 'Loom Diagrams',
+    name: 'Arc Diagram',
+    category: 'Arc Diagrams',
     updatedAt: Date.now(),
     files: [
       {
@@ -161,7 +190,7 @@ const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-2',
     name: 'Personal Flowchart',
-    category: 'Loom Diagrams',
+    category: 'Arc Diagrams',
     updatedAt: Date.now() - 3600000,
     files: [
       {
@@ -193,6 +222,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     console.log('nodes state updated to:', nodes);
   }, [nodes]);
   const [zoom, setZoom] = useState<number>(1.0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [activeSnapLines, setActiveSnapLines] = useState<SnapLine[]>([]);
   const [activeTool, setActiveTool] = useState<string>('select');
   const [selectToolMode, setSelectToolMode] = useState<'move' | 'scale'>('move');
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true);
@@ -245,15 +276,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       const fetchProjects = async () => {
         setIsLoadingProjects(true);
         try {
-          const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-          const response = await fetch(`${loomApiUrl}/api/projects`, { credentials: 'include' });
+          const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+          const response = await fetch(`${arcApiUrl}/api/projects`, { credentials: 'include' });
           
           if (response.ok) {
             const data = await response.json();
             const mappedProjects: WorkspaceProject[] = data.map((p: any) => ({
               id: p.id,
               name: p.name,
-              category: p.category || 'Loom Diagrams',
+              category: p.category || 'Arc Diagrams',
               updatedAt: p.updatedAt,
               files: p.files.map((f: any) => ({
                 id: f.id,
@@ -299,22 +330,81 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
   const toggleAiChat = () => setIsAiChatOpen(prev => !prev);
 
+  // Version History state
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<{ id: string; createdAt: number }[]>([]);
+
+  const toggleVersionHistory = () => {
+    setIsVersionHistoryOpen(prev => {
+      const next = !prev;
+      if (next) {
+        fetchVersions();
+      }
+      return next;
+    });
+  };
+
+  const fetchVersions = async (fileId: string = activeFileId) => {
+    if (isGuest || !fileId) return;
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${fileId}/versions`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setVersions(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch versions:', error);
+    }
+  };
+
+  const restoreVersion = async (versionId: string) => {
+    if (isGuest || !activeFileId) return;
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${activeFileId}/versions/${versionId}/restore`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.nodes) {
+          setNodesState(data.nodes);
+          saveHistoryState(data.nodes);
+          fetchVersions();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore version:', error);
+    }
+  };
+
   // Design Panel open/close state
-  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(true);
+  const [isDesignPanelOpen, setIsDesignPanelOpen] = useState(false);
   const toggleDesignPanel = () => setIsDesignPanelOpen(prev => !prev);
+
+  useEffect(() => {
+    if (selectedNodeIds.length > 0) {
+      setIsDesignPanelOpen(true);
+    } else {
+      setIsDesignPanelOpen(false);
+    }
+  }, [selectedNodeIds]);
 
   // Theme state initialization with persistence and system preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const savedTheme = localStorage.getItem('loom-theme') as 'light' | 'dark';
+    const savedTheme = localStorage.getItem('arc-theme') as 'light' | 'dark';
     if (savedTheme) return savedTheme;
     
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
+
   const toggleTheme = () => {
     setTheme(prev => {
       const nextTheme = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('loom-theme', nextTheme);
+      localStorage.setItem('arc-theme', nextTheme);
       document.documentElement.setAttribute('data-theme', nextTheme);
       return nextTheme;
     });
@@ -322,7 +412,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('loom-theme', theme);
+    localStorage.setItem('arc-theme', theme);
   }, [theme]);
 
   // Synced setNodes state wrapper
@@ -350,6 +440,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const debouncedNodes = useDebounce(nodes, 1000);
   const isInitialMount = useRef(true);
 
+  const lastSavedNodesStr = useRef<string>('');
+
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -363,8 +455,24 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         const targetFile = projects.find(p => p.id === activeProjectId)?.files.find(f => f.id === activeFileId);
         if (!targetFile) return;
 
-        const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-        const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
+        const currentNodesStr = JSON.stringify(debouncedNodes);
+        
+        // Ensure debouncedNodes has caught up to nodes
+        // This prevents saving stale state from a previous file immediately after switching
+        if (JSON.stringify(nodes) !== currentNodesStr) {
+          setSaveStatus('unsaved');
+          return;
+        }
+
+        if (currentNodesStr === lastSavedNodesStr.current) {
+          // No changes since last save/load, skip saving
+          setSaveStatus('saved');
+          return;
+        }
+
+        setSaveStatus('saving');
+        const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+        const response = await fetch(`${arcApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -377,14 +485,20 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         
         if (!response.ok) {
           console.error('Auto-save failed:', response.statusText);
+          setSaveStatus('error');
+        } else {
+          lastSavedNodesStr.current = currentNodesStr;
+          setSaveStatus('saved');
+          fetchVersions();
         }
       } catch (error) {
         console.error('Failed to auto-save to backend:', error);
+        setSaveStatus('error');
       }
     };
 
     autoSave();
-  }, [debouncedNodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
+  }, [debouncedNodes, nodes, activeFileId, isGuest, isFileLoading, activeProjectId, projects]);
 
   // Save specific nodes list to history
   const saveHistoryState = useCallback((customNodes: DiagramNode[]) => {
@@ -760,7 +874,122 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     setNodes((prev) => [...prev, newNode]);
   };
 
+  const addShape = (type: string, position?: { x: number; y: number }) => {
+    saveHistoryState(nodes);
+    const isEdge = type === 'line' || type === 'arrow';
+    const isDiamond = type === 'diamond' || type === 'decision-merge';
+    const isUML = type.startsWith('uml-') || type === 'actor' || type === 'use-case' || type === 'component';
+    const isCircle = type === 'circle' || type === 'use-case';
+    const isTerminator = type === 'terminator';
+    
+    const width = isDiamond || isCircle ? 130 : isTerminator ? 160 : isUML ? 220 : 160;
+    const height = isDiamond || isCircle ? 130 : isTerminator ? 60 : isUML ? 120 : 90;
+
+    const cx = position ? position.x : 200;
+    const cy = position ? position.y : 200;
+
+    if (isEdge) {
+      const startX = cx - 80;
+      const startY = cy;
+      const newNode: DiagramNode = {
+        id: Math.random().toString(36).substring(2, 10),
+        type: type as any,
+        position: { x: startX, y: startY - 10 },
+        dimensions: { width: 160, height: 20 },
+        content: '',
+        style: { borderColor: type === 'arrow' ? '#0c8ce9' : '#888888' },
+        startPoint: { x: startX, y: startY },
+        endPoint: { x: startX + 160, y: startY },
+      };
+      setNodes((prev) => [...prev, newNode]);
+      return;
+    }
+
+    const newNode: DiagramNode = {
+      id: Math.random().toString(36).substring(2, 10),
+      type: type as any,
+      position: { x: cx - width / 2, y: cy - height / 2 },
+      dimensions: { width, height },
+      content: type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, ' '),
+      style: {
+        backgroundColor: '#2c2c2c',
+        borderColor: '#555555',
+        color: '#e3e3e3',
+      },
+      ...(isUML && {
+        sections: [
+          { title: 'Attributes', items: ['+ field: Type'] },
+          { title: 'Methods', items: ['+ method(): void'] },
+        ]
+      })
+    };
+    setNodes((prev) => [...prev, newNode]);
+    broadcast('NODE_ADDED', newNode);
+  };
+
+  const splitElbowLine = (id: string) => {
+    setNodes(prev => {
+      const node = prev.find(n => n.id === id);
+      if (!node || node.routing !== 'elbow' || !node.startPoint || !node.endPoint) return prev;
+      
+      const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+      
+      const points = isVerticalElbow ? [
+        { x: node.startPoint.x, y: node.startPoint.y },
+        { x: node.startPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+        { x: node.endPoint.x, y: node.startPoint.y + (node.endPoint.y - node.startPoint.y) / 2 },
+        { x: node.endPoint.x, y: node.endPoint.y }
+      ] : [
+        { x: node.startPoint.x, y: node.startPoint.y },
+        { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.startPoint.y },
+        { x: node.startPoint.x + (node.endPoint.x - node.startPoint.x) / 2, y: node.endPoint.y },
+        { x: node.endPoint.x, y: node.endPoint.y }
+      ];
+
+      const validPoints = [points[0]];
+      for (let i = 1; i < points.length; i++) {
+        const p1 = validPoints[validPoints.length - 1];
+        const p2 = points[i];
+        if (Math.abs(p1.x - p2.x) > 1 || Math.abs(p1.y - p2.y) > 1) {
+          validPoints.push(p2);
+        }
+      }
+
+      if (validPoints.length < 2) return prev;
+
+      const newLines: DiagramNode[] = [];
+      for (let i = 0; i < validPoints.length - 1; i++) {
+        const newId = `line-${Math.random().toString(36).substring(2, 8)}`;
+        const p1 = validPoints[i];
+        const p2 = validPoints[i+1];
+        const isFirst = i === 0;
+        const isLast = i === validPoints.length - 2;
+        
+        const newLine: DiagramNode = {
+          ...node,
+          id: newId,
+          routing: 'straight',
+          startPoint: { ...p1 },
+          endPoint: { ...p2 },
+          position: { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y) },
+          dimensions: { width: Math.max(15, Math.abs(p2.x - p1.x)), height: Math.max(15, Math.abs(p2.y - p1.y)) },
+          startConnection: isFirst ? node.startConnection : { nodeId: newLines[i-1].id, anchor: 'closest' },
+          endConnection: isLast ? node.endConnection : undefined,
+          arrowType: isLast ? (node.arrowType || (node.type === 'arrow' ? 'single' : 'none')) : 'none',
+        };
+        
+        newLine.waypoints = undefined;
+        newLines.push(newLine);
+      }
+
+      saveHistoryState(prev);
+      return [...prev.filter(n => n.id !== node.id), ...newLines];
+    });
+    setSelectedNodeIds([]);
+  };
+
   const updateLinePoints = (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => {
+
     setNodes((prev) => prev.map(node => {
       if (node.id === id) {
         const x = Math.min(startPoint.x, endPoint.x);
@@ -780,9 +1009,54 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const updateNode = (updatedNode: DiagramNode) => {
-    saveHistoryState(nodes);
-    setNodes((prev) => prev.map(node => node.id === updatedNode.id ? updatedNode : node));
+  const updateWaypoint = (id: string, index: number, pos: { x: number; y: number }) => {
+    setNodes((prev) => prev.map(node => {
+      if (node.id === id && node.waypoints) {
+        const newWaypoints = [...node.waypoints];
+        if (index >= 0 && index < newWaypoints.length) {
+          newWaypoints[index] = pos;
+          return {
+            ...node,
+            waypoints: newWaypoints
+          };
+        }
+      }
+      return node;
+    }));
+  };
+
+  const updateNode = (updatedNode: DiagramNode, saveHistory: boolean = true) => {
+    if (saveHistory) {
+      saveHistoryState(nodes);
+    }
+    setNodes((prev) => {
+      const nextNodes = prev.map(node => node.id === updatedNode.id ? updatedNode : node);
+      let finalNodes = [...nextNodes];
+      let didCascade = false;
+      for (let i = 0; i < finalNodes.length; i++) {
+        const node = finalNodes[i];
+        if ((node.type === 'line' || node.type === 'arrow') && (node.startConnection?.nodeId === updatedNode.id || node.endConnection?.nodeId === updatedNode.id)) {
+          const newNode = { ...node };
+          if (node.startConnection?.nodeId === updatedNode.id) {
+            newNode.startPoint = getAnchorPoint(updatedNode, node.startConnection.anchor, node.endPoint);
+          }
+          if (node.endConnection?.nodeId === updatedNode.id) {
+            newNode.endPoint = getAnchorPoint(updatedNode, node.endConnection.anchor, node.startPoint);
+          }
+          const minX = Math.min(newNode.startPoint!.x, newNode.endPoint!.x);
+          const minY = Math.min(newNode.startPoint!.y, newNode.endPoint!.y);
+          newNode.position = { x: minX, y: minY };
+          newNode.dimensions = { 
+            width: Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x)),
+            height: Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y))
+          };
+          newNode.waypoints = undefined;
+          finalNodes[i] = newNode;
+          didCascade = true;
+        }
+      }
+      return didCascade ? finalNodes : nextNodes;
+    });
     broadcast('NODE_UPDATED', updatedNode);
   };
 
@@ -830,10 +1104,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           const movedNode = updatedNodes.find(n => n.id === id)!;
 
           if (node.startConnection?.nodeId === id) {
-            newNode.startPoint = getAnchorPoint(movedNode, node.startConnection.anchor);
+            newNode.startPoint = getAnchorPoint(movedNode, node.startConnection.anchor, node.endPoint);
           }
           if (node.endConnection?.nodeId === id) {
-            newNode.endPoint = getAnchorPoint(movedNode, node.endConnection.anchor);
+            newNode.endPoint = getAnchorPoint(movedNode, node.endConnection.anchor, node.startPoint);
           }
 
           // Recalculate bounding box for the line
@@ -844,6 +1118,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
           
           newNode.position = { x: minX, y: minY };
           newNode.dimensions = { width, height };
+          newNode.waypoints = undefined; // Reset custom path on node drag
           broadcast('NODE_UPDATED', newNode);
           return newNode;
         }
@@ -864,7 +1139,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right') => {
+  const getAnchorPoint = (node: DiagramNode, anchor: 'top' | 'bottom' | 'left' | 'right' | 'closest' | 'start' | 'end', currentPoint?: { x: number; y: number }) => {
+    if (node.type === 'line' || node.type === 'arrow') {
+      if (anchor === 'start' && node.startPoint) return { ...node.startPoint };
+      if (anchor === 'end' && node.endPoint) return { ...node.endPoint };
+      if (anchor === 'closest' && currentPoint) return getClosestPointOnLineNode(currentPoint, node);
+    }
     const { x, y } = node.position;
     const { width, height } = node.dimensions;
     switch (anchor) {
@@ -872,6 +1152,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       case 'bottom': return { x: x + width / 2, y: y + height };
       case 'left': return { x, y: y + height / 2 };
       case 'right': return { x: x + width, y: y + height / 2 };
+      case 'start': return { x: x + width / 2, y: y + height / 2 };
+      case 'end': return { x: x + width / 2, y: y + height / 2 };
+      case 'closest': return { x: x + width / 2, y: y + height / 2 };
     }
   };
 
@@ -912,12 +1195,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
           if (node.startConnection && movedIds.includes(node.startConnection.nodeId)) {
             const connectedNode = updatedNodes.find(n => n.id === node.startConnection!.nodeId)!;
-            newNode.startPoint = getAnchorPoint(connectedNode, node.startConnection.anchor);
+            newNode.startPoint = getAnchorPoint(connectedNode, node.startConnection.anchor, node.endPoint);
             needsUpdate = true;
           }
           if (node.endConnection && movedIds.includes(node.endConnection.nodeId)) {
             const connectedNode = updatedNodes.find(n => n.id === node.endConnection!.nodeId)!;
-            newNode.endPoint = getAnchorPoint(connectedNode, node.endConnection.anchor);
+            newNode.endPoint = getAnchorPoint(connectedNode, node.endConnection.anchor, node.startPoint);
             needsUpdate = true;
           }
 
@@ -929,6 +1212,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
               width: Math.max(15, Math.abs(newNode.endPoint!.x - newNode.startPoint!.x)), 
               height: Math.max(15, Math.abs(newNode.endPoint!.y - newNode.startPoint!.y)) 
             };
+            newNode.waypoints = undefined; // Reset custom path on node drag
             return newNode;
           }
         }
@@ -1021,6 +1305,41 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const bringForward = (ids: string[]) => {
+    saveHistoryState(nodes);
+    setNodes((prev) => {
+      const result = [...prev];
+      // We want to move selected items one position up, 
+      // but if multiple are selected, we should preserve their relative order
+      // and move the group up past the first non-selected element after them.
+      for (let i = result.length - 2; i >= 0; i--) {
+        if (ids.includes(result[i].id) && !ids.includes(result[i + 1].id)) {
+          // Swap with the element above
+          const temp = result[i];
+          result[i] = result[i + 1];
+          result[i + 1] = temp;
+        }
+      }
+      return result;
+    });
+  };
+
+  const sendBackward = (ids: string[]) => {
+    saveHistoryState(nodes);
+    setNodes((prev) => {
+      const result = [...prev];
+      for (let i = 1; i < result.length; i++) {
+        if (ids.includes(result[i].id) && !ids.includes(result[i - 1].id)) {
+          // Swap with the element below
+          const temp = result[i];
+          result[i] = result[i - 1];
+          result[i - 1] = temp;
+        }
+      }
+      return result;
+    });
+  };
+
   const alignSelected = (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     if (selectedNodeIds.length === 0) return;
 
@@ -1108,11 +1427,17 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const switchProject = async (targetId: string) => {
+  const switchProject = async (targetId: string, targetFileId?: string) => {
     const target = projects.find(p => p.id === targetId);
     if (!target) return;
     
-    let targetFile = target.files.length > 0 ? target.files[0] : null;
+    let targetFile = null;
+    if (targetFileId) {
+      targetFile = target.files.find(f => f.id === targetFileId) || null;
+    }
+    if (!targetFile && target.files.length > 0) {
+      targetFile = target.files[0];
+    }
     
     if (!targetFile && isGuest) {
       const newFileId = Math.random().toString(36).substring(2, 10);
@@ -1128,7 +1453,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addProject = async (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
+  const addProject = async (name: string, category: string = 'Arc Diagrams', backgroundColor: string = '#0f0f0f') => {
     if (isGuest) {
       const newId = Math.random().toString(36).substring(2, 10);
       const newFileId = Math.random().toString(36).substring(2, 10);
@@ -1143,12 +1468,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       setActiveFileId(newFileId);
       setPast([]);
       setFuture([]);
-      return;
+      return newProj;
     }
 
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1174,10 +1499,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         } else {
            await switchFile(newProj.files[0].id, newProj.id);
         }
+        return newProj;
       }
     } catch (error) {
       console.error('Failed to create project', error);
     }
+    return null;
   };
 
   const switchFile = async (fileId: string, projectId: string = activeProjectId) => {
@@ -1199,8 +1526,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
     setIsFileLoading(true);
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${fileId}`, { credentials: 'include' });
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${fileId}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         let loadedNodes: DiagramNode[] = [];
@@ -1214,7 +1541,9 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
            }
         }
         
+        lastSavedNodesStr.current = JSON.stringify(loadedNodes);
         setNodesState(loadedNodes);
+        fetchVersions(fileId);
         
         setProjects(prev => prev.map(p => {
           if (p.id === projectId) {
@@ -1234,7 +1563,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
+  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f'): Promise<string | undefined> => {
     if (isGuest) {
       const newFileId = Math.random().toString(36).substring(2, 10);
       setProjects(prev => prev.map(p => {
@@ -1249,12 +1578,12 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       if (projectId === activeProjectId) {
         switchFile(newFileId);
       }
-      return;
+      return newFileId;
     }
 
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects/${projectId}/files`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${projectId}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1279,9 +1608,107 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         if (projectId === activeProjectId) {
           await switchFile(newFile.id, projectId);
         }
+        return newFile.id;
+      } else if (response.status === 409) {
+        throw new Error('Name is already exist');
+      } else {
+        throw new Error('Failed to create file');
       }
     } catch (error) {
       console.error('Failed to create file', error);
+      throw error;
+    }
+  };
+
+  const updateProject = async (id: string, name: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+      return;
+    }
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+      }
+    } catch (error) {
+      console.error('Failed to update project:', error);
+    }
+  };
+
+  const deleteProject = async (id: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.filter(p => p.id !== id));
+      return;
+    }
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  };
+
+  const updateFile = async (id: string, name: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => ({
+        ...p,
+        files: p.files.map(f => f.id === id ? { ...f, name } : f)
+      })));
+      return;
+    }
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name })
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => ({
+          ...p,
+          files: p.files.map(f => f.id === id ? { ...f, name } : f)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to update file:', error);
+    }
+  };
+
+  const deleteFile = async (id: string) => {
+    if (isGuest) {
+      setProjects(prev => prev.map(p => ({
+        ...p,
+        files: p.files.filter(f => f.id !== id)
+      })));
+      return;
+    }
+    try {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        setProjects(prev => prev.map(p => ({
+          ...p,
+          files: p.files.filter(f => f.id !== id)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to delete file:', error);
     }
   };
 
@@ -1315,22 +1742,31 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addArrow, 
       addCustomBlock,
       addCustomConnector,
-      updateLinePoints, 
+      addShape,
+      updateLinePoints,
+      updateWaypoint, 
       updateNode, 
       updateMultipleNodes,
       moveNode, 
       moveSelectedNodes,
+      splitElbowLine,
       resizeNode, 
       selectNode, 
       setSelectedNodeIds,
       setNodes,
-      bringToFront,
-      sendToBack,
-      alignSelected,
       groupSelected,
       ungroupSelected,
+      bringToFront,
+      sendToBack,
+      bringForward,
+      sendBackward,
+      activeSnapLines,
+      setActiveSnapLines,
+      alignSelected,
       zoom,
       setZoom,
+      panOffset,
+      setPanOffset,
       activeTool,
       setActiveTool,
       selectToolMode,
@@ -1342,6 +1778,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       addProject,
       switchFile,
       addFile,
+      updateProject,
+      deleteProject,
+      updateFile,
+      deleteFile,
       updateCanvasConfig,
       isLoadingProjects,
       isFileLoading,
@@ -1353,6 +1793,13 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       // AI Chat
       isAiChatOpen,
       toggleAiChat,
+
+      // Version History
+      isVersionHistoryOpen,
+      toggleVersionHistory,
+      versions,
+      fetchVersions,
+      restoreVersion,
 
       // Design Panel
       isDesignPanelOpen,
@@ -1373,7 +1820,10 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
       // Theme
       theme,
-      toggleTheme
+      toggleTheme,
+
+      // Save status
+      saveStatus
     }}>
       {children}
     </DiagramContext.Provider>
