@@ -139,8 +139,9 @@ function WorkspaceRoute() {
             borderRight: '1px solid var(--border-default)',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             paddingTop: '16px',
+            paddingLeft: '14px',
             paddingBottom: '16px',
             gap: '20px',
             zIndex: 45, // Elevated above the sliding drawer panel!
@@ -156,7 +157,7 @@ function WorkspaceRoute() {
               marginBottom: '4px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               color: 'var(--text-primary)',
               width: '32px',
               height: '32px'
@@ -167,13 +168,13 @@ function WorkspaceRoute() {
           </div>
 
           {/* Tab Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center', flex: 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'flex-start', flex: 1 }}>
             {/* Files Tab Button */}
-            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
               {activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
-                  left: 0,
+                  left: '-14px',
                   top: '25%',
                   height: '50%',
                   width: '3px',
@@ -213,11 +214,11 @@ function WorkspaceRoute() {
             </div>
 
             {/* Layers Tab Button */}
-            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
               {activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
-                  left: 0,
+                  left: '-14px',
                   top: '25%',
                   height: '50%',
                   width: '3px',
@@ -257,11 +258,11 @@ function WorkspaceRoute() {
             </div>
 
             {/* Shapes Tab Button */}
-            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
               {activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
-                  left: 0,
+                  left: '-14px',
                   top: '25%',
                   height: '50%',
                   width: '3px',
@@ -301,11 +302,11 @@ function WorkspaceRoute() {
             </div>
 
             {/* Templates Tab Button */}
-            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
               {activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
-                  left: 0,
+                  left: '-14px',
                   top: '25%',
                   height: '50%',
                   width: '3px',
@@ -346,7 +347,7 @@ function WorkspaceRoute() {
           </div>
 
           {/* Bottom Actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', width: '100%' }}>
             {/* File Creation Button */}
             <button
               onClick={() => setIsCreatingFile(true)}

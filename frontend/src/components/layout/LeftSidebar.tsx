@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '@/components/ui/Logo';
 import styles from './LeftSidebar.module.css';
 import { 
   Layers, 
@@ -292,13 +291,12 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
         borderBottom: '1px solid var(--border-default)', 
         flexShrink: 0 
       }}>
-        {/* Brand logo & text */}
+        {/* Brand text */}
         <div 
           style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} 
           onClick={() => navigate('/dashboard')}
           title="Go to Dashboard"
         >
-          <Logo size={18} />
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.5px' }}>Arqulat Arc</span>
         </div>
 
