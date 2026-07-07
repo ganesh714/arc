@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCollaboration } from '@/context/CollaborationContext';
@@ -6,18 +6,51 @@ import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './Header.module.css';
 import { FolderInput, FileDown, Sun, Moon, LogIn, Palette, Bot, Keyboard, History } from 'lucide-react';
 
 export function Header() {
-  const { nodes, theme, toggleTheme, toggleAiChat, toggleVersionHistory, toggleDesignPanel, saveStatus } = useDiagram();
+  const { 
+    nodes, 
+    theme, 
+    toggleTheme, 
+    toggleAiChat, 
+    toggleVersionHistory, 
+    toggleDesignPanel, 
+    saveStatus,
+    projects,
+    activeProjectId,
+    activeFileId,
+    updateFile
+  } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const { remoteCursors } = useCollaboration();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
+
+  const navigate = useNavigate();
+  const activeProject = projects.find(p => p.id === activeProjectId);
+  const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [fileNameInput, setFileNameInput] = useState('');
+
+  useEffect(() => {
+    if (activeFile) {
+      setFileNameInput(activeFile.name);
+    }
+  }, [activeFile]);
+
+  const handleRename = () => {
+    if (fileNameInput.trim() && activeFile && fileNameInput !== activeFile.name) {
+      updateFile(activeFile.id, fileNameInput.trim());
+    }
+    setIsEditingName(false);
+  };
 
 
   const getInitials = (name: string) => {
@@ -49,9 +82,53 @@ export function Header() {
       <header className={styles.header}>
         <div className={styles.leftSection}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px', fontSize: '13px', fontWeight: 500 }}>
-            <span style={{ color: 'var(--text-muted)' }}>Drafts</span>
+            <span 
+              onClick={() => navigate('/dashboard')} 
+              style={{ color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} 
+              onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} 
+              onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+              title="Go to Dashboard"
+            >
+              {activeProject ? activeProject.name : 'Drafts'}
+            </span>
             <span style={{ color: 'var(--text-muted)' }}>/</span>
-            <span style={{ color: 'var(--text-primary)' }}>{isGuest ? 'New Project' : 'Interactive Diagram'}</span>
+            {isEditingName ? (
+              <input
+                value={fileNameInput}
+                onChange={(e) => setFileNameInput(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                  if (e.key === 'Escape') {
+                    setFileNameInput(activeFile?.name || '');
+                    setIsEditingName(false);
+                  }
+                }}
+                autoFocus
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--accent-blue)',
+                  borderRadius: '4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  padding: '2px 6px',
+                  outline: 'none',
+                  width: '180px'
+                }}
+              />
+            ) : (
+              <span 
+                onClick={() => {
+                  setFileNameInput(activeFile?.name || '');
+                  setIsEditingName(true);
+                }}
+                style={{ color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Click to rename"
+              >
+                {activeFile ? activeFile.name : (isGuest ? 'New Project' : 'Interactive Diagram')}
+              </span>
+            )}
           </div>
           <div className={styles.statusIndicator}>
             {isGuest ? (
