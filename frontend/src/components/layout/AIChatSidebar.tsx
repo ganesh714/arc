@@ -5,9 +5,9 @@ import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
 
 const MODELS = [
-  'Loom GPT-4',
-  'Loom Claude 3.5',
-  'Loom Gemini Pro'
+  'Arc GPT-4',
+  'Arc Claude 3.5',
+  'Arc Gemini Pro'
 ];
 
 
@@ -106,14 +106,14 @@ export function AIChatSidebar() {
     if (isListening) toggleListen();
     
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
       // Build chat context
       const chatContextStr = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join("\\n");
       const fullPrompt = messages.length > 0 ? `PREVIOUS CHAT HISTORY:\\n${chatContextStr}\\n\\nCURRENT REQUEST:\\n${promptText}` : promptText;
       
       let response: Response;
       if (aiMode === 'generate') {
-        response = await fetch(`${loomApiUrl}/api/ai/generate`, {
+        response = await fetch(`${arcApiUrl}/api/ai/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -140,7 +140,7 @@ export function AIChatSidebar() {
           }
         };
         
-        response = await fetch(`${loomApiUrl}/api/ai/edit`, {
+        response = await fetch(`${arcApiUrl}/api/ai/edit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

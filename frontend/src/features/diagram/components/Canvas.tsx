@@ -464,7 +464,7 @@ export function Canvas() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const type = e.dataTransfer.getData('application/loom-node-type');
+    const type = e.dataTransfer.getData('application/arc-node-type');
     if (!type) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -1071,7 +1071,7 @@ export function Canvas() {
           left: 0,
           pointerEvents: 'none'
         }}>
-          <div id="loom-export-area" className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
+          <div id="arc-export-area" className={getCursorClass()} style={{ pointerEvents: 'auto', width: '100%', height: '100%', position: 'relative' }}>
             {nodes.map((node) => (
               <Node 
                 key={node.id} 

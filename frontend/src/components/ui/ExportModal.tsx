@@ -46,7 +46,7 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'loom-diagram.json';
+    a.download = 'arc-diagram.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -56,7 +56,7 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
   const handleExportImage = async (format: 'png' | 'svg') => {
     try {
       setIsExporting(true);
-      const element = document.getElementById('loom-export-area');
+      const element = document.getElementById('arc-export-area');
       if (!element) throw new Error('Export area not found');
 
       if (nodes.length === 0) {
@@ -102,7 +102,7 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
 
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `loom-export.${format}`;
+      a.download = `arc-export.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -200,7 +200,7 @@ export function ExportModal({ isOpen, onClose, htmlCode }: ExportModalProps) {
           {activeTab === 'json' && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[var(--text-primary)] font-medium">JSON AST (Loom Script)</h3>
+                <h3 className="text-[var(--text-primary)] font-medium">JSON AST (Arc Script)</h3>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleCopyJson} className="flex items-center gap-2">
                     {copiedJson ? <Check size={14} /> : <Copy size={14} />}

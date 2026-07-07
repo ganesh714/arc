@@ -51,7 +51,7 @@ interface DiagramContextType {
   addShape: (type: string, position?: { x: number; y: number }) => void;
   updateLinePoints: (id: string, startPoint: { x: number; y: number }, endPoint: { x: number; y: number }) => void;
   updateWaypoint: (id: string, index: number, pos: { x: number; y: number }) => void;
-  updateNode: (updatedNode: DiagramNode) => void;
+  updateNode: (updatedNode: DiagramNode, saveHistory?: boolean) => void;
   updateMultipleNodes: (ids: string[], updates: Partial<DiagramNode>) => void;
   moveNode: (id: string, position: { x: number; y: number }) => void;
   moveSelectedNodes: (draggedNodeId: string, position: { x: number; y: number }) => void;
@@ -137,8 +137,8 @@ const DiagramContext = createContext<DiagramContextType | undefined>(undefined);
 const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-1',
-    name: 'Loom Diagram',
-    category: 'Loom Diagrams',
+    name: 'Arc Diagram',
+    category: 'Arc Diagrams',
     updatedAt: Date.now(),
     files: [
       {
@@ -190,7 +190,7 @@ const initialProjects: WorkspaceProject[] = [
   {
     id: 'project-2',
     name: 'Personal Flowchart',
-    category: 'Loom Diagrams',
+    category: 'Arc Diagrams',
     updatedAt: Date.now() - 3600000,
     files: [
       {
@@ -276,15 +276,15 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       const fetchProjects = async () => {
         setIsLoadingProjects(true);
         try {
-          const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-          const response = await fetch(`${loomApiUrl}/api/projects`, { credentials: 'include' });
+          const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+          const response = await fetch(`${arcApiUrl}/api/projects`, { credentials: 'include' });
           
           if (response.ok) {
             const data = await response.json();
             const mappedProjects: WorkspaceProject[] = data.map((p: any) => ({
               id: p.id,
               name: p.name,
-              category: p.category || 'Loom Diagrams',
+              category: p.category || 'Arc Diagrams',
               updatedAt: p.updatedAt,
               files: p.files.map((f: any) => ({
                 id: f.id,
@@ -347,8 +347,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const fetchVersions = async (fileId: string = activeFileId) => {
     if (isGuest || !fileId) return;
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${fileId}/versions`, { credentials: 'include' });
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${fileId}/versions`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setVersions(data);
@@ -361,8 +361,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const restoreVersion = async (versionId: string) => {
     if (isGuest || !activeFileId) return;
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}/versions/${versionId}/restore`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${activeFileId}/versions/${versionId}/restore`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -393,7 +393,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   // Theme state initialization with persistence and system preference
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const savedTheme = localStorage.getItem('loom-theme') as 'light' | 'dark';
+    const savedTheme = localStorage.getItem('arc-theme') as 'light' | 'dark';
     if (savedTheme) return savedTheme;
     
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -404,7 +404,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
   const toggleTheme = () => {
     setTheme(prev => {
       const nextTheme = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('loom-theme', nextTheme);
+      localStorage.setItem('arc-theme', nextTheme);
       document.documentElement.setAttribute('data-theme', nextTheme);
       return nextTheme;
     });
@@ -412,7 +412,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('loom-theme', theme);
+    localStorage.setItem('arc-theme', theme);
   }, [theme]);
 
   // Synced setNodes state wrapper
@@ -471,8 +471,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         }
 
         setSaveStatus('saving');
-        const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-        const response = await fetch(`${loomApiUrl}/api/files/${activeFileId}`, {
+        const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+        const response = await fetch(`${arcApiUrl}/api/files/${activeFileId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -1453,7 +1453,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addProject = async (name: string, category: string = 'Loom Diagrams', backgroundColor: string = '#0f0f0f') => {
+  const addProject = async (name: string, category: string = 'Arc Diagrams', backgroundColor: string = '#0f0f0f') => {
     if (isGuest) {
       const newId = Math.random().toString(36).substring(2, 10);
       const newFileId = Math.random().toString(36).substring(2, 10);
@@ -1472,8 +1472,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1526,8 +1526,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
 
     setIsFileLoading(true);
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${fileId}`, { credentials: 'include' });
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${fileId}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         let loadedNodes: DiagramNode[] = [];
@@ -1582,8 +1582,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects/${projectId}/files`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${projectId}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1625,8 +1625,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects/${id}`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1646,8 +1646,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/projects/${id}`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/projects/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -1668,8 +1668,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${id}`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -1695,8 +1695,8 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const loomApiUrl = (import.meta.env.VITE_LOOM_API_URL || 'http://localhost:8081').replace(/\/$/, '');
-      const response = await fetch(`${loomApiUrl}/api/files/${id}`, {
+      const arcApiUrl = (import.meta.env.VITE_ARC_API_URL || 'http://localhost:8081').replace(/\/$/, '');
+      const response = await fetch(`${arcApiUrl}/api/files/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });

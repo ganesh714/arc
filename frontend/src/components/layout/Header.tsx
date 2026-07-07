@@ -52,7 +52,7 @@ export function Header() {
         <div className={styles.leftSection}>
           <div className={styles.logoContainer} onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className={styles.logoIcon}>L</div>
-            <span className={styles.title}>Loom</span>
+            <span className={styles.title}>Arqulat Arc</span>
           </div>
           <div className={styles.statusIndicator}>
             {isGuest ? (

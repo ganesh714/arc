@@ -249,7 +249,7 @@ export function LandingPage() {
 
   // Copy command code
   const handleCopyCommand = () => {
-    navigator.clipboard.writeText('npx create-loom-app@latest workspace');
+    navigator.clipboard.writeText('npx create-arc-app@latest workspace');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -301,31 +301,31 @@ export function LandingPage() {
       name: "Jonah Dubois",
       handle: "@jonahships_",
       avatar: "J",
-      text: "Setup @loom yesterday. All I have to say is, wow. I mapped my DB model visually and Loom generated the migration schemas and React flow routes in seconds."
+      text: "Setup @arqulat-arc yesterday. All I have to say is, wow. I mapped my DB model visually and Arqulat Arc generated the migration schemas and React flow routes in seconds."
     },
     {
       name: "Aryeh Dubois",
       handle: "@AryehDubois",
       avatar: "A",
-      text: "Tried Loom. I tried to build my own visual mockups and compilers before, and I am very impressed how many hard things Loom gets right. Visual connections are awesome."
+      text: "Tried Arqulat Arc. I tried to build my own visual mockups and compilers before, and I am very impressed how many hard things Arqulat Arc gets right. Visual connections are awesome."
     },
     {
       name: "Mark Jaquith",
       handle: "@markjaquith",
       avatar: "M",
-      text: "I've been saying for like six months that even if LLMs suddenly stopped improving, we could spend years discovering new uses. @loom feels like that kind of 'just had to glue all the parts together' leap."
+      text: "I've been saying for like six months that even if LLMs suddenly stopped improving, we could spend years discovering new uses. @arqulat-arc feels like that kind of 'just had to glue all the parts together' leap."
     },
     {
       name: "Dan Peguine",
       handle: "@danpeguine",
       avatar: "D",
-      text: "Why @loom is nuts: your context and code layout designs live on YOUR computer, not a walled garden. Growing community building custom blocks. Context persists 24/7."
+      text: "Why @arqulat-arc is nuts: your context and code layout designs live on YOUR computer, not a walled garden. Growing community building custom blocks. Context persists 24/7."
     },
     {
       name: "Nate Eliason",
       handle: "@nateliason",
       avatar: "N",
-      text: "Yeah this was 1,000% worth it. Separate Claude/Gemini model + Loom, managing visual canvas components I can compile anywhere, autonomously resolving SQL routes."
+      text: "Yeah this was 1,000% worth it. Separate Claude/Gemini model + Arqulat Arc, managing visual canvas components I can compile anywhere, autonomously resolving SQL routes."
     },
     {
       name: "Nathan Clark",
@@ -346,7 +346,7 @@ export function LandingPage() {
       <nav className={styles.nav}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}>L</div>
-          <span>Loom</span>
+          <span>Arqulat Arc</span>
         </div>
         <div className={styles.navLinks}>
           <a href="#features">Features</a>
@@ -380,7 +380,7 @@ export function LandingPage() {
         
         {/* OpenClaw-Style Installation Code Snippet */}
         <div className={styles.bashCommand} onClick={handleCopyCommand}>
-          <code>npx create-loom-app@latest workspace</code>
+          <code>npx create-arc-app@latest workspace</code>
           {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
         </div>
       </section>
@@ -685,7 +685,7 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p>© 2026 Loom by Neuarc. Built for the next generation of developers.</p>
+        <p>© 2026 Arqulat Arc by Neuarc. Built for the next generation of developers.</p>
       </footer>
     </div>
   );

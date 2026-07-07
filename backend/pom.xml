@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.arqulat</groupId>
-	<artifactId>loom-backend</artifactId>
+	<artifactId>arc-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>
@@ -161,3 +161,4 @@
 	</build>
 
 </project>
+

@@ -73,7 +73,7 @@ export function Dashboard() {
   };
 
   const handleConfirmCreate = async (name: string, bgColor: string) => {
-    const newProj = await addProject(name, 'Loom Diagrams', bgColor);
+    const newProj = await addProject(name, 'Arc Diagrams', bgColor);
     if (newProj && newProj.files.length > 0) {
       navigate(`/project/${newProj.id}/file/${newProj.files[0].id}`);
     }
@@ -101,7 +101,7 @@ export function Dashboard() {
       <aside className={styles.sidebar}>
         <div className={styles.logoArea}>
           <div className={styles.logoIcon}>L</div>
-          <span className={styles.logoText}>Loom Dashboard</span>
+          <span className={styles.logoText}>Arc Dashboard</span>
         </div>
 
         <nav className={styles.navSection}>

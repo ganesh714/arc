@@ -135,7 +135,7 @@ export function ProjectsSidebar() {
       >
         <div className={styles.logoWrapper}>
           <Logo className={styles.logo} />
-          <span className={styles.logoText}>Loom</span>
+          <span className={styles.logoText}>Arqulat Arc</span>
         </div>
       </div>
 
