@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
-import { Layers, Square, LayoutTemplate } from 'lucide-react';
+import { Layers, Square, LayoutTemplate, FolderKanban } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
 import { Header } from '@/components/layout/Header';
-import { ProjectsSidebar } from '@/components/layout/ProjectsSidebar';
 import { LeftSidebar } from '@/components/layout/LeftSidebar';
 import { SidePanel } from '@/components/layout/SidePanel';
 import { AIChatSidebar } from '@/components/layout/AIChatSidebar';
@@ -19,12 +18,13 @@ import { Loader } from '@/components/ui/Loader';
 
 function WorkspaceRoute() {
   const { projectId, fileId } = useParams();
-  const { switchProject, activeProjectId, activeFileId, isSidebarOpen, isAiChatOpen, isDesignPanelOpen, isVersionHistoryOpen } = useDiagram();
+  const navigate = useNavigate();
+  const { switchProject, activeProjectId, activeFileId, isAiChatOpen, isDesignPanelOpen, isVersionHistoryOpen } = useDiagram();
   const [leftWidth, setLeftWidth] = useState(220);
   const [rightWidth, setRightWidth] = useState(340);
   const [isLeftSidebarPinned, setIsLeftSidebarPinned] = useState(false); // Collapsed by default
   const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
-  const [activeLeftTab, setActiveLeftTab] = useState<'layers' | 'shapes' | 'templates'>('layers');
+  const [activeLeftTab, setActiveLeftTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('files');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Responsive layout: collapse panel pinning on small screens
@@ -98,28 +98,264 @@ function WorkspaceRoute() {
 
   return (
     <div className="flex h-screen w-full bg-[var(--bg-canvas)] overflow-hidden relative">
-      <div 
-        style={{ 
-          width: isSidebarOpen ? '200px' : '60px', 
-          minWidth: isSidebarOpen ? '200px' : '60px', 
-          height: '100%', 
+      {/* Unified Left Activity Bar (60px) */}
+      <div
+        onMouseEnter={() => setIsLeftSidebarHovered(true)}
+        onMouseLeave={() => setIsLeftSidebarHovered(false)}
+        style={{
+          width: '60px',
+          minWidth: '60px',
+          height: '100%',
+          backgroundColor: 'var(--bg-panel-solid)',
+          borderRight: '1px solid var(--border-default)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: '16px',
+          paddingBottom: '16px',
+          gap: '24px',
+          zIndex: 45, // Elevated above the sliding drawer panel!
           position: 'relative',
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          overflow: 'hidden',
           flexShrink: 0
         }}
       >
-        <ProjectsSidebar />
+        {/* Top Logo */}
+        <div 
+          onClick={() => navigate('/dashboard')}
+          style={{ 
+            cursor: 'pointer',
+            width: '32px',
+            height: '32px',
+            background: 'linear-gradient(135deg, #0c8ce9 0%, #2563eb 100%)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: '18px',
+            boxShadow: '0 0 12px rgba(12, 140, 233, 0.35)',
+            marginBottom: '8px'
+          }}
+          title="Go to Dashboard"
+        >
+          L
+        </div>
+
+        {/* Tab Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center', flex: 1 }}>
+          {/* Files Tab Button */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {activeLeftTab === 'files' && isLeftSidebarHovered && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: '25%',
+                height: '50%',
+                width: '3px',
+                backgroundColor: '#0c8ce9',
+                borderRadius: '0 4px 4px 0',
+                boxShadow: '0 0 10px #0c8ce9'
+              }} />
+            )}
+            <button 
+              onMouseEnter={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('files');
+              }}
+              onClick={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('files');
+              }}
+              style={{
+                color: (activeLeftTab === 'files' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                padding: '8px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: (activeLeftTab === 'files' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
+                transform: (activeLeftTab === 'files' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: (activeLeftTab === 'files' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                border: 'none',
+                outline: 'none'
+              }}
+              title="Files Explorer (Hover to open)"
+            >
+              <FolderKanban size={16} />
+            </button>
+          </div>
+
+          {/* Layers Tab Button */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {activeLeftTab === 'layers' && isLeftSidebarHovered && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: '25%',
+                height: '50%',
+                width: '3px',
+                backgroundColor: '#0c8ce9',
+                borderRadius: '0 4px 4px 0',
+                boxShadow: '0 0 10px #0c8ce9'
+              }} />
+            )}
+            <button 
+              onMouseEnter={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('layers');
+              }}
+              onClick={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('layers');
+              }}
+              style={{
+                color: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                padding: '8px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
+                transform: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                border: 'none',
+                outline: 'none'
+              }}
+              title="Layers List (Hover to open)"
+            >
+              <Layers size={16} />
+            </button>
+          </div>
+
+          {/* Shapes Tab Button */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {activeLeftTab === 'shapes' && isLeftSidebarHovered && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: '25%',
+                height: '50%',
+                width: '3px',
+                backgroundColor: '#0c8ce9',
+                borderRadius: '0 4px 4px 0',
+                boxShadow: '0 0 10px #0c8ce9'
+              }} />
+            )}
+            <button 
+              onMouseEnter={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('shapes');
+              }}
+              onClick={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('shapes');
+              }}
+              style={{
+                color: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                padding: '8px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
+                transform: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                border: 'none',
+                outline: 'none'
+              }}
+              title="Shapes Palette (Hover to open)"
+            >
+              <Square size={14} />
+            </button>
+          </div>
+
+          {/* Templates Tab Button */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {activeLeftTab === 'templates' && isLeftSidebarHovered && (
+              <div style={{
+                position: 'absolute',
+                left: 0,
+                top: '25%',
+                height: '50%',
+                width: '3px',
+                backgroundColor: '#0c8ce9',
+                borderRadius: '0 4px 4px 0',
+                boxShadow: '0 0 10px #0c8ce9'
+              }} />
+            )}
+            <button 
+              onMouseEnter={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('templates');
+              }}
+              onClick={() => {
+                setIsLeftSidebarHovered(true);
+                setActiveLeftTab('templates');
+              }}
+              style={{
+                color: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                padding: '8px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
+                transform: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                border: 'none',
+                outline: 'none'
+              }}
+              title="Templates Presets (Hover to open)"
+            >
+              <LayoutTemplate size={15} />
+            </button>
+          </div>
+        </div>
       </div>
 
+      {/* Floating Collapsible LeftSidebar Drawer (when unpinned) */}
+      {!isLeftSidebarPinned && (
+        <div 
+          onMouseEnter={() => setIsLeftSidebarHovered(true)}
+          onMouseLeave={() => setIsLeftSidebarHovered(false)}
+          style={{
+            position: 'absolute',
+            left: '60px',
+            top: 0,
+            bottom: 0,
+            width: '260px',
+            zIndex: 40,
+            transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-105%)',
+            transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxShadow: isLeftSidebarHovered ? '12px 0 35px rgba(0,0,0,0.4)' : 'none',
+          }}
+        >
+          <LeftSidebar 
+            isPinned={false} 
+            onPinToggle={() => setIsLeftSidebarPinned(true)} 
+            activeTab={activeLeftTab}
+            onTabChange={setActiveLeftTab}
+          />
+        </div>
+      )}
+
+      {/* Main App Workspace Content */}
       <div className="flex flex-col flex-1 h-full relative overflow-hidden">
         <Header />
         
         <div className="flex flex-1 relative overflow-hidden">
           {/* Static Pinned LeftSidebar */}
-          {/* Static Pinned LeftSidebar */}
           {isLeftSidebarPinned && (
-            <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative' }}>
+            <div style={{ width: `${leftWidth}px`, minWidth: `${leftWidth}px`, height: '100%', position: 'relative', zIndex: 40 }}>
               <LeftSidebar 
                 isPinned={true} 
                 onPinToggle={() => setIsLeftSidebarPinned(false)} 
@@ -148,187 +384,6 @@ function WorkspaceRoute() {
             >
               <div style={{ width: '1px', backgroundColor: 'var(--border-default)', height: '100%', transition: 'background-color 0.15s' }} className="group-hover:bg-[#0c8ce9]" />
             </div>
-          )}
-
-          {/* Floating Collapsible LeftSidebar (when unpinned) */}
-          {!isLeftSidebarPinned && (
-            <>
-              {/* Thin visible activity bar */}
-              <div
-                onMouseEnter={() => setIsLeftSidebarHovered(true)}
-                style={{
-                  width: '40px',
-                  minWidth: '40px',
-                  height: '100%',
-                  backgroundColor: '#020306',
-                  borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  paddingTop: '20px',
-                  gap: '16px',
-                  zIndex: 45, // Elevated above the sliding drawer panel!
-                  position: 'relative'
-                }}
-              >
-                {/* Active indicator dot / line for Layers */}
-                <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  {activeLeftTab === 'layers' && isLeftSidebarHovered && (
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '25%',
-                      height: '50%',
-                      width: '3px',
-                      backgroundColor: '#0c8ce9',
-                      borderRadius: '0 4px 4px 0',
-                      boxShadow: '0 0 10px #0c8ce9'
-                    }} />
-                  )}
-                  <button 
-                    onMouseEnter={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('layers');
-                    }}
-                    onClick={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('layers');
-                    }}
-                    style={{
-                      color: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '#0c8ce9' : '#8b949e',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'rgba(12, 140, 233, 0.1)' : 'transparent',
-                      transform: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
-                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                    title="Layers List (Hover to open)"
-                  >
-                    <Layers size={16} />
-                  </button>
-                </div>
-
-                {/* Active indicator dot / line for Shapes */}
-                <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  {activeLeftTab === 'shapes' && isLeftSidebarHovered && (
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '25%',
-                      height: '50%',
-                      width: '3px',
-                      backgroundColor: '#0c8ce9',
-                      borderRadius: '0 4px 4px 0',
-                      boxShadow: '0 0 10px #0c8ce9'
-                    }} />
-                  )}
-                  <button 
-                    onMouseEnter={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('shapes');
-                    }}
-                    onClick={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('shapes');
-                    }}
-                    style={{
-                      color: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '#0c8ce9' : '#8b949e',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'rgba(12, 140, 233, 0.1)' : 'transparent',
-                      transform: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
-                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                    title="Shapes Palette (Hover to open)"
-                  >
-                    <Square size={14} />
-                  </button>
-                </div>
-
-                {/* Active indicator dot / line for Templates */}
-                <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                  {activeLeftTab === 'templates' && isLeftSidebarHovered && (
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '25%',
-                      height: '50%',
-                      width: '3px',
-                      backgroundColor: '#0c8ce9',
-                      borderRadius: '0 4px 4px 0',
-                      boxShadow: '0 0 10px #0c8ce9'
-                    }} />
-                  )}
-                  <button 
-                    onMouseEnter={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('templates');
-                    }}
-                    onClick={() => {
-                      setIsLeftSidebarHovered(true);
-                      setActiveLeftTab('templates');
-                    }}
-                    style={{
-                      color: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '#0c8ce9' : '#8b949e',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'rgba(12, 140, 233, 0.1)' : 'transparent',
-                      transform: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
-                      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                    title="Templates Presets (Hover to open)"
-                  >
-                    <LayoutTemplate size={15} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Sidebar drawer card */}
-              <div 
-                onMouseEnter={() => setIsLeftSidebarHovered(true)}
-                onMouseLeave={() => setIsLeftSidebarHovered(false)}
-                style={{
-                  position: 'absolute',
-                  left: 0, // Positioned at 0 to slide out from behind the thin activity bar!
-                  top: 0,
-                  bottom: 0,
-                  width: '300px', // 260px content + 40px padding offset
-                  paddingLeft: '40px', // Leave spacing matching activity bar width
-                  zIndex: 40,
-                  transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-100%)',
-                  transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: isLeftSidebarHovered ? '12px 0 35px rgba(0,0,0,0.6)' : 'none',
-                }}
-              >
-                <LeftSidebar 
-                  isPinned={false} 
-                  onPinToggle={() => setIsLeftSidebarPinned(true)} 
-                  activeTab={activeLeftTab}
-                  onTabChange={setActiveLeftTab}
-                />
-              </div>
-            </>
           )}
 
           <div className="flex-1 h-full relative overflow-hidden">
