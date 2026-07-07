@@ -157,7 +157,7 @@ function WorkspaceRoute() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', alignItems: 'center', flex: 1 }}>
             {/* Files Tab Button */}
             <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              {activeLeftTab === 'files' && isLeftSidebarHovered && (
+              {activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
                   left: 0,
@@ -179,17 +179,17 @@ function WorkspaceRoute() {
                   setActiveLeftTab('files');
                 }}
                 style={{
-                  color: (activeLeftTab === 'files' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                  color: (activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: (activeLeftTab === 'files' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
-                  transform: (activeLeftTab === 'files' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                  backgroundColor: (activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'var(--accent-blue-subtle)' : 'transparent',
+                  transform: (activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: (activeLeftTab === 'files' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                  boxShadow: (activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
                   border: 'none',
                   outline: 'none'
                 }}
@@ -201,7 +201,7 @@ function WorkspaceRoute() {
 
             {/* Layers Tab Button */}
             <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              {activeLeftTab === 'layers' && isLeftSidebarHovered && (
+              {activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
                   left: 0,
@@ -223,17 +223,17 @@ function WorkspaceRoute() {
                   setActiveLeftTab('layers');
                 }}
                 style={{
-                  color: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                  color: (activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
-                  transform: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                  backgroundColor: (activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'var(--accent-blue-subtle)' : 'transparent',
+                  transform: (activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: (activeLeftTab === 'layers' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                  boxShadow: (activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
                   border: 'none',
                   outline: 'none'
                 }}
@@ -245,7 +245,7 @@ function WorkspaceRoute() {
 
             {/* Shapes Tab Button */}
             <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              {activeLeftTab === 'shapes' && isLeftSidebarHovered && (
+              {activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
                   left: 0,
@@ -267,17 +267,17 @@ function WorkspaceRoute() {
                   setActiveLeftTab('shapes');
                 }}
                 style={{
-                  color: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                  color: (activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
-                  transform: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                  backgroundColor: (activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'var(--accent-blue-subtle)' : 'transparent',
+                  transform: (activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: (activeLeftTab === 'shapes' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                  boxShadow: (activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
                   border: 'none',
                   outline: 'none'
                 }}
@@ -289,7 +289,7 @@ function WorkspaceRoute() {
 
             {/* Templates Tab Button */}
             <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-              {activeLeftTab === 'templates' && isLeftSidebarHovered && (
+              {activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
                 <div style={{
                   position: 'absolute',
                   left: 0,
@@ -311,17 +311,17 @@ function WorkspaceRoute() {
                   setActiveLeftTab('templates');
                 }}
                 style={{
-                  color: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '#0c8ce9' : 'var(--text-secondary)',
+                  color: (activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'var(--accent-blue-subtle)' : 'transparent',
-                  transform: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                  backgroundColor: (activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'var(--accent-blue-subtle)' : 'transparent',
+                  transform: (activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: (activeLeftTab === 'templates' && isLeftSidebarHovered) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                  boxShadow: (activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
                   border: 'none',
                   outline: 'none'
                 }}
@@ -423,7 +423,7 @@ function WorkspaceRoute() {
               left: '60px',
               top: 0,
               bottom: 0,
-              width: '260px',
+              width: `${leftWidth}px`,
               zIndex: 40,
               transform: isLeftSidebarHovered ? 'translateX(0)' : 'translateX(-105%)',
               transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
