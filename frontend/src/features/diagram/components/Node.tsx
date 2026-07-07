@@ -47,6 +47,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const renderFigmaHandle = (position: string) => {
@@ -296,6 +297,12 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
+      onDoubleClick={(e: React.MouseEvent) => {
+        if (activeTool === 'select' && !isLine) {
+          e.stopPropagation();
+          setIsEditing(true);
+        }
+      }}
       onDrag={(_e, d) => {
         // Smart Guides Logic
         if (activeTool !== 'select' || selectToolMode !== 'move') return;
@@ -1393,6 +1400,46 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             onMouseDown={handleEndDrag}
           />
         </>
+      )}
+      {isEditing && (
+        <textarea
+          defaultValue={node.content}
+          autoFocus
+          onBlur={(e) => {
+            const val = e.target.value.trim();
+            updateNode({ ...node, content: val });
+            setIsEditing(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              const val = (e.target as HTMLTextAreaElement).value.trim();
+              updateNode({ ...node, content: val });
+              setIsEditing(false);
+            }
+            if (e.key === 'Escape') {
+              setIsEditing(false);
+            }
+          }}
+          style={{
+            position: 'absolute',
+            width: '90%',
+            height: '80%',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(4px)',
+            border: '1px solid #0c8ce9',
+            borderRadius: '6px',
+            color: '#fff',
+            fontFamily: 'inherit',
+            fontSize: node.style?.fontSize || '11px',
+            textAlign: node.style?.textAlign || 'center',
+            padding: '8px',
+            resize: 'none',
+            outline: 'none',
+            zIndex: 100,
+            boxSizing: 'border-box'
+          }}
+        />
       )}
     </Rnd>
   );
