@@ -42,6 +42,17 @@ function WorkspaceRoute() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
+  const handleTabClick = (tab: 'files' | 'layers' | 'shapes' | 'templates' | 'settings') => {
+    if (activeLeftTab === tab && isLeftSidebarPinned) {
+      setIsLeftSidebarPinned(false);
+      setIsLeftSidebarHovered(false);
+    } else {
+      setIsLeftSidebarPinned(true);
+      setIsLeftSidebarHovered(true);
+      setActiveLeftTab(tab);
+    }
+  };
+
   useEffect(() => {
     if (!isProfileMenuOpen) return;
     const handleOutsideClick = (e: MouseEvent) => {
@@ -188,10 +199,7 @@ function WorkspaceRoute() {
                   setIsLeftSidebarHovered(true);
                   setActiveLeftTab('files');
                 }}
-                onClick={() => {
-                  setIsLeftSidebarHovered(true);
-                  setActiveLeftTab('files');
-                }}
+                onClick={() => handleTabClick('files')}
                 style={{
                   color: (activeLeftTab === 'files' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
@@ -232,10 +240,7 @@ function WorkspaceRoute() {
                   setIsLeftSidebarHovered(true);
                   setActiveLeftTab('layers');
                 }}
-                onClick={() => {
-                  setIsLeftSidebarHovered(true);
-                  setActiveLeftTab('layers');
-                }}
+                onClick={() => handleTabClick('layers')}
                 style={{
                   color: (activeLeftTab === 'layers' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
@@ -276,10 +281,7 @@ function WorkspaceRoute() {
                   setIsLeftSidebarHovered(true);
                   setActiveLeftTab('shapes');
                 }}
-                onClick={() => {
-                  setIsLeftSidebarHovered(true);
-                  setActiveLeftTab('shapes');
-                }}
+                onClick={() => handleTabClick('shapes')}
                 style={{
                   color: (activeLeftTab === 'shapes' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
@@ -320,10 +322,7 @@ function WorkspaceRoute() {
                   setIsLeftSidebarHovered(true);
                   setActiveLeftTab('templates');
                 }}
-                onClick={() => {
-                  setIsLeftSidebarHovered(true);
-                  setActiveLeftTab('templates');
-                }}
+                onClick={() => handleTabClick('templates')}
                 style={{
                   color: (activeLeftTab === 'templates' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
@@ -364,10 +363,7 @@ function WorkspaceRoute() {
                   setIsLeftSidebarHovered(true);
                   setActiveLeftTab('settings');
                 }}
-                onClick={() => {
-                  setIsLeftSidebarHovered(true);
-                  setActiveLeftTab('settings');
-                }}
+                onClick={() => handleTabClick('settings')}
                 style={{
                   color: (activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
                   padding: '8px',
