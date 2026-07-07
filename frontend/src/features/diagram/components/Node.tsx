@@ -280,6 +280,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   // Build text style object
   const textStyle: React.CSSProperties = {
     color: effectiveColor || '#e3e3e3',
+    fontFamily: node.style?.fontFamily || 'inherit',
     fontSize: node.style?.fontSize || '11px',
     fontWeight: node.style?.fontWeight || 'normal',
     textAlign: node.style?.textAlign || 'center',
@@ -1403,70 +1404,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         </>
       )}
       {isEditing && (
-        <>
-          <div
-            style={{
-              position: 'absolute',
-              top: '-40px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-default)',
-              borderRadius: '8px',
-              padding: '4px',
-              display: 'flex',
-              gap: '4px',
-              zIndex: 101,
-              boxShadow: 'var(--shadow-lg)'
-            }}
-            onMouseDown={(e) => {
-              // Prevent losing focus on textarea
-              e.preventDefault();
-            }}
-          >
-            {[
-              { label: 'B', prefix: '**', suffix: '**', tooltip: 'Bold' },
-              { label: 'I', prefix: '*', suffix: '*', tooltip: 'Italic' },
-              { label: '<>', prefix: '`', suffix: '`', tooltip: 'Code' },
-            ].map(({ label, prefix, suffix, tooltip }) => (
-              <button
-                key={label}
-                title={tooltip}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-primary)',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: label === 'B' ? 'bold' : 'normal',
-                  fontStyle: label === 'I' ? 'italic' : 'normal',
-                  fontFamily: label === '<>' ? 'monospace' : 'inherit',
-                  fontSize: '12px'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const textarea = document.getElementById(`node-edit-${node.id}`) as HTMLTextAreaElement;
-                  if (!textarea) return;
-                  const start = textarea.selectionStart;
-                  const end = textarea.selectionEnd;
-                  const text = textarea.value;
-                  const before = text.substring(0, start);
-                  const selected = text.substring(start, end);
-                  const after = text.substring(end);
-                  textarea.value = before + prefix + selected + suffix + after;
-                  textarea.focus();
-                  textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <textarea
+        <textarea
             id={`node-edit-${node.id}`}
             key={node.content}
             defaultValue={node.content}
@@ -1507,7 +1445,6 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               boxSizing: 'border-box'
             }}
           />
-        </>
       )}
     </Rnd>
   );

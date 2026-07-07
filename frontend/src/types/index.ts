@@ -13,6 +13,7 @@ export interface NodeStyle {
   borderColor?: string;
   color?: string;
   fontSize?: string;
+  fontFamily?: string;
   borderRadius?: string;
   boxShadow?: string;
   fontWeight?: string;
