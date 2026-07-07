@@ -418,24 +418,4 @@
   font-family: var(--font-mono, monospace);
 }
 
-@keyframes quickAddIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -100%) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -110%) scale(1);
-  }
-}
 
-@keyframes portSnapPulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.4);
-    opacity: 0.4;
-  }
-}

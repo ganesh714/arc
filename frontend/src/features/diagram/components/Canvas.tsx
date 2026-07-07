@@ -12,6 +12,7 @@ import {
   Triangle, 
   Minus, 
   ArrowRight,
+  Gem,
   Star as StarIcon,
   Plus,
   Minus as ZoomOutIcon,
@@ -1048,6 +1049,7 @@ export function Canvas() {
         const PORT_SNAP_RADIUS = 24;
         let bestSnap: typeof portSnapTarget = null;
         let bestDist = PORT_SNAP_RADIUS;
+        const canvasRect = e.currentTarget.getBoundingClientRect();
         nodes.forEach(n => {
           if (n.type === 'line' || n.type === 'arrow') return;
           const ports: Record<string, { px: number; py: number }> = {
@@ -1060,11 +1062,10 @@ export function Canvas() {
             const dist = Math.sqrt(Math.pow(currentX - px, 2) + Math.pow(currentY - py, 2));
             if (dist < bestDist) {
               bestDist = dist;
-              const rect2 = e.currentTarget.getBoundingClientRect();
               bestSnap = {
                 nodeId: n.id, anchor,
-                screenX: (px + panOffset.x) * zoom + rect2.left,
-                screenY: (py + panOffset.y) * zoom + rect2.top
+                screenX: (px + panOffset.x) * zoom + canvasRect.left,
+                screenY: (py + panOffset.y) * zoom + canvasRect.top
               };
             }
           });
@@ -1521,12 +1522,12 @@ export function Canvas() {
         >
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', padding: '2px 8px 4px', fontWeight: 600, letterSpacing: '0.05em' }}>QUICK ADD</div>
           {([
-            { type: 'box', label: 'Rectangle', icon: '⬜' },
-            { type: 'circle', label: 'Ellipse', icon: '⭕' },
-            { type: 'diamond', label: 'Diamond', icon: '◇' },
-            { type: 'arrow', label: 'Arrow', icon: '→' },
-            { type: 'note', label: 'Sticky Note', icon: '📄' },
-            { type: 'uml-class', label: 'UML Class', icon: '🗂️' },
+            { type: 'box', label: 'Rectangle', icon: <Square size={14} /> },
+            { type: 'circle', label: 'Ellipse', icon: <Circle size={14} /> },
+            { type: 'diamond', label: 'Diamond', icon: <Gem size={14} /> },
+            { type: 'arrow', label: 'Arrow', icon: <ArrowRight size={14} /> },
+            { type: 'note', label: 'Sticky Note', icon: <StickyNote size={14} /> },
+            { type: 'uml-class', label: 'UML Class', icon: <Sparkles size={14} /> },
           ] as const).map(({ type, label, icon }) => (
             <button
               key={type}
@@ -1552,7 +1553,7 @@ export function Canvas() {
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover, rgba(255,255,255,0.07))')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <span style={{ fontSize: '14px' }}>{icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center', width: '14px', height: '14px' }}>{icon}</span>
               {label}
             </button>
           ))}

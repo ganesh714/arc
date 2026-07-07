@@ -4,44 +4,43 @@ import { getSemanticStyle } from '../../../utils/semanticStyles';
 
 export function parseMarkdown(text: string): React.ReactNode {
   if (!text) return '';
+  
   const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|_.*?_)/g;
   const parts = text.split(regex);
-  return parts.map((part, index) => {
+  
+  return parts.reduce<React.ReactNode[]>((acc, part, index) => {
+    if (part === '') return acc;
+    
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('*') && part.endsWith('*')) {
-      return <em key={index}>{part.slice(1, -1)}</em>;
-    }
-    if (part.startsWith('_') && part.endsWith('_')) {
-      return <em key={index}>{part.slice(1, -1)}</em>;
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return (
-        <code 
-          key={index} 
-          style={{
-            fontFamily: 'monospace',
-            backgroundColor: 'rgba(255,255,255,0.1)',
-            padding: '2px 4px',
-            borderRadius: '4px',
-            fontSize: '90%'
-          }}
-        >
+      acc.push(<strong key={index}>{part.slice(2, -2)}</strong>);
+    } else if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
+      acc.push(<em key={index}>{part.slice(1, -1)}</em>);
+    } else if (part.startsWith('`') && part.endsWith('`')) {
+      acc.push(
+        <code key={index} style={{
+          fontFamily: 'monospace',
+          backgroundColor: 'rgba(255,255,255,0.1)',
+          padding: '2px 4px',
+          borderRadius: '4px',
+          fontSize: '90%'
+        }}>
           {part.slice(1, -1)}
         </code>
       );
+    } else {
+      const lines = part.split('\n');
+      lines.forEach((line, lineIndex) => {
+        if (lineIndex > 0) {
+          acc.push(<br key={`${index}-br-${lineIndex}`} />);
+        }
+        if (line) {
+          acc.push(<React.Fragment key={`${index}-${lineIndex}`}>{line}</React.Fragment>);
+        }
+      });
     }
-    if (part.includes('\n')) {
-      return part.split('\n').map((line, i) => (
-        <React.Fragment key={`${index}-${i}`}>
-          {line}
-          {i < part.split('\n').length - 1 && <br />}
-        </React.Fragment>
-      ));
-    }
-    return part;
-  });
+    
+    return acc;
+  }, []);
 }
 
 interface ShapeRendererProps {

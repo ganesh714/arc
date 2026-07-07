@@ -4,7 +4,7 @@ import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
-import { renderExtendedShape } from './ShapeRenderers';
+import { renderExtendedShape, parseMarkdown } from './ShapeRenderers';
 import { getSemanticStyle } from '../../../utils/semanticStyles';
 import { getClosestPointOnLineNode } from '../../../utils/geometry';
 
@@ -495,7 +495,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '16px', textAlign: 'center' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'circle' ? (
@@ -515,7 +515,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '8px' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'triangle' ? (
@@ -567,7 +567,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '30px 15px 15px 15px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -595,7 +595,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '24px 20px 20px 20px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -616,7 +616,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '8px 20px' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'hexagon' ? (
@@ -644,7 +644,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -673,7 +673,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px 20px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -709,7 +709,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -744,7 +744,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             borderTop: `1px solid ${node.style?.borderColor || '#f59e0b'}`,
           }} />
           <div style={{ ...textStyle, color: node.style?.color || '#92400e' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'custom-block' ? (
@@ -772,7 +772,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         >
           {node.content ? (
             <div style={textStyle}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           ) : null}
         </div>
@@ -1319,7 +1319,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={textStyle}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       )}
@@ -1403,6 +1403,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
       )}
       {isEditing && (
         <textarea
+          key={node.content}
           defaultValue={node.content}
           autoFocus
           onBlur={(e) => {
