@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { CreateEntityModal } from '@/components/layout/CreateEntityModal';
 import styles from './LeftSidebar.module.css';
 import { 
   Layers, 
@@ -32,9 +30,6 @@ import {
   Folder,
   Edit,
   MoreVertical,
-  LogIn,
-  Plus,
-  X,
 } from 'lucide-react';
 
 // ─── Shape Categories ───────────────────────────────────────────────────────
@@ -109,9 +104,8 @@ interface LeftSidebarProps {
 }
 
 export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChange }: LeftSidebarProps) {
-  const [localActiveTab, setLocalActiveTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('layers');
+  const [localActiveTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('layers');
   const currentTab = onTabChange ? activeTab : localActiveTab;
-  const setCurrentTab = onTabChange ? onTabChange : setLocalActiveTab;
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
   const { 
@@ -125,15 +119,11 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
     projects,
     activeProjectId,
     activeFileId,
-    addFile,
     updateFile,
     deleteFile
   } = useDiagram();
   
-  const { isGuest, user, login, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
-  const [isCreating, setIsCreating] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -166,13 +156,6 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
           navigate('/dashboard');
         }
       }
-    }
-  };
-
-  const handleConfirmCreateFile = async (name: string, bgColor: string) => {
-    if (name.trim()) {
-      await addFile(activeProjectId, name.trim(), bgColor);
-      setIsCreating(false);
     }
   };
 
@@ -299,35 +282,8 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
 
   return (
     <div className={styles.container}>
-      <div className={styles.tabs} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button 
-            className={`${styles.tab} ${currentTab === 'files' ? styles.activeTab : ''}`}
-            onClick={() => setCurrentTab('files')}
-          >
-            Files
-          </button>
-          <button 
-            className={`${styles.tab} ${currentTab === 'layers' ? styles.activeTab : ''}`}
-            onClick={() => setCurrentTab('layers')}
-          >
-            Layers
-          </button>
-          <button 
-            className={`${styles.tab} ${currentTab === 'shapes' ? styles.activeTab : ''}`}
-            onClick={() => setCurrentTab('shapes')}
-          >
-            Shapes
-          </button>
-          <button 
-            className={`${styles.tab} ${currentTab === 'templates' ? styles.activeTab : ''}`}
-            onClick={() => setCurrentTab('templates')}
-          >
-            Templates
-          </button>
-        </div>
-
-        {onPinToggle && (
+      {onPinToggle && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 4px 16px', width: '100%', flexShrink: 0 }}>
           <button 
             onClick={onPinToggle} 
             className={styles.pinBtn} 
@@ -349,222 +305,118 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
           >
             <Pin size={13} style={{ transform: isPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 0.2s', color: isPinned ? '#0c8ce9' : 'var(--text-muted)' }} />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className={styles.panelContent}>
         {currentTab === 'files' ? (
-          <>
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionTitle}>Project Files</span>
-              <span className="text-[10px] text-slate-500 font-bold">
-                {projects.find(p => p.id === activeProjectId)?.files.length || 0} files
-              </span>
+          <div className={styles.projectList}>
+            {projects.find(p => p.id === activeProjectId)?.files.map((file) => {
+              const isActive = file.id === activeFileId;
+              return (
+                <div key={file.id} style={{ position: 'relative' }}>
+                  <button
+                    className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
+                    onClick={() => navigate(`/project/${activeProjectId}/file/${file.id}`)}
+                    style={{ paddingRight: '28px' }}
+                  >
+                    <Folder size={14} className={styles.itemIcon} />
+                    <span className={styles.projectName}>{file.name}</span>
+                    <span className={styles.itemCount}>{file.nodes.length}</span>
+                  </button>
+                  
+                  <button 
+                    style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuId(activeMenuId === file.id ? null : file.id);
+                    }}
+                  >
+                    <MoreVertical size={14} />
+                  </button>
+
+                  {activeMenuId === file.id && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: '0',
+                      backgroundColor: 'var(--bg-panel-solid)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: '6px',
+                      boxShadow: 'var(--shadow-sm)',
+                      zIndex: 50,
+                      minWidth: '120px',
+                      overflow: 'hidden'
+                    }}>
+                      <button 
+                        onClick={(e) => handleRenameFile(e, file.id, file.name)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <Edit size={12} /> Rename
+                      </button>
+                      <button 
+                        onClick={(e) => handleDeleteFile(e, file.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : currentTab === 'layers' ? (
+          nodes.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Layers size={24} strokeWidth={1.5} />
+              <span className={styles.emptyTitle}>No layers yet</span>
+              <span className={styles.emptyDesc}>Add shapes using the Shapes tab or AI generation</span>
             </div>
+          ) : (
+            <div className={styles.layerList}>
+              {displayNodes.map((node, index) => {
+                const isSelected = selectedNodeIds.includes(node.id);
+                const isDragging = draggedIndex === index;
+                const isDragOver = dragOverIndex === index;
 
-            <div className={styles.projectList}>
-              {projects.find(p => p.id === activeProjectId)?.files.map((file) => {
-                const isActive = file.id === activeFileId;
                 return (
-                  <div key={file.id} style={{ position: 'relative' }}>
-                    <button
-                      className={`${styles.projectBtn} ${isActive ? styles.activeProject : ''}`}
-                      onClick={() => navigate(`/project/${activeProjectId}/file/${file.id}`)}
-                      style={{ paddingRight: '28px' }}
-                    >
-                      <Folder size={14} className={styles.itemIcon} />
-                      <span className={styles.projectName}>{file.name}</span>
-                      <span className={styles.itemCount}>{file.nodes.length}</span>
-                    </button>
-                    
-                    <button 
-                      style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenuId(activeMenuId === file.id ? null : file.id);
-                      }}
-                    >
-                      <MoreVertical size={14} />
-                    </button>
-
-                    {activeMenuId === file.id && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: '0',
-                        backgroundColor: 'var(--bg-panel-solid)',
-                        border: '1px solid var(--border-default)',
-                        borderRadius: '6px',
-                        boxShadow: 'var(--shadow-sm)',
-                        zIndex: 50,
-                        minWidth: '120px',
-                        overflow: 'hidden'
-                      }}>
-                        <button 
-                          onClick={(e) => handleRenameFile(e, file.id, file.name)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderBottom: '1px solid var(--border-default)', color: 'var(--text-primary)', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
-                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
-                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <Edit size={12} /> Rename
-                        </button>
-                        <button 
-                          onClick={(e) => handleDeleteFile(e, file.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', textAlign: 'left' }}
-                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <Trash2 size={12} /> Delete
-                        </button>
+                  <div 
+                    key={node.id}
+                    className={`${styles.layerItem} ${isSelected ? styles.selectedLayer : ''} ${isDragging ? styles.draggingLayer : ''} ${isDragOver ? styles.dragOverLayer : ''}`}
+                    onClick={(e) => selectNode(node.id, e.shiftKey)}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className={styles.layerLeft}>
+                      <div className={styles.gripHandle} title="Drag to reorder layer">
+                        <GripVertical size={11} />
                       </div>
-                    )}
+                      {getNodeIcon(node.type)}
+                      <span className={styles.layerName}>{getNodeLabel(node)}</span>
+                    </div>
+                    <div className={styles.layerActions}>
+                      <button 
+                        className={styles.layerActionBtn}
+                        onClick={(e) => handleDeleteNode(node.id, e)}
+                        title="Delete element"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className={styles.footer}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-                {!isCreating ? (
-                  <button
-                    className={styles.addBtn}
-                    onClick={() => setIsCreating(true)}
-                    title="New File"
-                  >
-                    <Plus size={14} />
-                    <span>New File</span>
-                  </button>
-                ) : (
-                  <CreateEntityModal 
-                    isOpen={isCreating}
-                    onClose={() => setIsCreating(false)}
-                    onConfirm={handleConfirmCreateFile}
-                    title="Create New File"
-                    defaultName={`Untitled ${projects.find(p => p.id === activeProjectId)?.files.length ? projects.find(p => p.id === activeProjectId)!.files.length + 1 : 1}`}
-                  />
-                )}
-
-                {/* User Session Profile Details inside Unified LeftSidebar Footer */}
-                <div style={{ 
-                  padding: '12px 8px', 
-                  borderTop: '1px solid var(--border-default)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginTop: '4px'
-                }}>
-                  <div 
-                    onClick={isGuest ? login : undefined}
-                    style={{ 
-                      width: '28px', 
-                      height: '28px', 
-                      borderRadius: '50%', 
-                      backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
-                      overflow: 'hidden',
-                      cursor: isGuest ? 'pointer' : 'default'
-                    }}
-                  >
-                    {isGuest ? (
-                      <LogIn size={12} color="#f59e0b" />
-                    ) : user?.picture ? (
-                      <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <LogIn size={12} />
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
-                      {isGuest ? 'Guest User' : user?.name || 'User'}
-                    </span>
-                    {isGuest ? (
-                      <button 
-                        onClick={login}
-                        style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: '#f59e0b', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold' }}
-                      >
-                        Sign in to save
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => navigate('/dashboard')}
-                        style={{ background: 'none', border: 'none', padding: 0, fontSize: '9px', color: 'var(--text-muted)', cursor: 'pointer', textAlign: 'left', textDecoration: 'underline' }}
-                      >
-                        Dashboard
-                      </button>
-                    )}
-                  </div>
-                  {isAuthenticated && (
-                    <button 
-                      onClick={logout} 
-                      style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-muted)', cursor: 'pointer' }}
-                      title="Logout"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : currentTab === 'layers' ? (
-          <>
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionTitle}>Layers list</span>
-              <span className="text-[10px] text-slate-500 font-bold">{nodes.length} items</span>
-            </div>
-            
-            {nodes.length === 0 ? (
-              <div className={styles.emptyState}>
-                <Layers size={24} strokeWidth={1.5} />
-                <span className={styles.emptyTitle}>No layers yet</span>
-                <span className={styles.emptyDesc}>Add shapes using the Shapes tab or AI generation</span>
-              </div>
-            ) : (
-              <div className={styles.layerList}>
-                {displayNodes.map((node, index) => {
-                  const isSelected = selectedNodeIds.includes(node.id);
-                  const isDragging = draggedIndex === index;
-                  const isDragOver = dragOverIndex === index;
-
-                  return (
-                    <div 
-                      key={node.id}
-                      className={`${styles.layerItem} ${isSelected ? styles.selectedLayer : ''} ${isDragging ? styles.draggingLayer : ''} ${isDragOver ? styles.dragOverLayer : ''}`}
-                      onClick={(e) => selectNode(node.id, e.shiftKey)}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, index)}
-                      onDragOver={(e) => handleDragOver(e, index)}
-                      onDrop={(e) => handleDrop(e, index)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <div className={styles.layerLeft}>
-                        <div className={styles.gripHandle} title="Drag to reorder layer">
-                          <GripVertical size={11} />
-                        </div>
-                        {getNodeIcon(node.type)}
-                        <span className={styles.layerName}>{getNodeLabel(node)}</span>
-                      </div>
-                      <div className={styles.layerActions}>
-                        <button 
-                          className={styles.layerActionBtn}
-                          onClick={(e) => handleDeleteNode(node.id, e)}
-                          title="Delete element"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+          )
         ) : currentTab === 'shapes' ? (
-          // ─── Shapes Tab ────────────────────────────────────────────────────
           <div className={styles.shapesPanel}>
             {SHAPE_CATEGORIES.map(cat => {
               const isOpen = expandedCategories.has(cat.label);
@@ -601,120 +453,112 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
             })}
           </div>
         ) : (
-          // ─── Templates Tab ──────────────────────────────────────────────────
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px' }}>
-            <div className={styles.sectionHeader} style={{ padding: '0px' }}>
-              <span className={styles.sectionTitle}>Default Templates</span>
-              <span className="text-[10px] text-slate-500 font-bold">3 presets</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '4px' }}>
+            {/* User Authentication Flowchart */}
+            <button
+              onClick={() => loadTemplate([
+                  { id: 'start', type: 'terminator', content: 'Start', position: { x: 250, y: 50 }, dimensions: { width: 100, height: 45 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
+                  { id: 'login', type: 'process', content: 'Login Page', position: { x: 230, y: 140 }, dimensions: { width: 140, height: 60 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                  { id: 'decision', type: 'decision-merge', content: 'Credentials\nValid?', position: { x: 240, y: 250 }, dimensions: { width: 120, height: 90 }, style: { backgroundColor: '#d97706', color: '#fff', borderColor: '#b45309', strokeWidth: 1 } },
+                  { id: 'dashboard', type: 'process', content: 'Dashboard', position: { x: 120, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
+                  { id: 'error', type: 'process', content: 'Show Error', position: { x: 360, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#ef4444', color: '#fff', borderColor: '#dc2626', strokeWidth: 1 } },
+                  { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'start', anchor: 'bottom' }, endConnection: { nodeId: 'login', anchor: 'top' }, startPoint: { x: 300, y: 95 }, endPoint: { x: 300, y: 140 } },
+                  { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'login', anchor: 'bottom' }, endConnection: { nodeId: 'decision', anchor: 'top' }, startPoint: { x: 300, y: 200 }, endPoint: { x: 300, y: 250 } },
+                  { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'left' }, endConnection: { nodeId: 'dashboard', anchor: 'top' }, startPoint: { x: 240, y: 295 }, endPoint: { x: 180, y: 400 } },
+                  { id: 'conn4', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'right' }, endConnection: { nodeId: 'error', anchor: 'top' }, startPoint: { x: 360, y: 295 }, endPoint: { x: 420, y: 400 } },
+              ], 'User Authentication Flowchart')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '10px',
+                padding: '12px',
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+            >
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', padding: '8px', borderRadius: '8px' }}>
+                <Workflow size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>User Authentication</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flowchart login pattern</span>
+              </div>
+            </button>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* User Authentication Flowchart */}
-              <button
-                onClick={() => loadTemplate([
-                    { id: 'start', type: 'terminator', content: 'Start', position: { x: 250, y: 50 }, dimensions: { width: 100, height: 45 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
-                    { id: 'login', type: 'process', content: 'Login Page', position: { x: 230, y: 140 }, dimensions: { width: 140, height: 60 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
-                    { id: 'decision', type: 'decision-merge', content: 'Credentials\nValid?', position: { x: 240, y: 250 }, dimensions: { width: 120, height: 90 }, style: { backgroundColor: '#d97706', color: '#fff', borderColor: '#b45309', strokeWidth: 1 } },
-                    { id: 'dashboard', type: 'process', content: 'Dashboard', position: { x: 120, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
-                    { id: 'error', type: 'process', content: 'Show Error', position: { x: 360, y: 400 }, dimensions: { width: 120, height: 60 }, style: { backgroundColor: '#ef4444', color: '#fff', borderColor: '#dc2626', strokeWidth: 1 } },
-                    { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'start', anchor: 'bottom' }, endConnection: { nodeId: 'login', anchor: 'top' }, startPoint: { x: 300, y: 95 }, endPoint: { x: 300, y: 140 } },
-                    { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'login', anchor: 'bottom' }, endConnection: { nodeId: 'decision', anchor: 'top' }, startPoint: { x: 300, y: 200 }, endPoint: { x: 300, y: 250 } },
-                    { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'left' }, endConnection: { nodeId: 'dashboard', anchor: 'top' }, startPoint: { x: 240, y: 295 }, endPoint: { x: 180, y: 400 } },
-                    { id: 'conn4', type: 'arrow', startConnection: { nodeId: 'decision', anchor: 'right' }, endConnection: { nodeId: 'error', anchor: 'top' }, startPoint: { x: 360, y: 295 }, endPoint: { x: 420, y: 400 } },
-                ], 'User Authentication Flowchart')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: '10px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
-              >
-                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#34d399', padding: '8px', borderRadius: '8px' }}>
-                  <Workflow size={18} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>User Authentication</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flowchart login pattern</span>
-                </div>
-              </button>
+            {/* 3-Tier Architecture Grid */}
+            <button
+              onClick={() => loadTemplate([
+                  { id: 'browser', type: 'browser', content: 'Browser App', position: { x: 50, y: 180 }, dimensions: { width: 120, height: 70 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                  { id: 'gateway', type: 'server', content: 'API Gateway', position: { x: 230, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
+                  { id: 'server', type: 'server', content: 'App Server', position: { x: 410, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#8b5cf6', color: '#fff', borderColor: '#7c3aed', strokeWidth: 1 } },
+                  { id: 'db', type: 'database', content: 'SQL Database', position: { x: 590, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
+                  { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'browser', anchor: 'right' }, endConnection: { nodeId: 'gateway', anchor: 'left' }, startPoint: { x: 170, y: 215 }, endPoint: { x: 230, y: 215 } },
+                  { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'gateway', anchor: 'right' }, endConnection: { nodeId: 'server', anchor: 'left' }, startPoint: { x: 340, y: 215 }, endPoint: { x: 410, y: 215 } },
+                  { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'server', anchor: 'right' }, endConnection: { nodeId: 'db', anchor: 'left' }, startPoint: { x: 520, y: 215 }, endPoint: { x: 590, y: 215 } },
+              ], '3-Tier Architecture template')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '10px',
+                padding: '12px',
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+            >
+              <div style={{ backgroundColor: 'rgba(12, 140, 233, 0.1)', color: '#38bdf8', padding: '8px', borderRadius: '8px' }}>
+                <LayoutTemplate size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>3-Tier Architecture</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Client-Server-DB grid layout</span>
+              </div>
+            </button>
 
-              {/* 3-Tier Architecture Grid */}
-              <button
-                onClick={() => loadTemplate([
-                    { id: 'browser', type: 'browser', content: 'Browser App', position: { x: 50, y: 180 }, dimensions: { width: 120, height: 70 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
-                    { id: 'gateway', type: 'server', content: 'API Gateway', position: { x: 230, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#0c8ce9', color: '#fff', borderColor: '#0284c7', strokeWidth: 1 } },
-                    { id: 'server', type: 'server', content: 'App Server', position: { x: 410, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#8b5cf6', color: '#fff', borderColor: '#7c3aed', strokeWidth: 1 } },
-                    { id: 'db', type: 'database', content: 'SQL Database', position: { x: 590, y: 180 }, dimensions: { width: 110, height: 70 }, style: { backgroundColor: '#10b981', color: '#fff', borderColor: '#059669', strokeWidth: 1 } },
-                    { id: 'conn1', type: 'arrow', startConnection: { nodeId: 'browser', anchor: 'right' }, endConnection: { nodeId: 'gateway', anchor: 'left' }, startPoint: { x: 170, y: 215 }, endPoint: { x: 230, y: 215 } },
-                    { id: 'conn2', type: 'arrow', startConnection: { nodeId: 'gateway', anchor: 'right' }, endConnection: { nodeId: 'server', anchor: 'left' }, startPoint: { x: 340, y: 215 }, endPoint: { x: 410, y: 215 } },
-                    { id: 'conn3', type: 'arrow', startConnection: { nodeId: 'server', anchor: 'right' }, endConnection: { nodeId: 'db', anchor: 'left' }, startPoint: { x: 520, y: 215 }, endPoint: { x: 590, y: 215 } },
-                ], '3-Tier Architecture template')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: '10px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
-              >
-                <div style={{ backgroundColor: 'rgba(12, 140, 233, 0.1)', color: '#38bdf8', padding: '8px', borderRadius: '8px' }}>
-                  <LayoutTemplate size={18} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>3-Tier Architecture</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Client-Server-DB grid layout</span>
-                </div>
-              </button>
-
-              {/* UML Design patterns */}
-              <button
-                onClick={() => loadTemplate([
-                    { id: 'user', type: 'uml-class', content: 'User\n--\n+ id: string\n+ name: string\n--\n+ login(): void', position: { x: 100, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
-                    { id: 'account', type: 'uml-class', content: 'Account\n--\n+ balance: double\n--\n+ deposit(amt): void', position: { x: 320, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
-                    { id: 'conn1', type: 'line', startConnection: { nodeId: 'user', anchor: 'right' }, endConnection: { nodeId: 'account', anchor: 'left' }, startPoint: { x: 250, y: 150 }, endPoint: { x: 320, y: 150 } },
-                ], 'UML Classes template')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: '10px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  width: '100%',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
-              >
-                <div style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', padding: '8px', borderRadius: '8px' }}>
-                  <Cpu size={18} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>UML Class Diagram</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Object oriented structural pattern</span>
-                </div>
-              </button>
-            </div>
+            {/* UML Design patterns */}
+            <button
+              onClick={() => loadTemplate([
+                  { id: 'user', type: 'uml-class', content: 'User\n--\n+ id: string\n+ name: string\n--\n+ login(): void', position: { x: 100, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                  { id: 'account', type: 'uml-class', content: 'Account\n--\n+ balance: double\n--\n+ deposit(amt): void', position: { x: 320, y: 100 }, dimensions: { width: 150, height: 100 }, style: { backgroundColor: '#1e293b', color: '#fff', borderColor: '#334155', strokeWidth: 1 } },
+                  { id: 'conn1', type: 'line', startConnection: { nodeId: 'user', anchor: 'right' }, endConnection: { nodeId: 'account', anchor: 'left' }, startPoint: { x: 250, y: 150 }, endPoint: { x: 320, y: 150 } },
+              ], 'UML Classes template')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '10px',
+                padding: '12px',
+                cursor: 'pointer',
+                width: '100%',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'rgba(12, 140, 233, 0.05)'; e.currentTarget.style.borderColor = 'rgba(12, 140, 233, 0.2)'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.02)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)'; }}
+            >
+              <div style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#a78bfa', padding: '8px', borderRadius: '8px' }}>
+                <Cpu size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>UML Class Diagram</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Object oriented structural pattern</span>
+              </div>
+            </button>
           </div>
         )}
       </div>
