@@ -7,7 +7,7 @@ import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
 import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
-import { useNavigate } from 'react-router-dom';
+
 import styles from './Header.module.css';
 import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard, History } from 'lucide-react';
 
@@ -20,7 +20,7 @@ export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
-  const navigate = useNavigate();
+
 
   const getInitials = (name: string) => {
     return name
@@ -50,9 +50,10 @@ export function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.leftSection}>
-          <div className={styles.logoContainer} onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-            <div className={styles.logoIcon}>L</div>
-            <span className={styles.title}>Arqulat Arc</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px', fontSize: '13px', fontWeight: 500 }}>
+            <span style={{ color: 'var(--text-muted)' }}>Drafts</span>
+            <span style={{ color: 'var(--text-muted)' }}>/</span>
+            <span style={{ color: 'var(--text-primary)' }}>{isGuest ? 'New Project' : 'Interactive Diagram'}</span>
           </div>
           <div className={styles.statusIndicator}>
             {isGuest ? (
@@ -78,12 +79,6 @@ export function Header() {
               </>
             )}
           </div>
-        </div>
-
-        <div className={styles.centerSection}>
-          <span>Drafts</span>
-          <span style={{ color: 'var(--text-muted)' }}>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>{isGuest ? 'New Project' : 'Interactive Diagram'}</span>
         </div>
 
         <div className={styles.actions}>

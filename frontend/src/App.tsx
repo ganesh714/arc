@@ -296,7 +296,7 @@ function WorkspaceRoute() {
                 }}
                 title="Shapes Palette (Hover to open)"
               >
-                <Square size={14} />
+                <Square size={16} />
               </button>
             </div>
 
@@ -340,7 +340,7 @@ function WorkspaceRoute() {
                 }}
                 title="Templates Presets (Hover to open)"
               >
-                <LayoutTemplate size={15} />
+                <LayoutTemplate size={16} />
               </button>
             </div>
           </div>
@@ -392,11 +392,11 @@ function WorkspaceRoute() {
               title="Account Settings"
             >
               {isGuest ? (
-                <LogIn size={12} color="#f59e0b" />
+                <User size={14} color="#f59e0b" />
               ) : user?.picture ? (
                 <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <User size={12} />
+                <User size={14} />
               )}
             </div>
 
@@ -435,11 +435,11 @@ function WorkspaceRoute() {
                     overflow: 'hidden'
                   }}>
                     {isGuest ? (
-                      <LogIn size={14} color="#f59e0b" />
+                      <User size={16} color="#f59e0b" />
                     ) : user?.picture ? (
                       <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <User size={14} />
+                      <User size={16} />
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

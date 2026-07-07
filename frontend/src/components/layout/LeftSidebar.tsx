@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useNavigate } from 'react-router-dom';
+import { Logo } from '@/components/ui/Logo';
 import styles from './LeftSidebar.module.css';
 import { 
   Layers, 
@@ -282,8 +283,26 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
 
   return (
     <div className={styles.container}>
-      {onPinToggle && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 4px 16px', width: '100%', flexShrink: 0 }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        height: '68px', 
+        padding: '0 16px', 
+        borderBottom: '1px solid var(--border-default)', 
+        flexShrink: 0 
+      }}>
+        {/* Brand logo & text */}
+        <div 
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} 
+          onClick={() => navigate('/dashboard')}
+          title="Go to Dashboard"
+        >
+          <Logo size={18} />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.5px' }}>Arqulat Arc</span>
+        </div>
+
+        {onPinToggle && (
           <button 
             onClick={onPinToggle} 
             className={styles.pinBtn} 
@@ -305,8 +324,8 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
           >
             <Pin size={13} style={{ transform: isPinned ? 'rotate(0deg)' : 'rotate(45deg)', transition: 'transform 0.2s', color: isPinned ? '#0c8ce9' : 'var(--text-muted)' }} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className={styles.panelContent}>
         {currentTab === 'files' ? (
