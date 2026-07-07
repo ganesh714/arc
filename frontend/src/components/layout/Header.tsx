@@ -5,11 +5,10 @@ import { useCollaboration } from '@/context/CollaborationContext';
 import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
-import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
 
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard, History } from 'lucide-react';
+import { FolderInput, FileDown, Sun, Moon, LogIn, Palette, Bot, Keyboard, History } from 'lucide-react';
 
 export function Header() {
   const { nodes, theme, toggleTheme, toggleAiChat, toggleVersionHistory, toggleDesignPanel, saveStatus } = useDiagram();
@@ -17,7 +16,6 @@ export function Header() {
   const { remoteCursors } = useCollaboration();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
 
@@ -162,13 +160,7 @@ export function Header() {
           >
             <Keyboard size={14} />
           </button>
-          <button 
-            className={styles.btn} 
-            onClick={() => setIsSettingsOpen(true)} 
-            title="Canvas Settings"
-          >
-            <Settings size={14} />
-          </button>
+
           <button 
             className={styles.btn} 
             onClick={toggleTheme} 
@@ -232,10 +224,7 @@ export function Header() {
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
       />
-      <CanvasSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+
       <ShortcutsModal 
         isOpen={isShortcutsOpen} 
         onClose={() => setIsShortcutsOpen(false)} 

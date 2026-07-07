@@ -96,15 +96,26 @@ const SHAPE_CATEGORIES = [
   },
 ];
 
+const PRESET_COLORS = [
+  '#0f0f0f', // Dark Canvas
+  '#ffffff', // White
+  '#f8f9fa', // Light Gray
+  '#e2e8f0', // Slate
+  '#fdf6e3', // Solarized Light
+  '#1a1a1a', // Dark Gray
+  '#0f172a', // Slate Dark
+  '#002b36', // Solarized Dark
+];
+
 interface LeftSidebarProps {
   isPinned?: boolean;
   onPinToggle?: () => void;
-  activeTab?: 'files' | 'layers' | 'shapes' | 'templates';
-  onTabChange?: (tab: 'files' | 'layers' | 'shapes' | 'templates') => void;
+  activeTab?: 'files' | 'layers' | 'shapes' | 'templates' | 'settings';
+  onTabChange?: (tab: 'files' | 'layers' | 'shapes' | 'templates' | 'settings') => void;
 }
 
 export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChange }: LeftSidebarProps) {
-  const [localActiveTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('layers');
+  const [localActiveTab] = useState<'files' | 'layers' | 'shapes' | 'templates' | 'settings'>('layers');
   const currentTab = onTabChange ? activeTab : localActiveTab;
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Basic', 'Flowchart']));
@@ -120,7 +131,8 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
     activeProjectId,
     activeFileId,
     updateFile,
-    deleteFile
+    deleteFile,
+    updateCanvasConfig
   } = useDiagram();
   
   const navigate = useNavigate();
@@ -469,7 +481,7 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
               );
             })}
           </div>
-        ) : (
+        ) : currentTab === 'templates' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '4px' }}>
             {/* User Authentication Flowchart */}
             <button
@@ -576,6 +588,118 @@ export function LeftSidebar({ isPinned = true, onPinToggle, activeTab, onTabChan
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Object oriented structural pattern</span>
               </div>
             </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '12px 4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Canvas Background
+              </span>
+              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                Choose a preset or a custom color for your canvas background
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              {(() => {
+                const activeProject = projects.find(p => p.id === activeProjectId);
+                const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+                const canvasBg = activeFile?.canvasConfig?.backgroundColor || '#0f0f0f';
+
+                return PRESET_COLORS.map(color => {
+                  const isSelected = canvasBg === color;
+                  return (
+                    <button
+                      key={color}
+                      onClick={() => updateCanvasConfig(activeFileId, { backgroundColor: color })}
+                      style={{
+                        height: '28px',
+                        backgroundColor: color,
+                        border: isSelected ? '2px solid #0c8ce9' : '1px solid var(--border-default)',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.1s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      title={color}
+                    >
+                      {isSelected && (
+                        <div style={{
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '50%',
+                          backgroundColor: ['#ffffff', '#f8f9fa', '#e2e8f0', '#fdf6e3'].includes(color) ? '#000' : '#fff'
+                        }} />
+                      )}
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Custom Color Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-primary)' }}>Custom Color</span>
+              {(() => {
+                const activeProject = projects.find(p => p.id === activeProjectId);
+                const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+                const canvasBg = activeFile?.canvasConfig?.backgroundColor || '#0f0f0f';
+
+                return (
+                  <div 
+                    style={{ 
+                      height: '36px', 
+                      borderRadius: '8px', 
+                      border: '1px solid var(--border-default)',
+                      background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <input 
+                      type="color" 
+                      value={canvasBg}
+                      onChange={(e) => updateCanvasConfig(activeFileId, { backgroundColor: e.target.value })}
+                      style={{
+                        position: 'absolute',
+                        top: '-5px',
+                        left: '-5px',
+                        width: '120%',
+                        height: '120%',
+                        opacity: 0,
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      pointerEvents: 'none'
+                    }}>
+                      <span style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                        color: '#fff',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        fontFamily: 'monospace'
+                      }}>
+                        {canvasBg.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         )}
       </div>

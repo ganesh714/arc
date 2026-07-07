@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
-import { Layers, Square, LayoutTemplate, FolderKanban, Plus, LogIn, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { Layers, Square, LayoutTemplate, FolderKanban, Plus, LogIn, LogOut, LayoutDashboard, User, Settings } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
 import { Header } from '@/components/layout/Header';
@@ -37,7 +37,7 @@ function WorkspaceRoute() {
   const [rightWidth, setRightWidth] = useState(340);
   const [isLeftSidebarPinned, setIsLeftSidebarPinned] = useState(false); // Collapsed by default
   const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
-  const [activeLeftTab, setActiveLeftTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('files');
+  const [activeLeftTab, setActiveLeftTab] = useState<'files' | 'layers' | 'shapes' | 'templates' | 'settings'>('files');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -342,6 +342,50 @@ function WorkspaceRoute() {
                 title="Templates Presets (Hover to open)"
               >
                 <LayoutTemplate size={16} />
+              </button>
+            </div>
+
+            {/* Settings Tab Button */}
+            <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
+              {activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered) && (
+                <div style={{
+                  position: 'absolute',
+                  left: '-14px',
+                  top: '25%',
+                  height: '50%',
+                  width: '3px',
+                  backgroundColor: '#0c8ce9',
+                  borderRadius: '0 4px 4px 0',
+                  boxShadow: '0 0 10px #0c8ce9'
+                }} />
+              )}
+              <button 
+                onMouseEnter={() => {
+                  setIsLeftSidebarHovered(true);
+                  setActiveLeftTab('settings');
+                }}
+                onClick={() => {
+                  setIsLeftSidebarHovered(true);
+                  setActiveLeftTab('settings');
+                }}
+                style={{
+                  color: (activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '#0c8ce9' : 'var(--text-secondary)',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: (activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'var(--accent-blue-subtle)' : 'transparent',
+                  transform: (activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? 'scale(1.15) translateZ(0)' : 'scale(1) translateZ(0)',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: (activeLeftTab === 'settings' && (isLeftSidebarPinned || isLeftSidebarHovered)) ? '0 0 12px rgba(12, 140, 233, 0.15)' : 'none',
+                  border: 'none',
+                  outline: 'none'
+                }}
+                title="Canvas Settings (Hover to open)"
+              >
+                <Settings size={16} />
               </button>
             </div>
           </div>
