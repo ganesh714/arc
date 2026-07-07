@@ -106,28 +106,7 @@ export function Header() {
               );
             })}
 
-            {/* Current user */}
-            <div 
-              className={styles.avatar}
-              style={{ 
-                backgroundColor: user?.name ? getColorForUser(user.name) : '#8b949e',
-                border: '1.5px solid rgba(16, 185, 129, 0.6)'
-              }}
-            >
-              {user?.picture ? (
-                <img 
-                  src={user.picture} 
-                  alt={user.name} 
-                  style={{ width: '100%', height: '100%', borderRadius: '50%' }} 
-                />
-              ) : (
-                getInitials(user?.name || 'Guest')
-              )}
-              <span className={styles.onlineIndicator} />
-              <span className={styles.avatarTooltip}>
-                {user?.name || 'Guest User'} (You)
-              </span>
-            </div>
+
           </div>
 
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 4px' }} />

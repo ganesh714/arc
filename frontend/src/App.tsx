@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { DiagramProvider, useDiagram } from '@/context/DiagramContext';
-import { Layers, Square, LayoutTemplate, FolderKanban, Plus, LogIn, LogOut } from 'lucide-react';
+import { Layers, Square, LayoutTemplate, FolderKanban, Plus, LogIn, LogOut, LayoutDashboard, User } from 'lucide-react';
 import { AuthProvider } from '@/context/AuthContext';
 import { CollaborationProvider } from '@/context/CollaborationContext';
 import { Header } from '@/components/layout/Header';
@@ -39,6 +39,19 @@ function WorkspaceRoute() {
   const [isLeftSidebarHovered, setIsLeftSidebarHovered] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState<'files' | 'layers' | 'shapes' | 'templates'>('files');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isProfileMenuOpen]);
 
   // Responsive layout: collapse panel pinning on small screens
   useEffect(() => {
@@ -357,9 +370,9 @@ function WorkspaceRoute() {
               <Plus size={16} />
             </button>
 
-            {/* Profile Avatar / LogIn Button */}
+            {/* Profile Avatar / LogIn Button with Popover Dropdown */}
             <div 
-              onClick={isGuest ? login : () => { setActiveLeftTab('files'); setIsLeftSidebarHovered(true); }}
+              onClick={() => setIsProfileMenuOpen(prev => !prev)}
               style={{ 
                 width: '28px', 
                 height: '28px', 
@@ -371,44 +384,162 @@ function WorkspaceRoute() {
                 cursor: 'pointer',
                 border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
                 overflow: 'hidden',
-                transition: 'transform 0.2s'
+                transition: 'transform 0.2s',
+                position: 'relative'
               }}
               onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              title={isGuest ? "Sign in to save" : `Logged in as ${user?.name || 'User'}`}
+              title="Account Settings"
             >
               {isGuest ? (
                 <LogIn size={12} color="#f59e0b" />
               ) : user?.picture ? (
                 <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <LogIn size={12} />
+                <User size={12} />
               )}
             </div>
 
-            {/* Session Logout Button */}
-            {isAuthenticated && (
-              <button 
-                onClick={logout}
+            {/* Floating Profile Popover Menu */}
+            {isProfileMenuOpen && (
+              <div 
+                ref={profileMenuRef}
                 style={{
-                  color: 'var(--text-muted)',
-                  padding: '6px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
+                  position: 'absolute',
+                  left: '68px',
+                  bottom: '16px',
+                  backgroundColor: 'var(--bg-panel-solid)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
+                  padding: '16px',
+                  minWidth: '220px',
+                  zIndex: 100,
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  transition: 'all 0.2s'
+                  flexDirection: 'column',
+                  gap: '12px',
                 }}
-                onMouseOver={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
-                title="Logout"
               >
-                <LogOut size={14} />
-              </button>
+                {/* Profile Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: isGuest ? '#f59e0b20' : 'var(--bg-secondary)',
+                    border: isGuest ? '1px solid #f59e0b' : '1px solid var(--border-default)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }}>
+                    {isGuest ? (
+                      <LogIn size={14} color="#f59e0b" />
+                    ) : user?.picture ? (
+                      <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <User size={14} />
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {isGuest ? 'Guest User' : user?.name || 'User'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {isGuest ? 'Local mode' : user?.email || 'Cloud Account'}
+                    </span>
+                  </div>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1px solid var(--border-default)', margin: '4px 0' }} />
+
+                {/* Menu Items */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <button
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      navigate('/dashboard');
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      width: '100%',
+                      padding: '8px 12px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: 'var(--text-primary)',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <LayoutDashboard size={14} />
+                    <span>Dashboard & Projects</span>
+                  </button>
+
+                  {isAuthenticated ? (
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        logout();
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '8px 12px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#ef4444',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <LogOut size={14} />
+                      <span>Log Out</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        login();
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '8px 12px',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#f59e0b',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <LogIn size={14} />
+                      <span>Sign In to Save</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
