@@ -83,7 +83,7 @@ interface DiagramContextType {
   switchProject: (id: string, fileId?: string) => void;
   addProject: (name: string, category?: string, backgroundColor?: string) => Promise<WorkspaceProject | null | void>;
   switchFile: (id: string, projectId?: string) => void;
-  addFile: (projectId: string, name: string, backgroundColor?: string) => void;
+  addFile: (projectId: string, name: string, backgroundColor?: string) => Promise<string | undefined>;
   updateProject: (id: string, name: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   updateFile: (id: string, name: string) => Promise<void>;
@@ -1563,7 +1563,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f') => {
+  const addFile = async (projectId: string, name: string, backgroundColor: string = '#0f0f0f'): Promise<string | undefined> => {
     if (isGuest) {
       const newFileId = Math.random().toString(36).substring(2, 10);
       setProjects(prev => prev.map(p => {
@@ -1578,7 +1578,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
       if (projectId === activeProjectId) {
         switchFile(newFileId);
       }
-      return;
+      return newFileId;
     }
 
     try {
@@ -1608,6 +1608,7 @@ export function DiagramProvider({ children }: { children: ReactNode }) {
         if (projectId === activeProjectId) {
           await switchFile(newFile.id, projectId);
         }
+        return newFile.id;
       } else if (response.status === 409) {
         throw new Error('Name is already exist');
       } else {

@@ -4,7 +4,7 @@ import { Rnd } from 'react-rnd';
 import { useDiagram } from '@/context/DiagramContext';
 import type { DiagramNode } from '@/types';
 import styles from './Node.module.css';
-import { renderExtendedShape } from './ShapeRenderers';
+import { renderExtendedShape, parseMarkdown } from './ShapeRenderers';
 import { getSemanticStyle } from '../../../utils/semanticStyles';
 import { getClosestPointOnLineNode } from '../../../utils/geometry';
 
@@ -47,6 +47,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   const isSelected = selectedNodeIds.includes(node.id);
   const [isCardOpen, setIsCardOpen] = useState(node.content === '');
   const [isHovered, setIsHovered] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Figma resize handle - scales inversely with zoom to maintain constant screen size
   const renderFigmaHandle = (position: string) => {
@@ -279,11 +280,13 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
   // Build text style object
   const textStyle: React.CSSProperties = {
     color: effectiveColor || '#e3e3e3',
+    fontFamily: node.style?.fontFamily || 'inherit',
     fontSize: node.style?.fontSize || '11px',
     fontWeight: node.style?.fontWeight || 'normal',
     textAlign: node.style?.textAlign || 'center',
     width: '100%',
     wordBreak: 'break-word',
+    opacity: isEditing ? 0 : 1,
   };
 
   // Shadow filters vs css box shadows
@@ -296,6 +299,12 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
     <Rnd
       position={node.position}
       size={{ width: node.dimensions.width, height: node.dimensions.height }}
+      onDoubleClick={(e: React.MouseEvent) => {
+        if (activeTool === 'select' && !isLine) {
+          e.stopPropagation();
+          setIsEditing(true);
+        }
+      }}
       onDrag={(_e, d) => {
         // Smart Guides Logic
         if (activeTool !== 'select' || selectToolMode !== 'move') return;
@@ -488,7 +497,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '16px', textAlign: 'center' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'circle' ? (
@@ -508,7 +517,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '8px' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'triangle' ? (
@@ -560,7 +569,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '30px 15px 15px 15px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -588,7 +597,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '24px 20px 20px 20px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -609,7 +618,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={{ ...textStyle, padding: '8px 20px' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'hexagon' ? (
@@ -637,7 +646,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -666,7 +675,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px 20px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -702,7 +711,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             }}
           >
             <div style={{ ...textStyle, padding: '10px' }}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           </div>
         </div>
@@ -737,7 +746,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             borderTop: `1px solid ${node.style?.borderColor || '#f59e0b'}`,
           }} />
           <div style={{ ...textStyle, color: node.style?.color || '#92400e' }}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       ) : node.type === 'custom-block' ? (
@@ -765,7 +774,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
         >
           {node.content ? (
             <div style={textStyle}>
-              {node.content}
+              {parseMarkdown(node.content)}
             </div>
           ) : null}
         </div>
@@ -1312,7 +1321,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
           }}
         >
           <div style={textStyle}>
-            {node.content}
+            {parseMarkdown(node.content)}
           </div>
         </div>
       )}
@@ -1393,6 +1402,49 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             onMouseDown={handleEndDrag}
           />
         </>
+      )}
+      {isEditing && (
+        <textarea
+            id={`node-edit-${node.id}`}
+            key={node.content}
+            defaultValue={node.content}
+            autoFocus
+            onBlur={(e) => {
+              const val = e.target.value.trim();
+              updateNode({ ...node, content: val });
+              setIsEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const val = (e.target as HTMLTextAreaElement).value.trim();
+                updateNode({ ...node, content: val });
+                setIsEditing(false);
+              }
+              if (e.key === 'Escape') {
+                setIsEditing(false);
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'transparent',
+              border: 'none',
+              color: textStyle.color,
+              fontFamily: 'inherit',
+              fontSize: textStyle.fontSize,
+              fontWeight: textStyle.fontWeight,
+              textAlign: textStyle.textAlign,
+              padding: '16px', // average padding for most shapes
+              resize: 'none',
+              outline: 'none',
+              zIndex: 100,
+              boxSizing: 'border-box'
+            }}
+          />
       )}
     </Rnd>
   );

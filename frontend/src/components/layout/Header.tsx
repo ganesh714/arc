@@ -1,26 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDiagram } from '@/context/DiagramContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCollaboration } from '@/context/CollaborationContext';
 import { generateExportCode } from '@/utils/exportEngine';
 import { ExportModal } from '@/components/ui/ExportModal';
 import { ImportModal } from '@/components/ui/ImportModal';
-import { CanvasSettingsModal } from '@/components/layout/CanvasSettingsModal';
 import { ShortcutsModal } from '@/components/layout/ShortcutsModal';
 import { useNavigate } from 'react-router-dom';
+
 import styles from './Header.module.css';
-import { FolderInput, FileDown, Sun, Moon, LogIn, Settings, Palette, Bot, Keyboard, History } from 'lucide-react';
+import { FolderInput, Download, Sun, Moon, LogIn, Palette, Bot, Keyboard, History } from 'lucide-react';
 
 export function Header() {
-  const { nodes, theme, toggleTheme, toggleAiChat, toggleVersionHistory, toggleDesignPanel, saveStatus } = useDiagram();
+  const { 
+    nodes, 
+    theme, 
+    toggleTheme, 
+    toggleAiChat, 
+    toggleVersionHistory, 
+    toggleDesignPanel, 
+    saveStatus,
+    projects,
+    activeProjectId,
+    activeFileId,
+    updateFile
+  } = useDiagram();
   const { user, isAuthenticated, isGuest, login, logout } = useAuth();
   const { remoteCursors } = useCollaboration();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [exportData, setExportData] = useState('');
+
   const navigate = useNavigate();
+  const activeProject = projects.find(p => p.id === activeProjectId);
+  const activeFile = activeProject?.files.find(f => f.id === activeFileId);
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [fileNameInput, setFileNameInput] = useState('');
+
+  useEffect(() => {
+    if (activeFile) {
+      setFileNameInput(activeFile.name);
+    }
+  }, [activeFile]);
+
+  const handleRename = () => {
+    if (fileNameInput.trim() && activeFile && fileNameInput !== activeFile.name) {
+      updateFile(activeFile.id, fileNameInput.trim());
+    }
+    setIsEditingName(false);
+  };
+
 
   const getInitials = (name: string) => {
     return name
@@ -50,9 +81,54 @@ export function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.leftSection}>
-          <div className={styles.logoContainer} onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-            <div className={styles.logoIcon}>L</div>
-            <span className={styles.title}>Arqulat Arc</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px', fontSize: '13px', fontWeight: 500 }}>
+            <span 
+              onClick={() => navigate('/dashboard')} 
+              style={{ color: 'var(--text-muted)', cursor: 'pointer', transition: 'color 0.2s' }} 
+              onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'} 
+              onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+              title="Go to Dashboard"
+            >
+              {activeProject ? activeProject.name : 'Drafts'}
+            </span>
+            <span style={{ color: 'var(--text-muted)' }}>/</span>
+            {isEditingName ? (
+              <input
+                value={fileNameInput}
+                onChange={(e) => setFileNameInput(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                  if (e.key === 'Escape') {
+                    setFileNameInput(activeFile?.name || '');
+                    setIsEditingName(false);
+                  }
+                }}
+                autoFocus
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--accent-blue)',
+                  borderRadius: '4px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  padding: '2px 6px',
+                  outline: 'none',
+                  width: '180px'
+                }}
+              />
+            ) : (
+              <span 
+                onClick={() => {
+                  setFileNameInput(activeFile?.name || '');
+                  setIsEditingName(true);
+                }}
+                style={{ color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                title="Click to rename"
+              >
+                {activeFile ? activeFile.name : (isGuest ? 'New Project' : 'Interactive Diagram')}
+              </span>
+            )}
           </div>
           <div className={styles.statusIndicator}>
             {isGuest ? (
@@ -80,12 +156,6 @@ export function Header() {
           </div>
         </div>
 
-        <div className={styles.centerSection}>
-          <span>Drafts</span>
-          <span style={{ color: 'var(--text-muted)' }}>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>{isGuest ? 'New Project' : 'Interactive Diagram'}</span>
-        </div>
-
         <div className={styles.actions}>
           {/* Presence Avatars list */}
           <div className={styles.avatarGroup}>
@@ -106,28 +176,7 @@ export function Header() {
               );
             })}
 
-            {/* Current user */}
-            <div 
-              className={styles.avatar}
-              style={{ 
-                backgroundColor: user?.name ? getColorForUser(user.name) : '#8b949e',
-                border: '1.5px solid rgba(16, 185, 129, 0.6)'
-              }}
-            >
-              {user?.picture ? (
-                <img 
-                  src={user.picture} 
-                  alt={user.name} 
-                  style={{ width: '100%', height: '100%', borderRadius: '50%' }} 
-                />
-              ) : (
-                getInitials(user?.name || 'Guest')
-              )}
-              <span className={styles.onlineIndicator} />
-              <span className={styles.avatarTooltip}>
-                {user?.name || 'Guest User'} (You)
-              </span>
-            </div>
+
           </div>
 
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 4px' }} />
@@ -188,13 +237,7 @@ export function Header() {
           >
             <Keyboard size={14} />
           </button>
-          <button 
-            className={styles.btn} 
-            onClick={() => setIsSettingsOpen(true)} 
-            title="Canvas Settings"
-          >
-            <Settings size={14} />
-          </button>
+
           <button 
             className={styles.btn} 
             onClick={toggleTheme} 
@@ -214,8 +257,8 @@ export function Header() {
             <span>Import JSON</span>
           </button>
           <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleExport}>
-            <FileDown size={14} />
-            <span>Export Code</span>
+            <Download size={14} />
+            <span>Export Diagram</span>
           </button>
 
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--border-default)', margin: '0 8px' }} />
@@ -258,10 +301,7 @@ export function Header() {
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
       />
-      <CanvasSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+
       <ShortcutsModal 
         isOpen={isShortcutsOpen} 
         onClose={() => setIsShortcutsOpen(false)} 
