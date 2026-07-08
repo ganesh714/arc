@@ -168,7 +168,7 @@ export function Dashboard() {
               onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
               onMouseOut={(e) => { e.currentTarget.style.background = '#010409'; e.currentTarget.style.color = '#8b949e'; e.currentTarget.style.borderColor = '#21262d'; }}
             >
-              <LogOut size={12} /> DISCONNECT
+              <LogOut size={12} /> LOGOUT
             </button>
           </div>
         </nav>
@@ -195,7 +195,7 @@ export function Dashboard() {
             </div>
             <button className={styles.newProjectBtn} onClick={handleCreateNew}>
               <Plus size={16} />
-              <span>Initialize Node</span>
+              <span>Create Project</span>
             </button>
           </div>
         </header>
@@ -293,7 +293,7 @@ export function Dashboard() {
                     </div>
                     <div className={styles.nodeCount}>
                       <Layers size={10} />
-                      <span>{project.files.length} NODE{project.files.length !== 1 ? 'S' : ''}</span>
+                      <span>{project.files.length} FILE{project.files.length !== 1 ? 'S' : ''}</span>
                     </div>
                   </div>
                 </div>
@@ -308,7 +308,7 @@ export function Dashboard() {
             <h2>Architecture Dormant</h2>
             <p>Ready to crystallize your thoughts? Initialize a structural node to begin.</p>
             <button className={styles.newProjectBtn} onClick={handleCreateNew} style={{ marginTop: '12px' }}>
-              Initialize First Node
+              Create First Project
             </button>
           </div>
         )}
@@ -318,8 +318,8 @@ export function Dashboard() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onConfirm={handleConfirmCreate}
-        title="Initialize Structural Node"
-        defaultName={`Node_Model_${projects.length + 1}`}
+        title="Create Project"
+        defaultName={`Project_${projects.length + 1}`}
       />
 
       <DashboardSettingsModal
