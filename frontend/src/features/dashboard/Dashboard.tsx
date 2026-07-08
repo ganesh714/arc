@@ -99,7 +99,9 @@ export function Dashboard() {
       {/* Dashboard Sidebar */}
       <aside className={styles.sidebar}>
         <div className={styles.logoArea}>
-          <div className={styles.logoIcon}>L</div>
+          <div className={styles.logoIcon} style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
+            <img src="/favicon.svg" alt="Arqulat Arc" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
           <span className={styles.logoText}>Arc Dashboard</span>
         </div>
 
