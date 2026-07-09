@@ -19,31 +19,44 @@ import java.util.Map;
 @Service
 public class GeminiProvider extends AbstractAIProvider {
 
-    @Value("${ai.gemini.api-key:dummy-key}")
-    private String apiKey;
-
+    private final ApiKeyManager apiKeyManager;
     private final RestTemplate restTemplate;
 
-    public GeminiProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public GeminiProvider(RestTemplate restTemplate, ObjectMapper objectMapper, @Value("${ai.gemini.api-key:dummy-key}") String defaultKey) {
         super(objectMapper);
         this.restTemplate = restTemplate;
+        this.apiKeyManager = new ApiKeyManager("GEMINI_API_KEY", defaultKey, "Gemini");
     }
 
     @Override
     public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
-        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
-            throw new IllegalStateException("Gemini API key is not configured.");
-        }
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
 
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                return attemptGenerationWithKey(prompt, systemPrompt, imageBase64, currentKey);
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("Gemini generate attempt failed with key ending in " + 
+                    (currentKey.length() > 4 ? currentKey.substring(currentKey.length() - 4) : "...") + 
+                    ": " + e.getMessage() + ". Trying next key if available...");
+            }
+        }
+        throw new RuntimeException("All Gemini API keys failed for generate. Last error: " + lastException.getMessage(), lastException);
+    }
+
+    private String attemptGenerationWithKey(String prompt, String systemPrompt, String imageBase64, String apiKey) throws Exception {
         try {
-            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro", imageBase64);
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro", imageBase64, apiKey);
         } catch (Exception e) {
             System.err.println("Gemini 2.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Flash...");
-            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-flash", imageBase64);
+            return callGeminiApi(prompt, systemPrompt, "gemini-2.5-flash", imageBase64, apiKey);
         }
     }
 
-    private String callGeminiApi(String prompt, String systemPrompt, String model, String imageBase64) throws Exception {
+    private String callGeminiApi(String prompt, String systemPrompt, String model, String imageBase64, String apiKey) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key="
                 + apiKey;
 
@@ -105,6 +118,24 @@ public class GeminiProvider extends AbstractAIProvider {
 
     @Override
     public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
+
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                return callGeminiEditApi(prompt, contextNodes, imageBase64, currentKey);
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("Gemini edit attempt failed with key ending in " + 
+                    (currentKey.length() > 4 ? currentKey.substring(currentKey.length() - 4) : "...") + 
+                    ": " + e.getMessage() + ". Trying next key if available...");
+            }
+        }
+        throw new RuntimeException("All Gemini API keys failed for edit. Last error: " + lastException.getMessage(), lastException);
+    }
+
+    private String callGeminiEditApi(String prompt, String contextNodes, String imageBase64, String apiKey) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 

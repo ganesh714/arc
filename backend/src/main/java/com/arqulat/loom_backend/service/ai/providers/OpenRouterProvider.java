@@ -19,21 +19,35 @@ import java.util.Map;
 @Service
 public class OpenRouterProvider extends AbstractAIProvider {
 
-    @Value("${ai.openrouter.api-key:dummy-key}")
-    private String apiKey;
-
+    private final ApiKeyManager apiKeyManager;
     private final RestTemplate restTemplate;
-    public OpenRouterProvider(RestTemplate restTemplate, ObjectMapper objectMapper) {
+
+    public OpenRouterProvider(RestTemplate restTemplate, ObjectMapper objectMapper, @Value("${ai.openrouter.api-key:dummy-key}") String defaultKey) {
         super(objectMapper);
         this.restTemplate = restTemplate;
+        this.apiKeyManager = new ApiKeyManager("OPENROUTER_API_KEY", defaultKey, "OpenRouter");
     }
 
     @Override
     public String generate(String prompt, String systemPrompt, String imageBase64) throws Exception {
-        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("dummy-key")) {
-            throw new IllegalStateException("OpenRouter API key is not configured.");
-        }
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
 
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                return callOpenRouterApi(prompt, systemPrompt, currentKey);
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("OpenRouter generate attempt failed with key ending in " + 
+                    (currentKey.length() > 4 ? currentKey.substring(currentKey.length() - 4) : "...") + 
+                    ": " + e.getMessage() + ". Trying next key if available...");
+            }
+        }
+        throw new RuntimeException("All OpenRouter API keys failed for generate. Last error: " + lastException.getMessage(), lastException);
+    }
+
+    private String callOpenRouterApi(String prompt, String systemPrompt, String apiKey) throws Exception {
         String url = "https://openrouter.ai/api/v1/chat/completions";
 
         HttpHeaders headers = new HttpHeaders();
@@ -77,6 +91,24 @@ public class OpenRouterProvider extends AbstractAIProvider {
 
     @Override
     public String edit(String prompt, String contextNodes, String imageBase64) throws Exception {
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
+
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                return callOpenRouterEditApi(prompt, contextNodes, imageBase64, currentKey);
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("OpenRouter edit attempt failed with key ending in " + 
+                    (currentKey.length() > 4 ? currentKey.substring(currentKey.length() - 4) : "...") + 
+                    ": " + e.getMessage() + ". Trying next key if available...");
+            }
+        }
+        throw new RuntimeException("All OpenRouter API keys failed for edit. Last error: " + lastException.getMessage(), lastException);
+    }
+
+    private String callOpenRouterEditApi(String prompt, String contextNodes, String imageBase64, String apiKey) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(apiKey);
