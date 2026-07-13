@@ -198,8 +198,12 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
       } else {
         setErrorMsg('Could not find any valid nodes in the Mermaid code.');
       }
-    } catch (err) {
-      setErrorMsg('Error parsing Mermaid code.');
+    } catch (err: any) {
+      if (err.message && err.message.includes('not supported')) {
+        setErrorMsg(err.message);
+      } else {
+        setErrorMsg('Error parsing Mermaid code.');
+      }
     }
   };
 

@@ -9,8 +9,27 @@ export function parseMermaid(code: string): DiagramNode[] | null {
   const trimmed = code.trim();
   const firstLine = trimmed.split('\n')[0].trim().toLowerCase();
 
+  const unsupportedTypes = [
+    'sequencediagram', 'gantt', 'pie', 'gitgraph', 'xychart', 
+    'journey', 'timeline', 'quadrantchart', 'sankey-beta', 'block-beta'
+  ];
+
+  if (unsupportedTypes.some(type => firstLine.startsWith(type))) {
+    const typeName = firstLine.split(/\s+/)[0];
+    throw new Error(`The diagram type '${typeName}' is not supported because it represents a timeline or chart rather than a spatial node canvas. Please use flowchart, classDiagram, stateDiagram, erDiagram, or mindmap.`);
+  }
+
   if (firstLine.startsWith('classdiagram')) {
     return parseClassDiagram(trimmed);
+  }
+  if (firstLine.startsWith('statediagram')) {
+    return parseStateDiagram(trimmed);
+  }
+  if (firstLine.startsWith('erdiagram')) {
+    return parseErDiagram(trimmed);
+  }
+  if (firstLine.startsWith('mindmap')) {
+    return parseMindmap(trimmed);
   }
   // Default: flowchart / graph
   return parseFlowchart(trimmed);
@@ -321,6 +340,304 @@ function parseClassDiagram(code: string): DiagramNode[] | null {
 
   // Flush any remaining class being parsed
   flushClass();
+
+  return layoutResult(nodes, edges);
+}
+
+// ─── STATE DIAGRAM PARSER ──────────────────────────────────────────
+
+function parseStateDiagram(code: string): DiagramNode[] | null {
+  const lines = code.split('\n');
+  const nodes = new Map<string, DiagramNode>();
+  const edges: DiagramNode[] = [];
+
+  // State edge regex: StateA --> StateB : label
+  const stateEdgeRegex = /^(\[\*\]|[a-zA-Z0-9_]+)\s*-->\s*(\[\*\]|[a-zA-Z0-9_]+)(?:\s*:\s*(.*))?$/;
+  // State definition: state "Description" as alias
+  const stateDefRegex = /^state\s+"(.*?)"\s+as\s+([a-zA-Z0-9_]+)$/;
+  // Simple state with description: state name : description
+  const stateDescRegex = /^state\s+([a-zA-Z0-9_]+)\s*:\s*(.*)$/;
+
+
+  const ensureNode = (id: string) => {
+    if (nodes.has(id)) return;
+    // [*] = start or end state — handled in edge creation below
+    if (id === '[*]') return;
+    nodes.set(id, {
+      id, type: 'rounded-rect',
+      position: { x: 0, y: 0 },
+      dimensions: { width: Math.max(140, id.length * 9 + 30), height: 50 },
+      content: id,
+      style: { backgroundColor: '#0d1117', borderRadius: '12px' }
+    });
+  };
+
+  // First pass: collect all state definitions
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('%%')) continue;
+    if (line.toLowerCase().startsWith('statediagram')) continue;
+    if (line.toLowerCase().startsWith('direction ')) continue;
+
+    const defMatch = line.match(stateDefRegex);
+    if (defMatch) {
+      const description = defMatch[1];
+      const alias = defMatch[2];
+      nodes.set(alias, {
+        id: alias, type: 'rounded-rect',
+        position: { x: 0, y: 0 },
+        dimensions: { width: Math.max(140, description.length * 8 + 30), height: 50 },
+        content: description,
+        style: { backgroundColor: '#0d1117', borderRadius: '12px' }
+      });
+      continue;
+    }
+
+    const descMatch = line.match(stateDescRegex);
+    if (descMatch) {
+      const stateId = descMatch[1];
+      const description = descMatch[2];
+      nodes.set(stateId, {
+        id: stateId, type: 'rounded-rect',
+        position: { x: 0, y: 0 },
+        dimensions: { width: Math.max(140, description.length * 8 + 30), height: 50 },
+        content: description,
+        style: { backgroundColor: '#0d1117', borderRadius: '12px' }
+      });
+      continue;
+    }
+  }
+
+  // Second pass: edges and remaining nodes
+  let startId = '__start__';
+  let endId = '__end__';
+  let hasStart = false;
+  let hasEnd = false;
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('%%')) continue;
+    if (line.toLowerCase().startsWith('statediagram')) continue;
+    if (line.toLowerCase().startsWith('direction ')) continue;
+    if (line.match(stateDefRegex) || line.match(stateDescRegex)) continue;
+
+    const edgeMatch = line.match(stateEdgeRegex);
+    if (edgeMatch) {
+      let sourceId = edgeMatch[1];
+      let targetId = edgeMatch[2];
+      const label = edgeMatch[3]?.trim() || '';
+
+      // Handle [*] start/end
+      if (sourceId === '[*]') {
+        sourceId = startId;
+        if (!hasStart) {
+          nodes.set(startId, {
+            id: startId, type: 'circle',
+            position: { x: 0, y: 0 },
+            dimensions: { width: 40, height: 40 },
+            content: '',
+            tag: 'start',
+            style: { backgroundColor: '#e6edf3' }
+          });
+          hasStart = true;
+        }
+      }
+      if (targetId === '[*]') {
+        targetId = endId;
+        if (!hasEnd) {
+          nodes.set(endId, {
+            id: endId, type: 'circle',
+            position: { x: 0, y: 0 },
+            dimensions: { width: 40, height: 40 },
+            content: '',
+            tag: 'end',
+            style: { backgroundColor: '#e6edf3', borderWidth: '3px' }
+          });
+          hasEnd = true;
+        }
+      }
+
+      ensureNode(sourceId);
+      ensureNode(targetId);
+
+      edges.push({
+        id: `edge_${generateId()}`, type: 'arrow',
+        position: { x: 0, y: 0 }, dimensions: { width: 0, height: 0 },
+        content: '', label, lineStyle: 'solid',
+        startConnection: { nodeId: sourceId, anchor: 'closest' },
+        endConnection: { nodeId: targetId, anchor: 'closest' }
+      });
+    }
+  }
+
+  return layoutResult(nodes, edges);
+}
+
+// ─── ER DIAGRAM PARSER ─────────────────────────────────────────────
+
+function parseErDiagram(code: string): DiagramNode[] | null {
+  const lines = code.split('\n');
+  const entities = new Map<string, { id: string; attributes: string[] }>();
+  const edges: DiagramNode[] = [];
+
+  // Relationship: ENTITY1 ||--o{ ENTITY2 : "label"
+  const relRegex = /^([a-zA-Z0-9_]+)\s+(\|\||\}\||\|\{|\}\{|o\||\|o|o\{|\}o)(--)(\|\||\}\||\|\{|\}\{|o\||\|o|o\{|\}o)\s+([a-zA-Z0-9_]+)\s*:\s*"?(.*?)"?\s*$/;
+  // Attribute: type name
+  const attrRegex = /^\s+([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)(?:\s+(PK|FK|UK))?$/;
+  // Entity block: ENTITY {
+  const entityBlockRegex = /^([a-zA-Z0-9_]+)\s*\{$/;
+
+  let currentEntity: string | null = null;
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line || line.startsWith('%%')) continue;
+    if (line.toLowerCase().startsWith('erdiagram')) continue;
+
+    // Closing brace
+    if (line === '}') {
+      currentEntity = null;
+      continue;
+    }
+
+    // Entity block opening
+    const blockMatch = line.match(entityBlockRegex);
+    if (blockMatch) {
+      currentEntity = blockMatch[1];
+      if (!entities.has(currentEntity)) {
+        entities.set(currentEntity, { id: currentEntity, attributes: [] });
+      }
+      continue;
+    }
+
+    // Inside entity block - attribute
+    if (currentEntity) {
+      const attrMatch = line.match(attrRegex);
+      if (attrMatch) {
+        const constraint = attrMatch[3] ? ` ${attrMatch[3]}` : '';
+        entities.get(currentEntity)!.attributes.push(`${attrMatch[1]} ${attrMatch[2]}${constraint}`);
+      }
+      continue;
+    }
+
+    // Relationship line
+    const relMatch = line.match(relRegex);
+    if (relMatch) {
+      const sourceId = relMatch[1];
+      const targetId = relMatch[5];
+      const label = relMatch[6] || '';
+
+      // Ensure entities exist
+      if (!entities.has(sourceId)) entities.set(sourceId, { id: sourceId, attributes: [] });
+      if (!entities.has(targetId)) entities.set(targetId, { id: targetId, attributes: [] });
+
+      edges.push({
+        id: `edge_${generateId()}`, type: 'arrow',
+        position: { x: 0, y: 0 }, dimensions: { width: 0, height: 0 },
+        content: '', label, lineStyle: 'solid',
+        startConnection: { nodeId: sourceId, anchor: 'closest' },
+        endConnection: { nodeId: targetId, anchor: 'closest' }
+      });
+    }
+  }
+
+  // Convert entities to DiagramNodes
+  const nodes = new Map<string, DiagramNode>();
+  entities.forEach((entity) => {
+    const sections: NodeSection[] = [];
+    if (entity.attributes.length > 0) {
+      sections.push({ title: 'Attributes', items: entity.attributes });
+    }
+    const longestLine = [entity.id, ...entity.attributes]
+      .reduce((a, b) => a.length > b.length ? a : b, '');
+    const width = Math.max(180, longestLine.length * 8 + 40);
+    const height = Math.max(60, 40 + entity.attributes.length * 22 + 10);
+
+    nodes.set(entity.id, {
+      id: entity.id, type: 'uml-class',
+      position: { x: 0, y: 0 },
+      dimensions: { width, height },
+      content: entity.id, sections,
+      tag: 'entity',
+      style: { backgroundColor: '#0d1117' }
+    });
+  });
+
+  return layoutResult(nodes, edges);
+}
+
+// ─── MINDMAP PARSER ────────────────────────────────────────────────
+
+function parseMindmap(code: string): DiagramNode[] | null {
+  const lines = code.split('\n');
+  const nodes = new Map<string, DiagramNode>();
+  const edges: DiagramNode[] = [];
+
+  // Track indentation stack: each entry is { indent, id }
+  const stack: { indent: number; id: string }[] = [];
+  let nodeCounter = 0;
+
+  for (let line of lines) {
+    if (!line.trim() || line.trim().startsWith('%%')) continue;
+    if (line.trim().toLowerCase().startsWith('mindmap')) continue;
+
+    // Calculate indentation level (number of leading spaces)
+    const indent = line.search(/\S/);
+    if (indent < 0) continue;
+    const text = line.trim();
+    if (!text) continue;
+
+    // Extract label: remove Mermaid shape wrappers if any
+    let label = text;
+    let type: NodeType = 'rounded-rect';
+
+    // Root node (first entry, no indent) gets special type
+    if (stack.length === 0) {
+      type = 'box';
+    }
+
+    // Handle shapes: [text], (text), ((text)), {text}
+    const shapeMatch = text.match(/^\(\((.*?)\)\)$/) ||
+                       text.match(/^\((.*?)\)$/) ||
+                       text.match(/^\[(.*?)\]$/) ||
+                       text.match(/^\{(.*?)\}$/);
+    if (shapeMatch) {
+      label = shapeMatch[1];
+      if (text.startsWith('((')) type = 'circle';
+      else if (text.startsWith('{')) type = 'diamond';
+      else if (text.startsWith('[')) type = 'box';
+      else type = 'rounded-rect';
+    }
+
+    const id = `mm_${nodeCounter++}`;
+    const width = Math.max(100, label.length * 8 + 30);
+    nodes.set(id, {
+      id, type,
+      position: { x: 0, y: 0 },
+      dimensions: { width, height: 45 },
+      content: label,
+      style: { backgroundColor: '#0d1117' }
+    });
+
+    // Pop stack until we find a parent with less indentation
+    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+
+    // Connect to parent if any
+    if (stack.length > 0) {
+      const parentId = stack[stack.length - 1].id;
+      edges.push({
+        id: `edge_${generateId()}`, type: 'line',
+        position: { x: 0, y: 0 }, dimensions: { width: 0, height: 0 },
+        content: '', lineStyle: 'solid', arrowType: 'none',
+        startConnection: { nodeId: parentId, anchor: 'closest' },
+        endConnection: { nodeId: id, anchor: 'closest' }
+      });
+    }
+
+    stack.push({ indent, id });
+  }
 
   return layoutResult(nodes, edges);
 }
