@@ -64,6 +64,9 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
           minlen = 1;
           weight = 100; // Vertical branch (No/False) has extremely high weight to stay perfectly aligned
         }
+      } else if (edge.type === 'line') {
+        // Undirected line edges (---) should stay on the main spine with high weight
+        weight = 80;
       }
       
       g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId, { minlen, weight });
@@ -184,6 +187,19 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
     }
   }
 
+  // Force undirected line connections (---) to align their target directly below source.
+  // Dagre may drift the target node sideways even with high weight; this fixes it explicitly.
+  edges.forEach(edge => {
+    if (edge.type === 'line' && edge.arrowType === 'none' &&
+        edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
+      const gSource = g.node(edge.startConnection.nodeId);
+      const gTarget = g.node(edge.endConnection.nodeId);
+      if (gSource && gTarget) {
+        gTarget.x = gSource.x;
+      }
+    }
+  });
+
   // Apply calculated layout back to the real nodes
   const layoutedNodes = nodes.map(node => {
     if (!isEdge(node)) {
@@ -228,8 +244,9 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
         const targetNode = layoutedNodes.find(n => n.id === node.endConnection!.nodeId);
 
         if (sourceNode && targetNode) {
-          // Force edge to use elbow routing for a clean flowchart look
-          node.routing = 'elbow';
+          // Use straight routing for undirected lines, elbow for arrows/directed edges
+          const isUndirected = node.type === 'line' && node.arrowType === 'none';
+          node.routing = isUndirected ? 'straight' : 'elbow';
 
           // Automatically calculate anchor points
           const labelLower = (node.label || '').toLowerCase();
