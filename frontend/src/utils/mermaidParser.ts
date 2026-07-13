@@ -220,7 +220,7 @@ function parseClassDiagram(code: string): DiagramNode[] | null {
     if (line.toLowerCase().startsWith('direction ')) continue;
 
     // Opening a class block: class ClassName {
-    const classBlockMatch = line.match(/^class\s+([a-zA-Z0-9_]+)\s*\{?\s*$/);
+    const classBlockMatch = line.match(/^class\s+([a-zA-Z0-9_]+)\s*\{\s*$/);
     if (classBlockMatch) {
       flushClass();
       currentClassName = classBlockMatch[1];
