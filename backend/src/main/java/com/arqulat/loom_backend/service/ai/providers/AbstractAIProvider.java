@@ -12,6 +12,15 @@ public abstract class AbstractAIProvider implements AIProvider {
     }
 
     /**
+     * Executes an agent turn with function calling.
+     */
+    @Override
+    public String agentCall(String prompt, String systemPrompt, String contextNodes) throws Exception {
+        // For simple providers, we can just use the generation endpoint with the system prompt containing the tool schema
+        return generate(prompt, systemPrompt, null);
+    }
+
+    /**
      * Cleans the markdown wrapping from the response and validates that it's a valid JSON array.
      * Throws an exception if invalid, which triggers the fallback ring.
      */
@@ -41,6 +50,8 @@ public abstract class AbstractAIProvider implements AIProvider {
                 } else if (root.has("addedNodes") && root.get("addedNodes").isArray()) {
                     return clean;
                 } else if (root.has("deletedNodeIds") && root.get("deletedNodeIds").isArray()) {
+                    return clean;
+                } else if (root.has("toolCalls") && root.get("toolCalls").isArray()) {
                     return clean;
                 } else if (root.has("elements") && root.get("elements").isArray()) {
                     return clean;

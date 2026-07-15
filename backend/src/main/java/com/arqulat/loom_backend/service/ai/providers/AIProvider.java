@@ -21,6 +21,16 @@ public interface AIProvider {
     String edit(String prompt, String contextNodes, String imageBase64) throws Exception;
 
     /**
+     * Executes an agent turn with function calling.
+     * @param prompt The user prompt
+     * @param systemPrompt The system prompt
+     * @param contextNodes The canvas context
+     * @return The JSON string of tool calls
+     * @throws Exception if generation fails
+     */
+    String agentCall(String prompt, String systemPrompt, String contextNodes) throws Exception;
+
+    /**
      * @return The name of this provider for logging/response tracking.
      */
     String getProviderName();

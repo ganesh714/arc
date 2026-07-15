@@ -75,4 +75,24 @@ public class AIFallbackRingManager implements AIService {
         logger.error("All AI providers in the fallback ring have failed to edit.");
         throw new Exception("Unable to edit diagram nodes. All configured AI providers failed.");
     }
+
+    @Override
+    public String agentProcess(String prompt, String contextNodes, String toolDefinitions) throws Exception {
+        for (AIProvider provider : fallbackRing) {
+            try {
+                logger.info("Attempting AI agent turn using provider: {}", provider.getProviderName());
+                String systemPrompt = AIAgentPrompts.AGENT_SYSTEM_PROMPT + "\n\nTOOL DEFINITIONS:\n" + toolDefinitions + "\n\nCANVAS STATE:\n" + contextNodes;
+                String result = provider.agentCall(prompt, systemPrompt, contextNodes);
+                
+                logger.info("Successfully completed agent turn using {}", provider.getProviderName());
+                return result;
+                
+            } catch (Exception e) {
+                logger.warn("Provider {} failed agent turn. Reason: {}. Falling back to next provider...", provider.getProviderName(), e.getMessage());
+            }
+        }
+        
+        logger.error("All AI providers in the fallback ring have failed the agent turn.");
+        throw new Exception("Unable to execute agent turn. All configured AI providers failed.");
+    }
 }

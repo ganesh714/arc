@@ -3,6 +3,8 @@ import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3, ImagePlus } fr
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
+import { executeToolCalls, AGENT_TOOLS } from '../../utils/agentTools';
+import { autoFixCollisions } from '../../utils/collisionDetector';
 
 const MODELS = [
   'Arc GPT-4',
@@ -23,10 +25,10 @@ export function AIChatSidebar() {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiPhase, setAiPhase] = useState<'idle' | 'planning' | 'styling' | 'editing'>('idle');
+  const [aiPhase, setAiPhase] = useState<'idle' | 'planning' | 'styling' | 'editing' | 'executing'>('idle');
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [aiMode, setAiMode] = useState<'generate' | 'edit'>('generate');
+  const [aiMode, setAiMode] = useState<'generate' | 'edit' | 'agent'>('generate');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
@@ -96,7 +98,7 @@ export function AIChatSidebar() {
     const promptText = input.trim();
     setInput('');
     setIsGenerating(true);
-    setAiPhase(aiMode === 'generate' ? 'planning' : 'editing');
+    setAiPhase(aiMode === 'generate' ? 'planning' : aiMode === 'agent' ? 'executing' : 'editing');
     
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: promptText }]);
     
@@ -112,7 +114,17 @@ export function AIChatSidebar() {
       const fullPrompt = messages.length > 0 ? `PREVIOUS CHAT HISTORY:\\n${chatContextStr}\\n\\nCURRENT REQUEST:\\n${promptText}` : promptText;
       
       let response: Response;
-      if (aiMode === 'generate') {
+      if (aiMode === 'agent') {
+        const contextPayload = nodes.map(n => ({
+          id: n.id, type: n.type, position: n.position, dimensions: n.dimensions, content: n.content
+        }));
+        response = await fetch(`${arcApiUrl}/api/ai/agent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ prompt: fullPrompt, contextNodes: JSON.stringify(contextPayload), toolDefinitions: JSON.stringify(AGENT_TOOLS) }),
+        });
+      } else if (aiMode === 'generate') {
         response = await fetch(`${arcApiUrl}/api/ai/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -177,7 +189,29 @@ export function AIChatSidebar() {
           const parsed = typeof data.jsonTree === 'string' ? JSON.parse(data.jsonTree) : data.jsonTree;
           if (parsed && typeof parsed === 'object') {
             if (parsed.explanation) aiExplanation = parsed.explanation;
-            if (aiMode === 'edit' && (parsed.updatedNodes || parsed.addedNodes || parsed.deletedNodeIds)) {
+            
+            if (aiMode === 'agent') {
+              const toolCalls = parsed.toolCalls || [];
+              
+              saveHistoryState(nodes); // Save before agent execution
+              let newNodes = executeToolCalls(toolCalls, nodes, () => {}, () => {});
+              
+              // Apply collision detection and auto-fix
+              const fixResult = autoFixCollisions(newNodes);
+              newNodes = fixResult.nodes;
+              
+              setNodes(newNodes);
+              
+              const fixesCount = fixResult.report.nodeOverlaps.length + fixResult.report.lineIntersections.length;
+              const fixMsg = fixesCount > 0 ? ` ⚠️ Fixed ${fixesCount} collision(s).` : '';
+              
+              const toolSummary = toolCalls.map((t: any) => `🔧 ${t.tool}`).join('\\n');
+              const successMsg = aiExplanation ? `${aiExplanation}\\n\\n${toolSummary}${fixMsg}` : `Executed ${toolCalls.length} tool calls.${fixMsg}`;
+              
+              setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: successMsg }]);
+              return; // We handled the agent mode completely
+            }
+            else if (aiMode === 'edit' && (parsed.updatedNodes || parsed.addedNodes || parsed.deletedNodeIds)) {
               isDiff = true;
               diffData = {
                 updatedNodes: Array.isArray(parsed.updatedNodes) ? parsed.updatedNodes : [],
@@ -364,12 +398,20 @@ export function AIChatSidebar() {
                   Describe what you want to build. The AI will generate a visual diagram in a new file instantly.
                 </p>
               </>
-            ) : (
+            ) : aiMode === 'edit' ? (
               <>
                 <Edit3 size={48} style={{ marginBottom: '16px', color: '#10b981', opacity: 0.8 }} />
                 <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>AI Iteration</h3>
                 <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
                   Ask the AI to modify the existing diagram. E.g., "Change all boxes to blue" or "Add a database node".
+                </p>
+              </>
+            ) : (
+              <>
+                <Bot size={48} style={{ marginBottom: '16px', color: '#8b5cf6', opacity: 0.8 }} />
+                <h3 style={{ margin: '0 0 8px 0', color: '#e3e3e3', fontSize: '18px' }}>Agent Mode <span style={{ fontSize: '10px', background: 'linear-gradient(to right, #8b5cf6, #3b82f6)', color: '#fff', padding: '2px 6px', borderRadius: '4px', verticalAlign: 'middle', marginLeft: '6px' }}>PREMIUM</span></h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
+                  Full canvas control without hallucinations. The agent uses precise tools to build and fix diagrams step-by-step.
                 </p>
               </>
             )}
@@ -394,7 +436,9 @@ export function AIChatSidebar() {
                   border: msg.role === 'ai' && !msg.isError ? '1px solid #2a2e39' : msg.isError ? '1px solid #ef444450' : 'none'
                 }}
               >
-                {msg.content}
+                {msg.content.split('\\n').map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
               </div>
             ))}
           </div>
@@ -405,10 +449,10 @@ export function AIChatSidebar() {
              <div style={{ width: '24px', height: '24px', border: '2px solid', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                <span style={{ fontSize: '14px', fontWeight: 600 }}>
-                 {aiPhase === 'planning' ? '🧠 Planning...' : aiPhase === 'styling' ? '🎨 Styling...' : aiPhase === 'editing' ? '✏️ Editing...' : 'Working...'}
+                 {aiPhase === 'planning' ? '🧠 Planning...' : aiPhase === 'styling' ? '🎨 Styling...' : aiPhase === 'editing' ? '✏️ Editing...' : aiPhase === 'executing' ? '⚙️ Executing tools...' : 'Working...'}
                </span>
                <span style={{ fontSize: '11px', color: '#666', textAlign: 'center', lineHeight: 1.4, maxWidth: '160px' }}>
-                 {aiPhase === 'planning' ? 'AI is analyzing your request and building a semantic blueprint' : aiPhase === 'styling' ? 'Converting blueprint to styled diagram nodes' : aiPhase === 'editing' ? 'Applying your changes to the diagram' : ''}
+                 {aiPhase === 'planning' ? 'AI is analyzing your request and building a semantic blueprint' : aiPhase === 'styling' ? 'Converting blueprint to styled diagram nodes' : aiPhase === 'editing' ? 'Applying your changes to the diagram' : aiPhase === 'executing' ? 'Agent is calling specialized tools and checking collisions' : ''}
                </span>
              </div>
              {aiMode === 'generate' && (
@@ -440,6 +484,14 @@ export function AIChatSidebar() {
           >
             <Edit3 size={12} />
             Edit
+          </button>
+          <button 
+            className={`${styles.modeBtn} ${aiMode === 'agent' ? styles.modeBtnAgentActive : ''}`}
+            onClick={() => setAiMode('agent')}
+            title="Agent Mode"
+          >
+            <Bot size={12} />
+            Agent
           </button>
         </div>
 

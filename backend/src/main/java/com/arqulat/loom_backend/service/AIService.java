@@ -19,4 +19,14 @@ public interface AIService {
      * @throws Exception if generation fails.
      */
     String editDiagramNodes(String prompt, String contextNodes, String imageBase64) throws Exception;
+
+    /**
+     * Processes an agent tool-calling turn.
+     * @param prompt The user's prompt.
+     * @param contextNodes The canvas state.
+     * @param toolDefinitions The tool definitions schema.
+     * @return A JSON string representing the tool calls.
+     * @throws Exception if generation fails.
+     */
+    String agentProcess(String prompt, String contextNodes, String toolDefinitions) throws Exception;
 }
