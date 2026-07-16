@@ -90,7 +90,11 @@ public class GeminiProvider extends AbstractAIProvider {
         if (systemPrompt.contains("JSON")) {
             Map<String, Object> generationConfig = new HashMap<>();
             generationConfig.put("responseMimeType", "application/json");
-            generationConfig.put("responseSchema", getDiagramResponseSchema());
+            if (systemPrompt.contains("toolCalls")) {
+                generationConfig.put("responseSchema", getAgentResponseSchema());
+            } else {
+                generationConfig.put("responseSchema", getDiagramResponseSchema());
+            }
             requestBody.put("generationConfig", generationConfig);
         }
 
@@ -269,6 +273,33 @@ public class GeminiProvider extends AbstractAIProvider {
             "required", List.of("id", "type", "position", "dimensions", "content")
         ));
 
+        return schema;
+    }
+
+    private Map<String, Object> getAgentResponseSchema() {
+        Map<String, Object> schema = new HashMap<>();
+        schema.put("type", "OBJECT");
+        
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("explanation", Map.of("type", "STRING"));
+        
+        Map<String, Object> toolCallProperties = new HashMap<>();
+        toolCallProperties.put("tool", Map.of("type", "STRING"));
+        
+        Map<String, Object> anyArgs = new HashMap<>();
+        anyArgs.put("type", "OBJECT");
+        toolCallProperties.put("args", anyArgs);
+        
+        Map<String, Object> toolCallSchema = Map.of(
+            "type", "OBJECT",
+            "properties", toolCallProperties,
+            "required", List.of("tool", "args")
+        );
+        
+        properties.put("toolCalls", Map.of("type", "ARRAY", "items", toolCallSchema));
+        
+        schema.put("properties", properties);
+        schema.put("required", List.of("explanation", "toolCalls"));
         return schema;
     }
 
