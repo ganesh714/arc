@@ -288,6 +288,37 @@ public class GeminiProvider extends AbstractAIProvider {
         
         Map<String, Object> anyArgs = new HashMap<>();
         anyArgs.put("type", "OBJECT");
+        
+        Map<String, Object> argProperties = new HashMap<>();
+        argProperties.put("type", Map.of("type", "STRING"));
+        argProperties.put("content", Map.of("type", "STRING"));
+        argProperties.put("tag", Map.of("type", "STRING"));
+        argProperties.put("x", Map.of("type", "NUMBER"));
+        argProperties.put("y", Map.of("type", "NUMBER"));
+        argProperties.put("width", Map.of("type", "NUMBER"));
+        argProperties.put("height", Map.of("type", "NUMBER"));
+        argProperties.put("backgroundColor", Map.of("type", "STRING"));
+        argProperties.put("borderColor", Map.of("type", "STRING"));
+        argProperties.put("textColor", Map.of("type", "STRING"));
+        argProperties.put("nodeId", Map.of("type", "STRING"));
+        argProperties.put("fontSize", Map.of("type", "STRING"));
+        argProperties.put("fontWeight", Map.of("type", "STRING"));
+        argProperties.put("borderRadius", Map.of("type", "STRING"));
+        argProperties.put("opacity", Map.of("type", "STRING"));
+        argProperties.put("sourceId", Map.of("type", "STRING"));
+        argProperties.put("targetId", Map.of("type", "STRING"));
+        argProperties.put("label", Map.of("type", "STRING"));
+        argProperties.put("lineStyle", Map.of("type", "STRING"));
+        argProperties.put("arrowHead", Map.of("type", "STRING"));
+        argProperties.put("arrowTail", Map.of("type", "STRING"));
+        argProperties.put("routing", Map.of("type", "STRING"));
+        argProperties.put("edgeId", Map.of("type", "STRING"));
+        argProperties.put("nodeIds", Map.of("type", "ARRAY", "items", Map.of("type", "STRING")));
+        argProperties.put("alignment", Map.of("type", "STRING"));
+        argProperties.put("groupTitle", Map.of("type", "STRING"));
+        argProperties.put("groupColor", Map.of("type", "STRING"));
+        
+        anyArgs.put("properties", argProperties);
         toolCallProperties.put("args", anyArgs);
         
         Map<String, Object> toolCallSchema = Map.of(
@@ -301,6 +332,84 @@ public class GeminiProvider extends AbstractAIProvider {
         schema.put("properties", properties);
         schema.put("required", List.of("explanation", "toolCalls"));
         return schema;
+    }
+
+    /**
+     * Free-form agent call — NO JSON schema, NO responseMimeType enforcement.
+     * Used for Pass 1 (semantic) and Pass 2 (layout) where the LLM should
+     * think freely in natural language and output a <RESULT>...</RESULT> block.
+     */
+    @Override
+    public String agentFreeCall(String prompt, String systemPrompt) throws Exception {
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
+
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                return callGeminiFreeApi(prompt, systemPrompt, currentKey);
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("Gemini agentFreeCall attempt failed with key ending in " +
+                    (currentKey.length() > 4 ? currentKey.substring(currentKey.length() - 4) : "...") +
+                    ": " + e.getMessage() + ". Trying next key if available...");
+            }
+        }
+        throw new RuntimeException("All Gemini API keys failed for agentFreeCall. Last error: " + lastException.getMessage(), lastException);
+    }
+
+    /**
+     * Calls Gemini API without any JSON schema — returns raw text.
+     * Falls back from Pro to Flash internally.
+     */
+    private String callGeminiFreeApi(String prompt, String systemPrompt, String apiKey) throws Exception {
+        try {
+            return callGeminiFreeApiWithModel(prompt, systemPrompt, "gemini-2.5-flash", apiKey);
+        } catch (Exception e) {
+            System.err.println("Gemini 2.5 Flash free call failed (" + e.getMessage() + "). Trying Pro...");
+            return callGeminiFreeApiWithModel(prompt, systemPrompt, "gemini-2.5-pro", apiKey);
+        }
+    }
+
+    private String callGeminiFreeApiWithModel(String prompt, String systemPrompt, String model, String apiKey) throws Exception {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + apiKey;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, Object> requestBody = new HashMap<>();
+
+        Map<String, Object> systemPart = new HashMap<>();
+        systemPart.put("text", systemPrompt);
+        Map<String, Object> systemInstruction = new HashMap<>();
+        systemInstruction.put("parts", List.of(systemPart));
+        requestBody.put("system_instruction", systemInstruction);
+
+        Map<String, Object> part = new HashMap<>();
+        part.put("text", prompt);
+        Map<String, Object> content = new HashMap<>();
+        content.put("parts", List.of(part));
+        requestBody.put("contents", List.of(content));
+
+        // NO generationConfig with responseMimeType — let LLM think freely
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Gemini API call failed with status " + response.getStatusCode());
+        }
+
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode candidates = root.path("candidates");
+        if (candidates.isArray() && !candidates.isEmpty()) {
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (parts.isArray() && !parts.isEmpty()) {
+                return parts.get(0).path("text").asText();
+            }
+        }
+
+        throw new RuntimeException("Failed to parse Gemini free response: " + response.getBody());
     }
 
     @Override

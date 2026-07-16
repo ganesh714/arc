@@ -2,12 +2,14 @@ package com.arqulat.loom_backend.service.ai;
 
 import com.arqulat.loom_backend.service.AIService;
 import com.arqulat.loom_backend.service.ai.providers.AIProvider;
+import com.arqulat.loom_backend.service.ai.providers.AbstractAIProvider;
 import com.arqulat.loom_backend.service.ai.providers.GeminiProvider;
 import com.arqulat.loom_backend.service.ai.providers.GroqProvider;
 import com.arqulat.loom_backend.service.ai.providers.OpenRouterProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,10 +20,13 @@ public class AIFallbackRingManager implements AIService {
     private static final Logger logger = LoggerFactory.getLogger(AIFallbackRingManager.class);
     
     private final List<AIProvider> fallbackRing;
+    private final AgentOrchestrator agentOrchestrator;
 
-    public AIFallbackRingManager(GeminiProvider geminiProvider, GroqProvider groqProvider, OpenRouterProvider openRouterProvider) {
+    public AIFallbackRingManager(GeminiProvider geminiProvider, GroqProvider groqProvider,
+                                  OpenRouterProvider openRouterProvider, AgentOrchestrator agentOrchestrator) {
         // Defines the exact fallback order: Gemini -> Groq -> OpenRouter
         this.fallbackRing = Arrays.asList(geminiProvider, groqProvider, openRouterProvider);
+        this.agentOrchestrator = agentOrchestrator;
     }
 
     @Override
@@ -76,23 +81,73 @@ public class AIFallbackRingManager implements AIService {
         throw new Exception("Unable to edit diagram nodes. All configured AI providers failed.");
     }
 
-    @Override
-    public String agentProcess(String prompt, String contextNodes, String toolDefinitions) throws Exception {
+    // ─── Agent 3-Pass Methods ───
+
+    /**
+     * Pass 1: Semantic analysis — LLM thinks freely about entities and relationships.
+     * Returns extracted JSON from <RESULT> tags.
+     */
+    public String agentSemanticPass(String prompt) throws Exception {
         for (AIProvider provider : fallbackRing) {
             try {
-                logger.info("Attempting AI agent turn using provider: {}", provider.getProviderName());
-                String systemPrompt = AIAgentPrompts.AGENT_SYSTEM_PROMPT + "\n\nTOOL DEFINITIONS:\n" + toolDefinitions + "\n\nCANVAS STATE:\n" + contextNodes;
-                String result = provider.agentCall(prompt, systemPrompt, contextNodes);
-                
-                logger.info("Successfully completed agent turn using {}", provider.getProviderName());
-                return result;
-                
+                logger.info("[Agent Pass 1 - Semantic] Using provider: {}", provider.getProviderName());
+                String rawResponse = provider.agentFreeCall(prompt, AIAgentPrompts.SEMANTIC_PROMPT);
+                String extracted = AbstractAIProvider.extractResultTag(rawResponse);
+                logger.info("[Agent Pass 1 - Semantic] Success with {}. Extracted {} chars.", provider.getProviderName(), extracted.length());
+                return extracted;
             } catch (Exception e) {
-                logger.warn("Provider {} failed agent turn. Reason: {}. Falling back to next provider...", provider.getProviderName(), e.getMessage());
+                logger.warn("[Agent Pass 1 - Semantic] {} failed: {}. Falling back...", provider.getProviderName(), e.getMessage());
             }
         }
+        throw new Exception("All providers failed at Agent Pass 1 (Semantic).");
+    }
+
+    /**
+     * Pass 2: Layout strategy — LLM picks the best visual structure.
+     * Returns extracted JSON from <RESULT> tags.
+     */
+    public String agentLayoutPass(String semanticResult, String originalPrompt) throws Exception {
+        String layoutPromptInput = "SEMANTIC ANALYSIS:\n" + semanticResult + "\n\nORIGINAL USER REQUEST:\n" + originalPrompt;
         
-        logger.error("All AI providers in the fallback ring have failed the agent turn.");
-        throw new Exception("Unable to execute agent turn. All configured AI providers failed.");
+        for (AIProvider provider : fallbackRing) {
+            try {
+                logger.info("[Agent Pass 2 - Layout] Using provider: {}", provider.getProviderName());
+                String rawResponse = provider.agentFreeCall(layoutPromptInput, AIAgentPrompts.LAYOUT_PROMPT);
+                String extracted = AbstractAIProvider.extractResultTag(rawResponse);
+                logger.info("[Agent Pass 2 - Layout] Success with {}. Extracted {} chars.", provider.getProviderName(), extracted.length());
+                return extracted;
+            } catch (Exception e) {
+                logger.warn("[Agent Pass 2 - Layout] {} failed: {}. Falling back...", provider.getProviderName(), e.getMessage());
+            }
+        }
+        throw new Exception("All providers failed at Agent Pass 2 (Layout).");
+    }
+
+    /**
+     * Pass 3: Single execution step — LLM emits tool calls for the next batch.
+     * Returns raw JSON with toolCalls array.
+     */
+    public String agentExecuteStep(String blueprint, String layoutPlan, String canvasState, int step) throws Exception {
+        String stepPrompt = "STEP: " + step + "\n\n" +
+                "SEMANTIC BLUEPRINT:\n" + blueprint + "\n\n" +
+                "LAYOUT PLAN:\n" + layoutPlan + "\n\n" +
+                "CURRENT CANVAS STATE:\n" + canvasState;
+
+        for (AIProvider provider : fallbackRing) {
+            try {
+                logger.info("[Agent Pass 3 - Execute Step {}] Using provider: {}", step, provider.getProviderName());
+                String result = provider.agentCall(stepPrompt, AIAgentPrompts.EXECUTE_PROMPT, canvasState);
+                logger.info("[Agent Pass 3 - Execute Step {}] Success with {}. Result: {} chars.", step, provider.getProviderName(), result.length());
+                return result;
+            } catch (Exception e) {
+                logger.warn("[Agent Pass 3 - Execute Step {}] {} failed: {}. Falling back...", step, provider.getProviderName(), e.getMessage());
+            }
+        }
+        throw new Exception("All providers failed at Agent Pass 3 (Execute Step " + step + ").");
+    }
+
+    @Override
+    public void agentOrchestrate(String prompt, String contextNodes, SseEmitter emitter) throws Exception {
+        agentOrchestrator.orchestrate(prompt, contextNodes, this, emitter);
     }
 }

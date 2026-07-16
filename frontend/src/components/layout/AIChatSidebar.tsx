@@ -3,7 +3,6 @@ import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3, ImagePlus } fr
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
-import { executeToolCalls, AGENT_TOOLS } from '../../utils/agentTools';
 import { autoFixCollisions } from '../../utils/collisionDetector';
 
 const MODELS = [
@@ -115,15 +114,142 @@ export function AIChatSidebar() {
       
       let response: Response;
       if (aiMode === 'agent') {
+        // ─── Agent Mode: SSE Streaming ───
         const contextPayload = nodes.map(n => ({
-          id: n.id, type: n.type, position: n.position, dimensions: n.dimensions, content: n.content
+          id: n.id, type: n.type, position: n.position, dimensions: n.dimensions, content: n.content,
+          style: n.style, startConnection: n.startConnection, endConnection: n.endConnection,
+          label: n.label, lineStyle: n.lineStyle, arrowHead: n.arrowHead, routing: n.routing
         }));
-        response = await fetch(`${arcApiUrl}/api/ai/agent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ prompt: fullPrompt, contextNodes: JSON.stringify(contextPayload), toolDefinitions: JSON.stringify(AGENT_TOOLS) }),
-        });
+
+        saveHistoryState(nodes);
+
+        try {
+          const sseResponse = await fetch(`${arcApiUrl}/api/ai/agent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ prompt: fullPrompt, contextNodes: JSON.stringify(contextPayload) }),
+          });
+
+          if (!sseResponse.ok) {
+            throw new Error(`Server returned ${sseResponse.status}: ${await sseResponse.text()}`);
+          }
+
+          const reader = sseResponse.body?.getReader();
+          if (!reader) throw new Error('No response body');
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          const processEvent = (eventName: string, eventData: string) => {
+            try {
+              const data = JSON.parse(eventData);
+
+              if (eventName === 'progress' || data.type === 'progress') {
+                const phaseMap: Record<string, string> = {
+                  'semantic': '🧠 Analyzing entities and relationships...',
+                  'layout': '📐 Choosing layout structure...',
+                };
+                const msg = phaseMap[data.step] || data.message || 'Processing...';
+                setAiPhase(data.phase === 'planning' ? 'planning' : 'executing');
+                setMessages(prev => {
+                  const existing = prev.find(m => m.id === 'agent-progress');
+                  if (existing) {
+                    return prev.map(m => m.id === 'agent-progress' ? { ...m, content: msg } : m);
+                  }
+                  return [...prev, { id: 'agent-progress', role: 'ai' as const, content: msg }];
+                });
+              }
+              else if (eventName === 'step' || data.type === 'step') {
+                setAiPhase('executing');
+                const stepMsg = `⚡ Step ${data.step}/${data.maxSteps}: ${data.explanation} (${data.toolCallsApplied} operations)`;
+                setMessages(prev => {
+                  const filtered = prev.filter(m => m.id !== 'agent-progress');
+                  return [...filtered, { id: 'agent-step-' + data.step, role: 'ai' as const, content: stepMsg }];
+                });
+
+                // Live canvas preview update
+                if (data.currentCanvas && Array.isArray(data.currentCanvas)) {
+                  setNodes(data.currentCanvas as any);
+                }
+              }
+              else if (eventName === 'done' || data.type === 'done') {
+                // Final commit
+                if (data.finalNodes && Array.isArray(data.finalNodes)) {
+                  // Apply collision detection on final result
+                  const fixResult = autoFixCollisions(data.finalNodes as any);
+                  setNodes(fixResult.nodes);
+
+                  const fixCount = fixResult.report.nodeOverlaps.length + fixResult.report.lineIntersections.length;
+                  const fixMsg = fixCount > 0 ? ` ⚠️ Fixed ${fixCount} collision(s).` : '';
+                  const doneMsg = `✅ ${data.summary || 'Agent completed.'}${fixMsg}`;
+                  setMessages(prev => {
+                    const filtered = prev.filter(m => m.id !== 'agent-progress');
+                    return [...filtered, { id: Date.now().toString(), role: 'ai' as const, content: doneMsg }];
+                  });
+                }
+                setIsGenerating(false);
+                setAiPhase('idle');
+                setSelectedImage(null);
+              }
+              else if (eventName === 'error' || data.type === 'error') {
+                // Keep partial canvas if available
+                if (data.partialCanvas && Array.isArray(data.partialCanvas)) {
+                  setNodes(data.partialCanvas as any);
+                }
+                setMessages(prev => {
+                  const filtered = prev.filter(m => m.id !== 'agent-progress');
+                  return [...filtered, { id: Date.now().toString(), role: 'ai' as const, content: `❌ Agent error: ${data.message}`, isError: true }];
+                });
+                setIsGenerating(false);
+                setAiPhase('idle');
+              }
+            } catch (e) {
+              console.error('Failed to process SSE event:', eventName, eventData, e);
+            }
+          };
+
+          // Read SSE stream
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // Parse SSE events from buffer
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            let currentEventName = '';
+            let currentEventData = '';
+
+            for (const line of lines) {
+              if (line.startsWith('event:')) {
+                currentEventName = line.substring(6).trim();
+              } else if (line.startsWith('data:')) {
+                currentEventData = line.substring(5).trim();
+              } else if (line.trim() === '' && currentEventData) {
+                processEvent(currentEventName, currentEventData);
+                currentEventName = '';
+                currentEventData = '';
+              }
+            }
+          }
+
+          // Process any remaining data
+          if (buffer.trim()) {
+            const remaining = buffer.trim();
+            if (remaining.startsWith('data:')) {
+              processEvent('', remaining.substring(5).trim());
+            }
+          }
+
+        } catch (e: any) {
+          setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: `❌ Agent failed: ${e.message}`, isError: true }]);
+        } finally {
+          setIsGenerating(false);
+          setAiPhase('idle');
+          setSelectedImage(null);
+        }
+        return; // Agent mode handled completely via SSE
       } else if (aiMode === 'generate') {
         response = await fetch(`${arcApiUrl}/api/ai/generate`, {
           method: 'POST',
@@ -190,28 +316,7 @@ export function AIChatSidebar() {
           if (parsed && typeof parsed === 'object') {
             if (parsed.explanation) aiExplanation = parsed.explanation;
             
-            if (aiMode === 'agent') {
-              const toolCalls = parsed.toolCalls || [];
-              
-              saveHistoryState(nodes); // Save before agent execution
-              let newNodes = executeToolCalls(toolCalls, nodes);
-              
-              // Apply collision detection and auto-fix
-              const fixResult = autoFixCollisions(newNodes);
-              newNodes = fixResult.nodes;
-              
-              setNodes(newNodes);
-              
-              const fixesCount = fixResult.report.nodeOverlaps.length + fixResult.report.lineIntersections.length;
-              const fixMsg = fixesCount > 0 ? ` ⚠️ Fixed ${fixesCount} collision(s).` : '';
-              
-              const toolSummary = toolCalls.map((t: any) => `🔧 ${t.tool}`).join('\\n');
-              const successMsg = aiExplanation ? `${aiExplanation}\\n\\n${toolSummary}${fixMsg}` : `Executed ${toolCalls.length} tool calls.${fixMsg}`;
-              
-              setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: successMsg }]);
-              return; // We handled the agent mode completely
-            }
-            else if (aiMode === 'edit' && (parsed.updatedNodes || parsed.addedNodes || parsed.deletedNodeIds)) {
+            if (aiMode === 'edit' && (parsed.updatedNodes || parsed.addedNodes || parsed.deletedNodeIds)) {
               isDiff = true;
               diffData = {
                 updatedNodes: Array.isArray(parsed.updatedNodes) ? parsed.updatedNodes : [],
