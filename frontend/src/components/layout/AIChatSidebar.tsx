@@ -194,7 +194,7 @@ export function AIChatSidebar() {
               const toolCalls = parsed.toolCalls || [];
               
               saveHistoryState(nodes); // Save before agent execution
-              let newNodes = executeToolCalls(toolCalls, nodes, () => {}, () => {});
+              let newNodes = executeToolCalls(toolCalls, nodes);
               
               // Apply collision detection and auto-fix
               const fixResult = autoFixCollisions(newNodes);

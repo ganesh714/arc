@@ -166,9 +166,7 @@ export interface ToolCall {
 
 export function executeToolCalls(
   toolCalls: ToolCall[],
-  currentNodes: DiagramNode[],
-  updateNode: (node: DiagramNode) => void,
-  deleteNodeIds: (ids: string[]) => void
+  currentNodes: DiagramNode[]
 ): DiagramNode[] {
   let nodes = JSON.parse(JSON.stringify(currentNodes)) as DiagramNode[];
   const newNodesMap = new Map<string, string>(); // Maps $$NEW_0$$ to actual UUID
