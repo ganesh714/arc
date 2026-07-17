@@ -55,7 +55,7 @@ public class GeminiProvider extends AbstractAIProvider {
             return callGeminiApi(prompt, systemPrompt, "gemini-2.5-pro", imageBase64, apiKey);
         } catch (Exception e) {
             System.err.println("Gemini 2.5 Pro failed (" + e.getMessage() + "). Falling back to Gemini 2.5 Flash...");
-            return callGeminiApi(prompt, systemPrompt, "gemini-3-flash", imageBase64, apiKey);
+            return callGeminiApi(prompt, systemPrompt, "gemini-3.5-flash", imageBase64, apiKey);
         }
     }
 
@@ -184,7 +184,7 @@ public class GeminiProvider extends AbstractAIProvider {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key="
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key="
                 + apiKey;
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.POST, entity, JsonNode.class);
         JsonNode root = response.getBody();
@@ -368,9 +368,9 @@ public class GeminiProvider extends AbstractAIProvider {
      */
     private String callGeminiFreeApi(String prompt, String systemPrompt, String apiKey) throws Exception {
         try {
-            return callGeminiFreeApiWithModel(prompt, systemPrompt, "gemini-3-flash", apiKey);
+            return callGeminiFreeApiWithModel(prompt, systemPrompt, "gemini-3.5-flash", apiKey);
         } catch (Exception e) {
-            System.err.println("Gemini 2.5 Flash free call failed (" + e.getMessage() + "). Trying Pro...");
+            System.err.println("Gemini 3.5 Flash free call failed (" + e.getMessage() + "). Trying Pro...");
             return callGeminiFreeApiWithModel(prompt, systemPrompt, "gemini-2.5-pro", apiKey);
         }
     }
