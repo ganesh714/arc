@@ -53,6 +53,7 @@ public class AgentOrchestrator {
                 semanticResult = fallbackRing.agentSemanticPass(prompt);
                 logger.info("[Agent Orchestrator] Pass 1 complete. Semantic blueprint: {}", 
                         semanticResult.substring(0, Math.min(200, semanticResult.length())));
+                sendPlan(emitter, "semantic", semanticResult);
             } catch (Exception e) {
                 logger.error("[Agent Orchestrator] Pass 1 failed: {}", e.getMessage());
                 sendError(emitter, "Failed to analyze diagram structure: " + e.getMessage(), contextNodes);
@@ -68,6 +69,7 @@ public class AgentOrchestrator {
                 layoutResult = fallbackRing.agentLayoutPass(semanticResult, prompt);
                 logger.info("[Agent Orchestrator] Pass 2 complete. Layout plan: {}",
                         layoutResult.substring(0, Math.min(200, layoutResult.length())));
+                sendPlan(emitter, "layout", layoutResult);
             } catch (Exception e) {
                 logger.error("[Agent Orchestrator] Pass 2 failed: {}", e.getMessage());
                 sendError(emitter, "Failed to plan layout: " + e.getMessage(), contextNodes);
@@ -160,6 +162,18 @@ public class AgentOrchestrator {
             emitter.send(SseEmitter.event().name("progress").data(objectMapper.writeValueAsString(data)));
         } catch (Exception e) {
             logger.warn("Failed to send SSE progress event: {}", e.getMessage());
+        }
+    }
+
+    private void sendPlan(SseEmitter emitter, String type, String result) {
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("type", "plan");
+            data.put("planType", type); // 'semantic' or 'layout'
+            data.put("result", result);
+            emitter.send(SseEmitter.event().name("plan").data(objectMapper.writeValueAsString(data)));
+        } catch (Exception e) {
+            logger.warn("Failed to send SSE plan event: {}", e.getMessage());
         }
     }
 

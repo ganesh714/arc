@@ -159,6 +159,19 @@ export function AIChatSidebar() {
                   return [...prev, { id: 'agent-progress', role: 'ai' as const, content: msg }];
                 });
               }
+              else if (eventName === 'plan' || data.type === 'plan') {
+                const planTypeStr = data.planType === 'semantic' ? 'Semantic Analysis' : 'Layout Strategy';
+                const planMsg = `📝 **${planTypeStr} Completed:**\n\`\`\`json\n${data.result}\n\`\`\``;
+                setMessages(prev => {
+                  const progressMsg = prev.find(m => m.id === 'agent-progress');
+                  const filtered = prev.filter(m => m.id !== 'agent-progress');
+                  const newMsgs = [...filtered, { id: 'agent-plan-' + data.planType, role: 'ai' as const, content: planMsg }];
+                  if (progressMsg) {
+                    newMsgs.push(progressMsg);
+                  }
+                  return newMsgs;
+                });
+              }
               else if (eventName === 'step' || data.type === 'step') {
                 setAiPhase('executing');
                 const stepMsg = `⚡ Step ${data.step}/${data.maxSteps}: ${data.explanation} (${data.toolCallsApplied} operations)`;
