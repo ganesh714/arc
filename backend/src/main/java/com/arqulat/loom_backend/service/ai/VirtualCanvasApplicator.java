@@ -56,7 +56,7 @@ public class VirtualCanvasApplicator {
 
                         ObjectNode node = objectMapper.createObjectNode();
                         node.put("id", newId);
-                        node.put("type", args.path("type").asText("box"));
+                        node.put("type", mapNodeTypeAlias(args.path("type").asText("box")));
                         node.put("content", args.path("content").asText(""));
 
                         ObjectNode position = objectMapper.createObjectNode();
@@ -347,6 +347,37 @@ public class VirtualCanvasApplicator {
             case "left":
             case "right":
             default: return nodeY + nodeH / 2;
+        }
+    }
+
+    /**
+     * Gracefully maps LLM hallucinated node types to correct frontend types.
+     */
+    private String mapNodeTypeAlias(String type) {
+        if (type == null) return "box";
+        switch (type.toLowerCase().trim()) {
+            case "rhombus":
+            case "decision":
+            case "condition":
+                return "diamond";
+            case "capsule":
+            case "ellipse":
+            case "oval":
+            case "start":
+            case "end":
+                return "pill";
+            case "rectangle":
+            case "action":
+            case "process":
+                return "box";
+            case "database":
+            case "db":
+                return "database";
+            case "document":
+            case "doc":
+                return "document";
+            default:
+                return type;
         }
     }
 }
