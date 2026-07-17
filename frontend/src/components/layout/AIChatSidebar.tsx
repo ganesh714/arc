@@ -596,7 +596,7 @@ export function AIChatSidebar() {
               {showCollisionAction && (
                 <button 
                    onClick={() => {
-                     saveHistoryState();
+                     saveHistoryState(nodes);
                      const fixResult = autoFixCollisions(nodes);
                      setNodes(fixResult.nodes);
                      setShowCollisionAction(false);
