@@ -74,8 +74,8 @@ public class AIController {
      */
     @PostMapping(value = "/agent", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter agent(@RequestBody AIAgentRequest request) {
-        // 5 minute timeout for long agent runs
-        SseEmitter emitter = new SseEmitter(300_000L);
+        // 10 minute timeout for agent runs (rate limiting can cause delays)
+        SseEmitter emitter = new SseEmitter(600_000L);
 
         if (request.getPrompt() == null || request.getPrompt().trim().isEmpty()) {
             try {

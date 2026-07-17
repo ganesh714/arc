@@ -80,6 +80,12 @@ public class AgentOrchestrator {
             int totalToolCallsApplied = 0;
 
             for (int step = 1; step <= MAX_STEPS; step++) {
+                // Delay between steps to avoid rate limiting (skip delay for first step)
+                if (step > 1) {
+                    logger.info("[Agent Orchestrator] Waiting 3s before step {} to avoid rate limits...", step);
+                    try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+                }
+
                 sendProgress(emitter, "executing", "step_" + step, "Building step " + step + " of " + MAX_STEPS + "...");
                 logger.info("[Agent Orchestrator] Executing step {}/{}", step, MAX_STEPS);
 

@@ -147,6 +147,59 @@ public class GroqProvider extends AbstractAIProvider {
         throw new RuntimeException("Failed to parse Groq response: " + response.getBody());
     }
 
+    /**
+     * Free-form agent call — NO json_object response format.
+     * Used for agent passes 1+2 where LLM thinks freely.
+     */
+    @Override
+    public String agentFreeCall(String prompt, String systemPrompt) throws Exception {
+        int maxAttempts = Math.max(1, apiKeyManager.getKeyCount());
+        Exception lastException = null;
+
+        for (int i = 0; i < maxAttempts; i++) {
+            String currentKey = apiKeyManager.getNextKey();
+            try {
+                String url = "https://api.groq.com/openai/v1/chat/completions";
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(currentKey);
+
+                Map<String, Object> systemMessage = new HashMap<>();
+                systemMessage.put("role", "system");
+                systemMessage.put("content", systemPrompt);
+
+                Map<String, Object> userMessage = new HashMap<>();
+                userMessage.put("role", "user");
+                userMessage.put("content", prompt);
+
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("model", "llama-3.3-70b-versatile");
+                requestBody.put("messages", List.of(systemMessage, userMessage));
+                // NO response_format — let LLM think freely
+                requestBody.put("temperature", 0.7);
+
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+                ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+                if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                    throw new RuntimeException("Groq API call failed with status " + response.getStatusCode());
+                }
+
+                JsonNode root = objectMapper.readTree(response.getBody());
+                JsonNode choices = root.path("choices");
+                if (choices.isArray() && !choices.isEmpty()) {
+                    return choices.get(0).path("message").path("content").asText();
+                }
+                throw new RuntimeException("Failed to parse Groq response");
+            } catch (Exception e) {
+                lastException = e;
+                System.err.println("Groq agentFreeCall failed: " + e.getMessage());
+            }
+        }
+        throw new RuntimeException("All Groq API keys failed for agentFreeCall. Last error: " + lastException.getMessage(), lastException);
+    }
+
     @Override
     public String getProviderName() {
         return "Groq (Llama-3.3 70B)";
