@@ -27,6 +27,15 @@ public class AIAgentPrompts {
             "- Are there natural groupings, layers, or clusters?\n" +
             "- What is the dominant concept vs peripheral details?\n" +
             "- What is the natural flow direction? (top-down, left-right, radial)\n\n" +
+            "EDGE LABEL RULES:\n" +
+            "- For decision/condition branches, use ONLY short labels: 'True', 'False', 'Yes', 'No'.\n" +
+            "- For simple sequential flow, set label to empty string ''.\n" +
+            "- Only use descriptive labels for complex/ambiguous relationships (e.g. 'implements', 'extends').\n" +
+            "- DO NOT add verbose labels like 'initial condition', 'execute if true', 'completion'. These clutter the diagram.\n\n" +
+            "NODE SHAPE HINTS (use in the 'role' field):\n" +
+            "- Conditions/decisions -> role should mention 'decision'\n" +
+            "- Start/End -> role should mention 'terminal'\n" +
+            "- Actions/processes -> role should mention 'process'\n\n" +
             "After your analysis, output your findings inside <RESULT> tags as JSON:\n" +
             "<RESULT>\n" +
             "{\n" +
@@ -34,7 +43,7 @@ public class AIAgentPrompts {
             "    { \"name\": \"EntityName\", \"role\": \"brief role description\" }\n" +
             "  ],\n" +
             "  \"relationships\": [\n" +
-            "    { \"from\": \"EntityA\", \"to\": \"EntityB\", \"type\": \"relationship type\", \"label\": \"optional edge label\" }\n" +
+            "    { \"from\": \"EntityA\", \"to\": \"EntityB\", \"type\": \"relationship type\", \"label\": \"\" }\n" +
             "  ],\n" +
             "  \"groups\": [\"Group1 Name\", \"Group2 Name\"],\n" +
             "  \"entityToGroup\": { \"EntityA\": \"Group1 Name\", \"EntityB\": \"Group2 Name\" },\n" +
@@ -67,8 +76,8 @@ public class AIAgentPrompts {
             "    { \"entity\": \"Condition1\", \"row\": 1, \"col\": 0 },\n" +
             "    { \"entity\": \"Action1\", \"row\": 1, \"col\": 1 }\n" +
             "  ],\n" +
-            "  \"gridMetrics\": { \"columnWidth\": 300, \"rowHeight\": 150 },\n" +
-            "  \"nodeDefaults\": { \"width\": 220, \"height\": 90 },\n" +
+            "  \"gridMetrics\": { \"columnWidth\": 240, \"rowHeight\": 120 },\n" +
+            "  \"nodeDefaults\": { \"width\": 160, \"height\": 60 },\n" +
             "  \"colorPalette\": {\n" +
             "    \"Primary\": { \"bg\": \"#hex\", \"border\": \"#hex\", \"text\": \"#hex\" }\n" +
             "  },\n" +
@@ -118,12 +127,18 @@ public class AIAgentPrompts {
             "=== AVAILABLE TOOLS ===\n" +
             "add_node: { type, content, tag, x, y, width, height, backgroundColor, borderColor, textColor }\n" +
             "  - type values: box, capsule, rhombus, cylinder, database, cloud, server, terminator, diamond\n" +
+            "  - SHAPE RULES:\n" +
+            "    * Decision/Condition nodes MUST use type 'rhombus' (renders as diamond shape)\n" +
+            "    * Start/End nodes MUST use type 'capsule' (renders as rounded pill shape)\n" +
+            "    * Process/Action nodes use type 'box' (standard rectangle)\n" +
             "  - content MUST be non-empty (the visible label text)\n" +
-            "  - x, y are the top-left pixel position calculated from row/col\n\n" +
+            "  - x, y are the top-left pixel position calculated from row/col\n" +
+            "  - Use width=160 and height=60 unless the layout plan specifies otherwise\n\n" +
             "connect_nodes: { sourceId, targetId, label, lineStyle, arrowHead, routing }\n" +
             "  - sourceId: ID of the source node (use $$NEW_N$$ for newly created nodes)\n" +
             "  - targetId: ID of the target node\n" +
-            "  - label: edge label text (e.g. 'True', 'False', 'implements', 'calls')\n" +
+            "  - LABEL RULES: Only add a label on decision branches ('True', 'False', 'Yes', 'No').\n" +
+            "    For all other connections, OMIT the label field or set it to empty string.\n" +
             "  - lineStyle: solid / dashed / dotted\n" +
             "  - arrowHead: filled / none\n" +
             "  - routing: elbow / straight / curved\n\n" +
@@ -133,17 +148,20 @@ public class AIAgentPrompts {
             "resize_node: { nodeId, width, height }\n" +
             "delete_node: { nodeId }\n" +
             "disconnect_nodes: { edgeId }\n\n" +
-            "=== COMPLETE EXAMPLE ===\n" +
-            "For a simple A -> B -> C flow, one step should produce:\n" +
+            "=== COMPLETE EXAMPLE (if-else) ===\n" +
+            "For Start -> Condition --True--> Action ---> End, Condition --False--> End:\n" +
             "{\n" +
-            "  \"explanation\": \"Creating all nodes and connectors for A->B->C flow\",\n" +
+            "  \"explanation\": \"Creating nodes and connectors for conditional flow\",\n" +
             "  \"isDone\": true,\n" +
             "  \"toolCalls\": [\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"Start\", \"x\": 0, \"y\": 0, \"width\": 220, \"height\": 90, \"backgroundColor\": \"#E8F5E9\", \"borderColor\": \"#43A047\" } },\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"box\", \"content\": \"Process A\", \"x\": 0, \"y\": 150, \"width\": 220, \"height\": 90 } },\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"End\", \"x\": 0, \"y\": 300, \"width\": 220, \"height\": 90 } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"Start\", \"x\": 0, \"y\": 0, \"width\": 160, \"height\": 60, \"backgroundColor\": \"#E8F5E9\", \"borderColor\": \"#43A047\" } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"rhombus\", \"content\": \"Condition?\", \"x\": 0, \"y\": 120, \"width\": 160, \"height\": 60, \"backgroundColor\": \"#FFF3E0\", \"borderColor\": \"#E65100\" } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"box\", \"content\": \"Action\", \"x\": 240, \"y\": 120, \"width\": 160, \"height\": 60 } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"End\", \"x\": 0, \"y\": 240, \"width\": 160, \"height\": 60 } },\n" +
             "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_0$$\", \"targetId\": \"$$NEW_1$$\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } },\n" +
-            "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_1$$\", \"targetId\": \"$$NEW_2$$\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } }\n" +
+            "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_1$$\", \"targetId\": \"$$NEW_2$$\", \"label\": \"True\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } },\n" +
+            "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_2$$\", \"targetId\": \"$$NEW_3$$\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } },\n" +
+            "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_1$$\", \"targetId\": \"$$NEW_3$$\", \"label\": \"False\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } }\n" +
             "  ]\n" +
             "}\n\n" +
             "=== CHECKLIST BEFORE SETTING isDone=true ===\n" +
