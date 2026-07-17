@@ -245,16 +245,24 @@ export function Canvas() {
 
       // Copy / Paste / Cut
       if ((e.ctrlKey || e.metaKey) && key === 'c') {
+        if (window.getSelection()?.toString().trim() !== '') {
+          return; // Let the browser handle text copy
+        }
         e.preventDefault();
         copySelected();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && key === 'v') {
+        // Only prevent default if we are specifically focused on the canvas body, not if focused elsewhere.
+        // But for paste, it's safer just to try pasteSelected.
         e.preventDefault();
         pasteSelected();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && key === 'x') {
+        if (window.getSelection()?.toString().trim() !== '') {
+          return; // Let the browser handle text cut
+        }
         e.preventDefault();
         cutSelected();
         return;

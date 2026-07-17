@@ -19,6 +19,53 @@ interface ChatMessage {
   isError?: boolean;
 }
 
+const CollapsibleMessage = ({ msg }: { msg: ChatMessage }) => {
+  const [expanded, setExpanded] = useState(false);
+  const lines = msg.content.split('\n');
+  const isLarge = lines.length > 5 || msg.content.length > 250;
+
+  if (!isLarge || msg.role === 'user') {
+    return (
+      <>
+        {lines.map((line, i) => (
+          <div key={i}>{line}</div>
+        ))}
+      </>
+    );
+  }
+
+  return (
+    <div>
+      {expanded ? (
+        <>
+          {lines.map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+          <button 
+            onClick={() => setExpanded(false)}
+            style={{ background: 'none', border: 'none', color: '#0c8ce9', padding: '8px 0 0 0', cursor: 'pointer', fontSize: '12px', width: '100%', textAlign: 'center', fontWeight: 600 }}
+          >
+            Show Less
+          </button>
+        </>
+      ) : (
+        <>
+          {lines.slice(0, 3).map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+          <div style={{ color: '#888', fontStyle: 'italic', fontSize: '12px', marginTop: '4px' }}>...</div>
+          <button 
+            onClick={() => setExpanded(true)}
+            style={{ background: 'none', border: 'none', color: '#0c8ce9', padding: '8px 0 0 0', cursor: 'pointer', fontSize: '12px', width: '100%', textAlign: 'center', fontWeight: 600 }}
+          >
+            Show More
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
 export function AIChatSidebar() {
   const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState, zoom, panOffset, undo } = useDiagram();
   const [input, setInput] = useState('');
@@ -563,9 +610,7 @@ export function AIChatSidebar() {
                   border: msg.role === 'ai' && !msg.isError ? '1px solid #2a2e39' : msg.isError ? '1px solid #ef444450' : 'none'
                 }}
               >
-                {msg.content.split('\\n').map((line, i) => (
-                  <div key={i}>{line}</div>
-                ))}
+                <CollapsibleMessage msg={msg} />
               </div>
             ))}
           </div>
