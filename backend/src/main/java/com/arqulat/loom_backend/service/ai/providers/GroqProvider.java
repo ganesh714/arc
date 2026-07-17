@@ -61,7 +61,7 @@ public class GroqProvider extends AbstractAIProvider {
         Map<String, Object> userMessage = new HashMap<>();
         userMessage.put("role", "user");
         boolean expectsJson = systemPrompt.contains("JSON");
-        userMessage.put("content", prompt + (expectsJson ? "\n\nCRITICAL INSTRUCTION: You MUST output ONLY a valid JSON array. Do not wrap in markdown or include any explanations." : ""));
+        userMessage.put("content", prompt + (expectsJson ? "\n\nCRITICAL INSTRUCTION: You MUST output ONLY valid JSON. Do not wrap in markdown or include any explanations outside the JSON block." : ""));
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("model", "llama-3.3-70b-versatile");
