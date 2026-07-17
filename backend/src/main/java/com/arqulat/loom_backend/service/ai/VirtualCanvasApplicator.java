@@ -177,8 +177,8 @@ public class VirtualCanvasApplicator {
                         edge.put("content", "");
 
                         // Calculate anchor points based on node positions
-                        String sourceAnchor = args.path("sourceAnchor").asText("bottom");
-                        String targetAnchor = args.path("targetAnchor").asText("top");
+                        String sourceAnchor = args.path("sourceAnchor").asText("closest");
+                        String targetAnchor = args.path("targetAnchor").asText("closest");
 
                         double srcX = 0, srcY = 0, tgtX = 0, tgtY = 0;
                         double srcW = 220, srcH = 90, tgtW = 220, tgtH = 90;
