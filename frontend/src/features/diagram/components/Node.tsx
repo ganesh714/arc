@@ -1099,6 +1099,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
             const endY = node.endPoint!.y - node.position.y;
             let labelX = (startX + endX) / 2;
             let labelY = (startY + endY) / 2;
+            const labelOffset = 14; // px offset to avoid sitting on the line
 
             if (node.waypoints && node.waypoints.length > 0) {
               const midIndex = Math.floor((node.waypoints.length - 1) / 2);
@@ -1106,9 +1107,29 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               const wp2 = midIndex + 1 < node.waypoints.length ? node.waypoints[midIndex + 1] : { x: endX + node.position.x, y: endY + node.position.y };
               labelX = (wp1.x + wp2.x) / 2 - node.position.x;
               labelY = (wp1.y + wp2.y) / 2 - node.position.y;
+              // Offset perpendicular to the segment
+              const segDx = wp2.x - wp1.x;
+              const segDy = wp2.y - wp1.y;
+              if (Math.abs(segDx) > Math.abs(segDy)) {
+                labelY -= labelOffset; // horizontal segment -> push up
+              } else {
+                labelX += labelOffset; // vertical segment -> push right
+              }
             } else if (node.routing === 'elbow') {
-              labelX = (startX + endX) / 2;
-              labelY = startY;
+              const isVerticalElbow = node.startConnection?.anchor === 'bottom' || node.startConnection?.anchor === 'top' || !node.startConnection?.anchor;
+              const midY = (startY + endY) / 2;
+              const midX = (startX + endX) / 2;
+              if (isVerticalElbow) {
+                // Elbow goes: startX,startY -> startX,midY -> endX,midY -> endX,endY
+                // Label on the horizontal middle segment
+                labelX = (startX + endX) / 2;
+                labelY = midY - labelOffset;
+              } else {
+                // Elbow goes: startX,startY -> midX,startY -> midX,endY -> endX,endY
+                // Label on the vertical middle segment
+                labelX = midX + labelOffset;
+                labelY = (startY + endY) / 2;
+              }
             } else if (node.lineCurve === 'curved') {
               const dx = endX - startX;
               const dy = endY - startY;
@@ -1118,6 +1139,17 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
               const ny = len > 0 ? dx / len : 0;
               labelX += nx * (curveOffset * 0.5);
               labelY += ny * (curveOffset * 0.5);
+            } else {
+              // Straight line — offset perpendicular (above the line)
+              const dx = endX - startX;
+              const dy = endY - startY;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              if (len > 0) {
+                labelX += (-dy / len) * labelOffset;
+                labelY += (dx / len) * labelOffset;
+              } else {
+                labelY -= labelOffset;
+              }
             }
 
             if (node.labelPosition === 'start') {
@@ -1134,7 +1166,7 @@ export function Node({ node, onWaypointDragStart }: NodeProps) {
                 left: `${labelX}px`,
                 top: `${labelY}px`,
                 transform: 'translate(-50%, -50%)',
-                background: node.style?.backgroundColor || 'var(--bg-canvas)',
+                background: 'var(--bg-canvas, #1a1a2e)',
                 padding: '2px 6px',
                 borderRadius: '4px',
                 fontSize: node.style?.fontSize || '10px',
