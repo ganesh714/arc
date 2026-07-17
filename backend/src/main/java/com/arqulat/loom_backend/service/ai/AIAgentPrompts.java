@@ -51,40 +51,32 @@ public class AIAgentPrompts {
      */
     public static final String LAYOUT_PROMPT =
             "You are an expert diagram layout designer. Given the semantic analysis below, " +
-            "decide the best visual layout structure for this diagram.\n\n" +
+            "decide the precise spatial layout for this diagram using a grid system (rows and columns).\n\n" +
             "Think step by step in natural language:\n" +
-            "- What layout type fits best? Options include:\n" +
-            "  * flowchart (sequential process flow)\n" +
-            "  * layered_hierarchy (layers stacked top-to-bottom or left-to-right)\n" +
-            "  * tree (parent-children branching)\n" +
-            "  * hub_spoke (central node with spokes radiating out)\n" +
-            "  * swimlane (parallel columns/rows for different actors)\n" +
-            "  * matrix (grid arrangement)\n" +
-            "  * graph_mesh (free-form connected nodes)\n" +
-            "  * sequence (timeline or sequential steps)\n" +
-            "  * Or any combination you think works best\n" +
-            "- How many rows/columns/sections are needed?\n" +
-            "- Which entities go in which spatial region?\n" +
-            "- Should nodes be uniform or vary in size?\n" +
-            "- What color scheme would make this clear and visually appealing?\n\n" +
+            "- What is the primary flow of the diagram? (e.g., top-to-bottom for flowcharts)\n" +
+            "- Assign a specific `row` and `col` integer index to EVERY entity.\n" +
+            "  * E.g., for an if-else ladder, the main condition path might go down (col 0, rows 0, 1, 2) while the 'True' branches branch out horizontally (col 1, rows 0, 1, 2).\n" +
+            "- Ensure no two nodes occupy the exact same (row, col) unless intended to overlap.\n" +
+            "- What color scheme makes logical sense? (e.g., green for true/success, red for false/error).\n\n" +
             "After your analysis, output the layout plan inside <RESULT> tags as JSON:\n" +
             "<RESULT>\n" +
             "{\n" +
-            "  \"layoutType\": \"layered_hierarchy\",\n" +
-            "  \"layers\": [\n" +
-            "    { \"name\": \"Layer Name\", \"entities\": [\"Entity1\", \"Entity2\"], \"row\": 0 }\n" +
+            "  \"layoutType\": \"grid_flowchart\",\n" +
+            "  \"nodePositions\": [\n" +
+            "    { \"entity\": \"Start\", \"row\": 0, \"col\": 0 },\n" +
+            "    { \"entity\": \"Condition1\", \"row\": 1, \"col\": 0 },\n" +
+            "    { \"entity\": \"Action1\", \"row\": 1, \"col\": 1 }\n" +
             "  ],\n" +
-            "  \"estimatedSize\": { \"width\": 1200, \"height\": 700 },\n" +
-            "  \"spacing\": { \"horizontal\": 60, \"vertical\": 120 },\n" +
+            "  \"gridMetrics\": { \"columnWidth\": 300, \"rowHeight\": 150 },\n" +
             "  \"nodeDefaults\": { \"width\": 220, \"height\": 90 },\n" +
             "  \"colorPalette\": {\n" +
-            "    \"Layer Name\": { \"bg\": \"#hex\", \"border\": \"#hex\", \"text\": \"#hex\" }\n" +
+            "    \"Primary\": { \"bg\": \"#hex\", \"border\": \"#hex\", \"text\": \"#hex\" }\n" +
             "  },\n" +
-            "  \"styleHints\": \"Interfaces use dashed borders. Abstract classes use italic text.\"\n" +
+            "  \"styleHints\": \"Decision nodes use type 'rhombus'.\"\n" +
             "}\n" +
             "</RESULT>\n\n" +
-            "IMPORTANT: Think thoroughly about which layout type best communicates the relationships. " +
-            "Your reasoning before <RESULT> is crucial for a good layout decision.";
+            "IMPORTANT: Think thoroughly about the (row, col) coordinates to avoid overlaps and create a clean flow. " +
+            "Your reasoning before <RESULT> is crucial.";
 
     /**
      * Pass 3 — Execution Step (LOW LEVEL).
@@ -114,11 +106,12 @@ public class AIAgentPrompts {
             "them using 'connect_nodes'. A diagram without connectors is INCOMPLETE and USELESS.\n" +
             "5. Use $$NEW_N$$ placeholders for nodes created in THIS step ($$NEW_0$$, $$NEW_1$$, etc.).\n" +
             "6. When ALL entities AND ALL relationships from the blueprint exist on canvas, set isDone=true.\n" +
-            "7. Follow the layout plan's spacing, positions, and colors precisely.\n" +
-            "8. Leave at least 40px padding between nodes.\n\n" +
+            "7. CALCULATING POSITIONS: You MUST calculate the exact 'x' and 'y' for each node based on the Layout Plan's nodePositions.\n" +
+            "   Formula: x = col * columnWidth, y = row * rowHeight\n" +
+            "   (Example: col 1, row 2 with 300/150 spacing -> x = 300, y = 300)\n\n" +
             "=== EXECUTION STRATEGY ===\n" +
             "A complete diagram requires BOTH nodes AND connectors. Follow this order:\n" +
-            "- Step 1: Create ALL nodes with their content, positions, types, and styles.\n" +
+            "- Step 1: Create ALL nodes with their content, calculated x/y positions, types, and styles.\n" +
             "- Step 2: Create ALL connectors between the nodes (one connect_nodes per relationship).\n" +
             "- Step 3: Apply any remaining styling, fix positions, or refine. Set isDone=true.\n" +
             "DO NOT waste steps doing 1 operation at a time. Batch efficiently!\n\n" +
@@ -126,7 +119,7 @@ public class AIAgentPrompts {
             "add_node: { type, content, tag, x, y, width, height, backgroundColor, borderColor, textColor }\n" +
             "  - type values: box, capsule, rhombus, cylinder, database, cloud, server, terminator, diamond\n" +
             "  - content MUST be non-empty (the visible label text)\n" +
-            "  - x, y are the top-left pixel position\n\n" +
+            "  - x, y are the top-left pixel position calculated from row/col\n\n" +
             "connect_nodes: { sourceId, targetId, label, lineStyle, arrowHead, routing }\n" +
             "  - sourceId: ID of the source node (use $$NEW_N$$ for newly created nodes)\n" +
             "  - targetId: ID of the target node\n" +
@@ -146,9 +139,9 @@ public class AIAgentPrompts {
             "  \"explanation\": \"Creating all nodes and connectors for A->B->C flow\",\n" +
             "  \"isDone\": true,\n" +
             "  \"toolCalls\": [\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"Start\", \"x\": 400, \"y\": 20, \"width\": 220, \"height\": 90, \"backgroundColor\": \"#E8F5E9\", \"borderColor\": \"#43A047\" } },\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"box\", \"content\": \"Process A\", \"x\": 400, \"y\": 200, \"width\": 220, \"height\": 90 } },\n" +
-            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"End\", \"x\": 400, \"y\": 380, \"width\": 220, \"height\": 90 } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"Start\", \"x\": 0, \"y\": 0, \"width\": 220, \"height\": 90, \"backgroundColor\": \"#E8F5E9\", \"borderColor\": \"#43A047\" } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"box\", \"content\": \"Process A\", \"x\": 0, \"y\": 150, \"width\": 220, \"height\": 90 } },\n" +
+            "    { \"tool\": \"add_node\", \"args\": { \"type\": \"capsule\", \"content\": \"End\", \"x\": 0, \"y\": 300, \"width\": 220, \"height\": 90 } },\n" +
             "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_0$$\", \"targetId\": \"$$NEW_1$$\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } },\n" +
             "    { \"tool\": \"connect_nodes\", \"args\": { \"sourceId\": \"$$NEW_1$$\", \"targetId\": \"$$NEW_2$$\", \"routing\": \"elbow\", \"arrowHead\": \"filled\" } }\n" +
             "  ]\n" +

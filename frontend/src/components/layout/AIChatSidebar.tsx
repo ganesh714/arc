@@ -3,7 +3,7 @@ import { X, Send, Sparkles, ChevronDown, Mic, MicOff, Bot, Edit3, ImagePlus } fr
 import styles from './AIChatSidebar.module.css';
 import { useDiagram } from '@/context/DiagramContext';
 import { autoLayoutNodes } from '../../utils/layoutEngine';
-import { autoFixCollisions } from '../../utils/collisionDetector';
+import { autoFixCollisions, detectCollisions } from '../../utils/collisionDetector';
 
 const MODELS = [
   'Arc GPT-4',
@@ -20,7 +20,7 @@ interface ChatMessage {
 }
 
 export function AIChatSidebar() {
-  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState, zoom, panOffset } = useDiagram();
+  const { toggleAiChat, activeProjectId, addFile, setNodes, nodes, projects, selectedNodeIds, saveHistoryState, zoom, panOffset, undo } = useDiagram();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,6 +31,9 @@ export function AIChatSidebar() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
+  const [showCollisionAction, setShowCollisionAction] = useState(false);
+  const [canUndoCollision, setCanUndoCollision] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -188,12 +191,18 @@ export function AIChatSidebar() {
               else if (eventName === 'done' || data.type === 'done') {
                 // Final commit
                 if (data.finalNodes && Array.isArray(data.finalNodes)) {
-                  // Apply collision detection on final result
-                  const fixResult = autoFixCollisions(data.finalNodes as any);
-                  setNodes(fixResult.nodes);
+                  // Do not auto fix collisions anymore, give user the choice
+                  setNodes(data.finalNodes as any);
 
-                  const fixCount = fixResult.report.nodeOverlaps.length + fixResult.report.lineIntersections.length;
-                  const fixMsg = fixCount > 0 ? ` ⚠️ Fixed ${fixCount} collision(s).` : '';
+                  const report = detectCollisions(data.finalNodes as any);
+                  const hasCollisions = report.nodeOverlaps.length > 0 || report.lineIntersections.length > 0;
+                  
+                  if (hasCollisions) {
+                    setShowCollisionAction(true);
+                    setCanUndoCollision(false);
+                  }
+
+                  const fixMsg = hasCollisions ? ` ⚠️ Collisions detected.` : '';
                   const doneMsg = `✅ ${data.summary || 'Agent completed.'}${fixMsg}`;
                   setMessages(prev => {
                     const filtered = prev.filter(m => m.id !== 'agent-progress');
@@ -581,6 +590,38 @@ export function AIChatSidebar() {
               )}
            </div>
         )}
+        {/* Quick Actions (Collisions) */}
+        {(showCollisionAction || canUndoCollision) && (
+           <div style={{ padding: '12px 16px', display: 'flex', gap: '8px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-secondary)', marginTop: '8px', borderRadius: '8px' }}>
+              {showCollisionAction && (
+                <button 
+                   onClick={() => {
+                     saveHistoryState();
+                     const fixResult = autoFixCollisions(nodes);
+                     setNodes(fixResult.nodes);
+                     setShowCollisionAction(false);
+                     setCanUndoCollision(true);
+                   }}
+                   style={{ padding: '6px 12px', background: '#0c8ce9', color: '#fff', borderRadius: '4px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 500, flex: 1 }}
+                >
+                  ✨ Auto Fix Collisions
+                </button>
+              )}
+              {canUndoCollision && (
+                <button 
+                   onClick={() => {
+                     undo();
+                     setCanUndoCollision(false);
+                     setShowCollisionAction(true);
+                   }}
+                   style={{ padding: '6px 12px', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 500, flex: 1 }}
+                >
+                  ↩️ Undo Collision Fix
+                </button>
+              )}
+           </div>
+        )}
+
         <div ref={messagesEndRef} style={{ height: 1 }} />
       </div>
 
