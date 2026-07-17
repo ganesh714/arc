@@ -167,29 +167,94 @@ public class VirtualCanvasApplicator {
                         newIdMap.put("$$NEW_" + newCounter + "$$", edgeId);
                         newCounter++;
 
+                        // Find source and target node positions for geometry calculation
+                        JsonNode sourceNode = findNode(canvasArray, sourceId);
+                        JsonNode targetNode = findNode(canvasArray, targetNodeId);
+
                         ObjectNode edge = objectMapper.createObjectNode();
                         edge.put("id", edgeId);
                         edge.put("type", "arrow");
                         edge.put("content", "");
 
+                        // Calculate anchor points based on node positions
+                        String sourceAnchor = args.path("sourceAnchor").asText("bottom");
+                        String targetAnchor = args.path("targetAnchor").asText("top");
+
+                        double srcX = 0, srcY = 0, tgtX = 0, tgtY = 0;
+                        double srcW = 220, srcH = 90, tgtW = 220, tgtH = 90;
+
+                        if (sourceNode != null) {
+                            srcX = sourceNode.path("position").path("x").asDouble(0);
+                            srcY = sourceNode.path("position").path("y").asDouble(0);
+                            srcW = sourceNode.path("dimensions").path("width").asDouble(220);
+                            srcH = sourceNode.path("dimensions").path("height").asDouble(90);
+                        }
+                        if (targetNode != null) {
+                            tgtX = targetNode.path("position").path("x").asDouble(0);
+                            tgtY = targetNode.path("position").path("y").asDouble(0);
+                            tgtW = targetNode.path("dimensions").path("width").asDouble(220);
+                            tgtH = targetNode.path("dimensions").path("height").asDouble(90);
+                        }
+
+                        // Auto-detect best anchors based on relative positions
+                        double srcCenterX = srcX + srcW / 2;
+                        double srcCenterY = srcY + srcH / 2;
+                        double tgtCenterX = tgtX + tgtW / 2;
+                        double tgtCenterY = tgtY + tgtH / 2;
+                        double dx = tgtCenterX - srcCenterX;
+                        double dy = tgtCenterY - srcCenterY;
+
+                        if (sourceAnchor.equals("bottom") && targetAnchor.equals("top")) {
+                            // Use defaults — most common case (top-down flow)
+                        } else if (sourceAnchor.equals("closest")) {
+                            // Auto-detect
+                            if (Math.abs(dx) > Math.abs(dy)) {
+                                sourceAnchor = dx > 0 ? "right" : "left";
+                                targetAnchor = dx > 0 ? "left" : "right";
+                            } else {
+                                sourceAnchor = dy > 0 ? "bottom" : "top";
+                                targetAnchor = dy > 0 ? "top" : "bottom";
+                            }
+                        }
+
+                        // Calculate actual start and end points based on anchors
+                        double startPtX = getAnchorX(srcX, srcW, sourceAnchor);
+                        double startPtY = getAnchorY(srcY, srcH, sourceAnchor);
+                        double endPtX = getAnchorX(tgtX, tgtW, targetAnchor);
+                        double endPtY = getAnchorY(tgtY, tgtH, targetAnchor);
+
+                        ObjectNode startPoint = objectMapper.createObjectNode();
+                        startPoint.put("x", startPtX);
+                        startPoint.put("y", startPtY);
+                        edge.set("startPoint", startPoint);
+
+                        ObjectNode endPoint = objectMapper.createObjectNode();
+                        endPoint.put("x", endPtX);
+                        endPoint.put("y", endPtY);
+                        edge.set("endPoint", endPoint);
+
+                        // Position is top-left of bounding box
+                        double minX = Math.min(startPtX, endPtX);
+                        double minY = Math.min(startPtY, endPtY);
                         ObjectNode edgePos = objectMapper.createObjectNode();
-                        edgePos.put("x", 0);
-                        edgePos.put("y", 0);
+                        edgePos.put("x", minX);
+                        edgePos.put("y", minY);
                         edge.set("position", edgePos);
 
+                        // Dimensions are the bounding box
                         ObjectNode edgeDim = objectMapper.createObjectNode();
-                        edgeDim.put("width", 0);
-                        edgeDim.put("height", 0);
+                        edgeDim.put("width", Math.max(15, Math.abs(endPtX - startPtX)));
+                        edgeDim.put("height", Math.max(15, Math.abs(endPtY - startPtY)));
                         edge.set("dimensions", edgeDim);
 
                         ObjectNode startConn = objectMapper.createObjectNode();
                         startConn.put("nodeId", sourceId);
-                        startConn.put("anchor", "closest");
+                        startConn.put("anchor", sourceAnchor);
                         edge.set("startConnection", startConn);
 
                         ObjectNode endConn = objectMapper.createObjectNode();
                         endConn.put("nodeId", targetNodeId);
-                        endConn.put("anchor", "closest");
+                        endConn.put("anchor", targetAnchor);
                         edge.set("endConnection", endConn);
 
                         if (args.has("label")) edge.put("label", args.path("label").asText());
@@ -199,7 +264,8 @@ public class VirtualCanvasApplicator {
                         edge.put("routing", args.path("routing").asText("elbow"));
 
                         canvasArray.add(edge);
-                        logger.debug("connect_nodes: {} -> {}", sourceId, targetNodeId);
+                        logger.debug("connect_nodes: {} -> {} (label: {})", sourceId, targetNodeId,
+                                args.path("label").asText(""));
                         break;
                     }
 
@@ -244,5 +310,43 @@ public class VirtualCanvasApplicator {
             }
         }
         return count;
+    }
+
+    /**
+     * Finds a node in the canvas array by ID.
+     */
+    private JsonNode findNode(ArrayNode canvas, String id) {
+        for (JsonNode node : canvas) {
+            if (node.path("id").asText("").equals(id)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Calculates the X position of an anchor point on a node.
+     */
+    private double getAnchorX(double nodeX, double nodeW, String anchor) {
+        switch (anchor) {
+            case "left": return nodeX;
+            case "right": return nodeX + nodeW;
+            case "top":
+            case "bottom":
+            default: return nodeX + nodeW / 2;
+        }
+    }
+
+    /**
+     * Calculates the Y position of an anchor point on a node.
+     */
+    private double getAnchorY(double nodeY, double nodeH, String anchor) {
+        switch (anchor) {
+            case "top": return nodeY;
+            case "bottom": return nodeY + nodeH;
+            case "left":
+            case "right":
+            default: return nodeY + nodeH / 2;
+        }
     }
 }
